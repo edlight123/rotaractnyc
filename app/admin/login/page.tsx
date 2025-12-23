@@ -41,7 +41,7 @@ export default function AdminLogin() {
       <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 space-y-8">
         <div className="text-center">
           <Image
-            src="/logo.jpg"
+            src="/Rotaract%20Logo%20(1).png"
             alt="Rotaract Logo"
             width={100}
             height={100}

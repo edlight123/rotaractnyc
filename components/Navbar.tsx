@@ -49,7 +49,7 @@ const Navbar = () => {
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <Image
-              src="/logo.jpg"
+              src="/Rotaract%20Logo%20(1).png"
               alt="Rotaract Logo"
               width={100}
               height={100}
