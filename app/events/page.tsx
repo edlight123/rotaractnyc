@@ -59,9 +59,6 @@ export default function EventsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
-            <div className="mx-auto mb-5 inline-flex items-center rounded-full border border-rotaract-pink/20 bg-white px-4 py-1 text-sm text-rotaract-darkpink shadow-sm">
-              Events
-            </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-4 text-rotaract-darkpink tracking-tight">Events</h1>
             <p className="text-lg md:text-xl max-w-3xl mx-auto text-gray-700">
               Join us for meetings, service projects, and social events throughout the year

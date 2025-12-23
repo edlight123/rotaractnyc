@@ -17,10 +17,7 @@ export default function NewsArticlePage({ params }: Props) {
         <div className="absolute -bottom-56 -left-56 h-[640px] w-[640px] rounded-full bg-rotaract-darkpink/10 blur-3xl" />
 
         <div className="container mx-auto px-4 relative max-w-3xl">
-          <div className="inline-flex items-center rounded-full border border-rotaract-pink/20 bg-white px-4 py-1 text-sm text-rotaract-darkpink shadow-sm">
-            RCUN News
-          </div>
-          <h1 className="mt-4 text-3xl md:text-4xl font-bold text-rotaract-darkpink tracking-tight capitalize">
+          <h1 className="text-3xl md:text-4xl font-bold text-rotaract-darkpink tracking-tight capitalize">
             {title}
           </h1>
           <p className="mt-3 text-sm text-gray-600">

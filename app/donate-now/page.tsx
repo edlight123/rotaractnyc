@@ -9,10 +9,7 @@ export default function DonateNowPage() {
         <div className="absolute -bottom-56 -left-56 h-[640px] w-[640px] rounded-full bg-rotaract-darkpink/10 blur-3xl" />
 
         <div className="container mx-auto px-4 relative max-w-4xl">
-          <div className="inline-flex items-center rounded-full border border-rotaract-pink/20 bg-white px-4 py-1 text-sm text-rotaract-darkpink shadow-sm">
-            Support Rotaract NYC
-          </div>
-          <h1 className="mt-4 text-4xl md:text-5xl font-bold text-rotaract-darkpink tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-bold text-rotaract-darkpink tracking-tight">
             Donate Now
           </h1>
           <p className="mt-4 text-lg text-gray-700 leading-relaxed max-w-3xl">

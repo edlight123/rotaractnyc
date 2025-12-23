@@ -9,10 +9,7 @@ export default function Archive20212022Page() {
         <div className="absolute -bottom-56 -left-56 h-[640px] w-[640px] rounded-full bg-rotaract-darkpink/10 blur-3xl" />
 
         <div className="container mx-auto px-4 relative max-w-5xl">
-          <div className="inline-flex items-center rounded-full border border-rotaract-pink/20 bg-white px-4 py-1 text-sm text-rotaract-darkpink shadow-sm">
-            Archive
-          </div>
-          <h1 className="mt-4 text-4xl md:text-5xl font-bold text-rotaract-darkpink tracking-tight">2021–2022</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-rotaract-darkpink tracking-tight">2021–2022</h1>
           <p className="mt-4 text-lg text-gray-700 leading-relaxed max-w-3xl">
             A year-in-review snapshot of our service, fellowship, and leadership development.
             This archive is designed to match the live-site structure and can be expanded with photos and detailed recaps.
