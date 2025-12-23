@@ -7,15 +7,20 @@ export default function MeetingsPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-rotaract-pink to-rotaract-darkpink text-white py-20">
-        <div className="container mx-auto px-4">
+      <section className="relative pt-32 pb-14 overflow-hidden bg-white">
+        <div className="absolute -top-40 -right-40 h-[520px] w-[520px] rounded-full bg-rotaract-pink/10 blur-3xl" />
+        <div className="absolute -bottom-56 -left-56 h-[640px] w-[640px] rounded-full bg-rotaract-darkpink/10 blur-3xl" />
+        <div className="container mx-auto px-4 relative">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
-            <h1 className="text-5xl font-bold mb-6">Meeting Schedule</h1>
-            <p className="text-xl max-w-3xl mx-auto">
+            <div className="mx-auto mb-5 inline-flex items-center rounded-full border border-rotaract-pink/20 bg-white px-4 py-1 text-sm text-rotaract-darkpink shadow-sm">
+              Meetings
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-rotaract-darkpink tracking-tight">Meeting Schedule</h1>
+            <p className="text-lg md:text-xl max-w-3xl mx-auto text-gray-700">
               Join us at our regular meetings to stay connected and engaged
             </p>
           </motion.div>
@@ -104,15 +109,25 @@ export default function MeetingsPage() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="bg-gradient-to-r from-rotaract-pink to-rotaract-darkpink text-white p-8 rounded-lg"
+              className="relative overflow-hidden bg-white p-8 rounded-lg border border-rotaract-pink/15 shadow-lg"
             >
-              <h3 className="text-2xl font-bold mb-4">First Time Visitors Welcome!</h3>
-              <p className="mb-4">
+              <div className="absolute -top-24 -right-24 h-56 w-56 rounded-full bg-rotaract-pink/10 blur-3xl" />
+              <div className="absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-rotaract-darkpink/10 blur-3xl" />
+              <div className="relative">
+                <h3 className="text-2xl font-bold mb-4 text-rotaract-darkpink">First Time Visitors Welcome!</h3>
+                <p className="mb-4 text-gray-700">
                 Interested in learning more about Rotaract NYC? You're welcome to attend a meeting as our guest! No RSVP required, but feel free to email us if you have any questions.
-              </p>
-              <p className="text-sm">
-                Contact us at: <a href="mailto:rotaractnewyorkcity@gmail.com" className="underline hover:text-gray-200">rotaractnewyorkcity@gmail.com</a>
-              </p>
+                </p>
+                <p className="text-sm text-gray-700">
+                  Contact us at:{" "}
+                  <a
+                    href="mailto:rotaractnewyorkcity@gmail.com"
+                    className="font-semibold text-rotaract-pink hover:text-rotaract-darkpink transition-colors"
+                  >
+                    rotaractnewyorkcity@gmail.com
+                  </a>
+                </p>
+              </div>
             </motion.div>
           </div>
         </div>

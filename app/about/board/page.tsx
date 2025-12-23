@@ -16,15 +16,20 @@ export default function BoardPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-rotaract-pink to-rotaract-darkpink text-white py-20">
-        <div className="container mx-auto px-4">
+      <section className="relative pt-32 pb-14 overflow-hidden bg-white">
+        <div className="absolute -top-40 -right-40 h-[520px] w-[520px] rounded-full bg-rotaract-pink/10 blur-3xl" />
+        <div className="absolute -bottom-56 -left-56 h-[640px] w-[640px] rounded-full bg-rotaract-darkpink/10 blur-3xl" />
+        <div className="container mx-auto px-4 relative">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
-            <h1 className="text-5xl font-bold mb-6">Board of Directors</h1>
-            <p className="text-xl max-w-3xl mx-auto">
+            <div className="mx-auto mb-5 inline-flex items-center rounded-full border border-rotaract-pink/20 bg-white px-4 py-1 text-sm text-rotaract-darkpink shadow-sm">
+              Leadership
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-rotaract-darkpink tracking-tight">Board of Directors</h1>
+            <p className="text-lg md:text-xl max-w-3xl mx-auto text-gray-700">
               Meet the dedicated leaders guiding our club's mission and activities
             </p>
           </motion.div>
@@ -44,8 +49,8 @@ export default function BoardPage() {
                 transition={{ delay: index * 0.1 }}
                 className="bg-white p-8 rounded-lg shadow-md text-center hover:shadow-xl transition-shadow"
               >
-                <div className="bg-gradient-to-r from-rotaract-pink to-rotaract-darkpink w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FaUserTie className="text-4xl text-white" />
+                <div className="bg-rotaract-pink/10 border border-rotaract-pink/15 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FaUserTie className="text-4xl text-rotaract-darkpink" />
                 </div>
                 <h3 className="text-xl font-bold mb-2 text-rotaract-darkpink">{member.title}</h3>
                 <p className="text-gray-600 mb-3">{member.name}</p>
