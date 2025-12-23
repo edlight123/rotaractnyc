@@ -10,8 +10,8 @@ export default function Home() {
     <div className="bg-white">
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-rotaract-navy via-rotaract-blue to-rotaract-gold opacity-90 z-0" />
-        <div className="absolute inset-0 bg-black/30 z-10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-rotaract-pink to-rotaract-darkpink opacity-95 z-0" />
+        <div className="absolute inset-0 bg-black/20 z-10" />
         
         <motion.div
           initial={{ opacity: 0, y: 50 }}
@@ -26,7 +26,7 @@ export default function Home() {
             className="mb-8"
           >
             <Image
-              src="/assets/images/logo.jpg"
+              src="/logo.jpg"
               alt="Rotaract Logo"
               width={200}
               height={200}
@@ -37,7 +37,7 @@ export default function Home() {
           
           <h1 className="text-6xl md:text-7xl font-bold mb-6 tracking-tight">
             Rotaract Club at the
-            <span className="block text-rotaract-gold">United Nations</span>
+            <span className="block text-white">United Nations</span>
           </h1>
           
           <p className="text-2xl md:text-3xl mb-8 font-light">
@@ -52,7 +52,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/about"
-              className="px-8 py-4 bg-rotaract-gold hover:bg-yellow-500 text-rotaract-navy font-semibold rounded-lg shadow-lg transition-all transform hover:scale-105"
+              className="px-8 py-4 bg-white hover:bg-gray-100 text-rotaract-pink font-semibold rounded-lg shadow-lg transition-all transform hover:scale-105"
             >
               Learn More
             </Link>
@@ -91,8 +91,8 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
-            <h2 className="text-5xl font-bold text-rotaract-navy mb-6">Our Mission</h2>
-            <div className="w-24 h-1 bg-rotaract-gold mx-auto mb-8" />
+            <h2 className="text-5xl font-bold text-rotaract-darkpink mb-6">Our Mission</h2>
+            <div className="w-24 h-1 bg-rotaract-pink mx-auto mb-8" />
             <p className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
               Sponsored by The Rotary Club of New York, we empower young professionals
               to create positive change through service projects, professional development,
@@ -126,8 +126,8 @@ export default function Home() {
                 transition={{ delay: index * 0.2, duration: 0.6 }}
                 className="bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-2"
               >
-                <div className="text-rotaract-blue mb-6">{item.icon}</div>
-                <h3 className="text-2xl font-bold text-rotaract-navy mb-4">{item.title}</h3>
+                <div className="text-rotaract-pink mb-6">{item.icon}</div>
+                <h3 className="text-2xl font-bold text-rotaract-darkpink mb-4">{item.title}</h3>
                 <p className="text-gray-600 leading-relaxed">{item.description}</p>
               </motion.div>
             ))}
@@ -144,12 +144,12 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-5xl font-bold text-rotaract-navy mb-6">Recent Activities</h2>
-            <div className="w-24 h-1 bg-rotaract-gold mx-auto mb-8" />
+            <h2 className="text-5xl font-bold text-rotaract-darkpink mb-6">Recent Activities</h2>
+            <div className="w-24 h-1 bg-rotaract-pink mx-auto mb-8" />
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-            {['logo.jpg', 'logo.jpg', 'logo.jpg', 'logo.jpg'].map((img, index) => (
+            {['/53cde13b1a312d32c08a429715695a65.jpg', '/b220fe440206d474a74b2a2467d410ac.jpg', '/ce9ea973f79cb6988ad3e2945e3a87ae.jpg', '/f16b74a04b626f30222c37c4d15d7c80.jpg'].map((img, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -159,7 +159,7 @@ export default function Home() {
                 className="relative group overflow-hidden rounded-xl shadow-lg aspect-square"
               >
                 <Image
-                  src={`/assets/images/${img}`}
+                  src={img}
                   alt={`Activity ${index + 1}`}
                   fill
                   className="object-cover group-hover:scale-110 transition-transform duration-500"
@@ -174,7 +174,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-gradient-to-r from-rotaract-navy to-rotaract-blue text-white">
+      <section className="py-24 bg-gradient-to-r from-rotaract-pink to-rotaract-darkpink text-white">
         <div className="container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -188,7 +188,7 @@ export default function Home() {
             </p>
             <Link
               href="/membership"
-              className="inline-flex items-center gap-3 px-10 py-5 bg-rotaract-gold hover:bg-yellow-500 text-rotaract-navy font-bold rounded-lg shadow-xl transition-all transform hover:scale-105 text-lg"
+              className="inline-flex items-center gap-3 px-10 py-5 bg-white hover:bg-gray-100 text-rotaract-pink font-bold rounded-lg shadow-xl transition-all transform hover:scale-105 text-lg"
             >
               Become a Member
               <FaArrowRight />
@@ -201,13 +201,13 @@ export default function Home() {
       <section className="py-24 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-12">
-            <h2 className="text-4xl font-bold text-rotaract-navy mb-8 text-center">Visit Us</h2>
+            <h2 className="text-4xl font-bold text-rotaract-darkpink mb-8 text-center">Visit Us</h2>
             <div className="text-center text-lg text-gray-700 space-y-2">
-              <p className="font-semibold text-2xl text-rotaract-blue">216 East 45th Street</p>
+              <p className="font-semibold text-2xl text-rotaract-pink">216 East 45th Street</p>
               <p className="text-xl">New York, NY 10017</p>
               <p className="text-xl">United States</p>
               <p className="mt-6 text-gray-600">
-                Email: <a href="mailto:rotaractnewyorkcity@gmail.com" className="text-rotaract-blue hover:underline">rotaractnewyorkcity@gmail.com</a>
+                Email: <a href="mailto:rotaractnewyorkcity@gmail.com" className="text-rotaract-pink hover:underline">rotaractnewyorkcity@gmail.com</a>
               </p>
             </div>
           </div>

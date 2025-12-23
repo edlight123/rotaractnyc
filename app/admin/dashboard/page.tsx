@@ -34,7 +34,7 @@ export default function AdminDashboard() {
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rotaract-blue"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rotaract-pink"></div>
       </div>
     )
   }
@@ -55,7 +55,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Admin Header */}
-      <div className="bg-rotaract-navy text-white">
+      <div className="bg-rotaract-darkpink text-white">
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
             <div>
@@ -89,9 +89,9 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm">Total Members</p>
-                <p className="text-3xl font-bold text-rotaract-blue mt-1">{stats.members}</p>
+                <p className="text-3xl font-bold text-rotaract-pink mt-1">{stats.members}</p>
               </div>
-              <div className="text-4xl text-rotaract-blue">
+              <div className="text-4xl text-rotaract-pink">
                 <FaUsers />
               </div>
             </div>
@@ -101,9 +101,9 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm">Events</p>
-                <p className="text-3xl font-bold text-rotaract-gold mt-1">{stats.events}</p>
+                <p className="text-3xl font-bold text-rotaract-pink mt-1">{stats.events}</p>
               </div>
-              <div className="text-4xl text-rotaract-gold">
+              <div className="text-4xl text-rotaract-pink">
                 <FaCalendar />
               </div>
             </div>
@@ -144,14 +144,14 @@ export default function AdminDashboard() {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-bold text-rotaract-navy mb-2">{item.name}</h3>
+                  <h3 className="text-xl font-bold text-rotaract-darkpink mb-2">{item.name}</h3>
                   {item.count !== null && (
                     <p className="text-gray-600">
                       {item.count} {item.count === 1 ? 'item' : 'items'}
                     </p>
                   )}
                 </div>
-                <div className="text-4xl text-rotaract-blue">{item.icon}</div>
+                <div className="text-4xl text-rotaract-pink">{item.icon}</div>
               </div>
             </Link>
           ))}
@@ -159,7 +159,7 @@ export default function AdminDashboard() {
 
         {/* Recent Activity */}
         <div className="mt-8 bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-rotaract-navy mb-4 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-rotaract-darkpink mb-4 flex items-center gap-2">
             <FaChartLine />
             Recent Activity
           </h2>

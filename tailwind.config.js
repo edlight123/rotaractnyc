@@ -8,11 +8,11 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Rotaract brand colors based on the logo
+        // Rotaract brand colors from original website
         rotaract: {
-          blue: '#003DA5',
-          gold: '#F7A81B',
-          navy: '#012169',
+          pink: '#ac005a',
+          darkpink: '#5a0732',
+          white: '#ffffff',
         },
       },
       fontFamily: {

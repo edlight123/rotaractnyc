@@ -37,17 +37,17 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-rotaract-navy via-rotaract-blue to-rotaract-gold py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-rotaract-pink via-rotaract-darkpink to-rotaract-pink py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 space-y-8">
         <div className="text-center">
           <Image
-            src="/assets/images/logo.jpg"
+            src="/logo.jpg"
             alt="Rotaract Logo"
             width={100}
             height={100}
             className="mx-auto rounded-full"
           />
-          <h2 className="mt-6 text-3xl font-bold text-rotaract-navy">
+          <h2 className="mt-6 text-3xl font-bold text-rotaract-darkpink">
             Admin Portal
           </h2>
           <p className="mt-2 text-sm text-gray-600">
@@ -74,7 +74,7 @@ export default function AdminLogin() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-rotaract-blue focus:border-rotaract-blue"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-rotaract-pink focus:border-rotaract-pink"
                 placeholder="admin@rotaractnyc.org"
               />
             </div>
@@ -90,7 +90,7 @@ export default function AdminLogin() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-rotaract-blue focus:border-rotaract-blue"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-rotaract-pink focus:border-rotaract-pink"
                 placeholder="••••••••"
               />
             </div>
@@ -99,7 +99,7 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-rotaract-blue hover:bg-rotaract-navy focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rotaract-blue disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-rotaract-pink hover:bg-rotaract-darkpink focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rotaract-pink disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? 'Signing in...' : 'Sign in'}
           </button>

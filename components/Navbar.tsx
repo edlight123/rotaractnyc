@@ -56,13 +56,13 @@ const Navbar = () => {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-3">
             <Image
-              src="/assets/images/logo.jpg"
+              src="/logo.jpg"
               alt="Rotaract Logo"
               width={50}
               height={50}
               className="rounded-full"
             />
-            <span className="text-xl font-bold text-rotaract-navy hidden md:block">
+            <span className="text-xl font-bold text-rotaract-darkpink hidden md:block">
               Rotaract at the UN
             </span>
           </Link>
@@ -73,7 +73,7 @@ const Navbar = () => {
               <div key={item.name} className="relative group">
                 <Link
                   href={item.href}
-                  className="text-gray-800 hover:text-rotaract-blue font-medium transition-colors py-2"
+                  className="text-gray-800 hover:text-rotaract-pink font-medium transition-colors py-2"
                 >
                   {item.name}
                 </Link>
@@ -83,7 +83,7 @@ const Navbar = () => {
                       <Link
                         key={subitem.name}
                         href={subitem.href}
-                        className="block px-4 py-3 text-gray-700 hover:bg-rotaract-blue hover:text-white transition-colors"
+                        className="block px-4 py-3 text-gray-700 hover:bg-rotaract-pink hover:text-white transition-colors"
                       >
                         {subitem.name}
                       </Link>
@@ -94,7 +94,7 @@ const Navbar = () => {
             ))}
             <Link
               href="/admin"
-              className="px-6 py-2 bg-rotaract-gold hover:bg-yellow-500 text-rotaract-navy font-semibold rounded-lg transition-colors"
+              className="px-6 py-2 bg-rotaract-pink hover:bg-rotaract-darkpink text-white font-semibold rounded-lg transition-colors"
             >
               Admin
             </Link>
@@ -122,7 +122,7 @@ const Navbar = () => {
                 <div key={item.name} className="py-2">
                   <Link
                     href={item.href}
-                    className="block text-gray-800 hover:text-rotaract-blue font-medium py-2"
+                    className="block text-gray-800 hover:text-rotaract-pink font-medium py-2"
                     onClick={() => setIsOpen(false)}
                   >
                     {item.name}
@@ -133,7 +133,7 @@ const Navbar = () => {
                         <Link
                           key={subitem.name}
                           href={subitem.href}
-                          className="block text-gray-600 hover:text-rotaract-blue py-1"
+                          className="block text-gray-600 hover:text-rotaract-pink py-1"
                           onClick={() => setIsOpen(false)}
                         >
                           {subitem.name}
@@ -145,7 +145,7 @@ const Navbar = () => {
               ))}
               <Link
                 href="/admin"
-                className="block mt-4 px-6 py-2 bg-rotaract-gold text-rotaract-navy font-semibold rounded-lg text-center"
+                className="block mt-4 px-6 py-2 bg-rotaract-pink text-white font-semibold rounded-lg text-center"
                 onClick={() => setIsOpen(false)}
               >
                 Admin
