@@ -6,6 +6,22 @@ import { FaQuestionCircle } from 'react-icons/fa'
 export default function FAQPage() {
   const faqs = [
     {
+      question: 'I am visiting NYC for a short period of time. Do you have any events I can attend?',
+      answer: 'Please see our Events page for a list of events. All of those events are open to Rotaractors, Rotarians, and those who support Rotaract and Rotary\'s mission. Feel free to come! Due to the number of requests we receive from visitors to NYC, it is difficult to schedule additional events if there is not an event planned for the time you are here. For now, please feel free to post on our Facebook page to connect with other visitors.'
+    },
+    {
+      question: 'I am not a member of the Rotaract Club at the United Nations. Can I attend your meetings and/or events?',
+      answer: 'All of our events that are on our Events page are open to Rotaractors, Rotarians, and those who support Rotaract and Rotary\'s mission.'
+    },
+    {
+      question: 'I am visiting NYC and I am looking for a place to stay. Can your members host me?',
+      answer: 'Due to the number of requests we receive for hosts, we cannot offer this service.'
+    },
+    {
+      question: 'I would like to send your club a gift from my club. Do you accept gifts?',
+      answer: 'While we see it as a great compliment that you would like to send us a gift, we only have a PO Box mailing address. If you would like to show support for our club, we ask that you support us by joining in our post-Rotary UN Day fundraising efforts or our international project.'
+    },
+    {
       question: 'What is Rotaract?',
       answer: 'Rotaract is a Rotary-sponsored service club for young men and women ages 18 to 30. Rotaract clubs are either community or university based, and they\'re sponsored by a local Rotary club. This makes them true partners in service and creates a special mentoring relationship.'
     },

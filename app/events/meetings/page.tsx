@@ -16,9 +16,12 @@ export default function MeetingsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-rotaract-darkpink tracking-tight">Meeting Schedule</h1>
-            <p className="text-lg md:text-xl max-w-3xl mx-auto text-gray-700">
-              Join us at our regular meetings to stay connected and engaged
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-rotaract-darkpink tracking-tight">General Meetings</h1>
+            <p className="text-lg md:text-xl max-w-3xl mx-auto text-gray-700 font-semibold uppercase tracking-wide">
+              Our meetings are held in-person (Zoom option available)
+            </p>
+            <p className="text-base md:text-lg max-w-3xl mx-auto text-gray-600 mt-3">
+              The Rotaract Club at the United Nations meets regularly for general meetings and our meetings are always open to Rotaractors, Rotarians, and anyone who supports Rotaract or Rotary&apos;s mission.
             </p>
           </motion.div>
         </div>
@@ -100,6 +103,45 @@ export default function MeetingsPage() {
                 </ul>
               </motion.div>
             </div>
+
+            {/* Upcoming Meetings */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="bg-gray-50 p-8 rounded-lg mb-8"
+            >
+              <h3 className="text-2xl font-bold mb-4 text-rotaract-darkpink">Upcoming General Meetings</h3>
+              <p className="text-gray-700 mb-4">
+                Check our <a href="/events" className="text-rotaract-pink hover:text-rotaract-darkpink font-semibold underline">Events page</a> for a full list of scheduled meetings and events!
+              </p>
+            </motion.div>
+
+            {/* Past Meetings */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="bg-gray-50 p-8 rounded-lg mb-12"
+            >
+              <h3 className="text-2xl font-bold mb-4 text-rotaract-darkpink">Past General Meetings</h3>
+              <p className="text-gray-700 mb-4">
+                We've hosted engaging discussions on a variety of important topics, including:
+              </p>
+              <ul className="grid md:grid-cols-2 gap-3 text-gray-700 mb-4">
+                <li>• Climate Change & Carbon Fee and Dividend</li>
+                <li>• Combat Social Isolation for Elderly New Yorkers</li>
+                <li>• The Impulso Project - Guatemala</li>
+                <li>• UpwardlyGlobal Volunteer Program</li>
+                <li>• The Henry Street Settlement Story</li>
+                <li>• Reducing Inequalities with UN Representatives</li>
+                <li>• Back to School Challenges & Education Equity</li>
+                <li>• Community Service Initiatives</li>
+              </ul>
+              <p className="text-gray-600 text-sm">
+                Recordings and materials from past meetings are available to members. Contact us for more information.
+              </p>
+            </motion.div>
 
             {/* First Time Visitors */}
             <motion.div

@@ -46,6 +46,37 @@ export default function SisterClubsPage() {
         </div>
       </section>
 
+      {/* Our Sister Clubs */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold mb-12 text-rotaract-darkpink text-center">Our Sister Clubs</h2>
+          <div className="max-w-3xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="bg-gray-50 p-8 rounded-lg shadow-lg"
+            >
+              <h3 className="text-2xl font-bold mb-4 text-rotaract-darkpink">København Rotaract</h3>
+              <div className="space-y-3 text-gray-700">
+                <p className="flex items-start">
+                  <span className="font-semibold min-w-[140px]">Sister-Club since:</span>
+                  <span>2021</span>
+                </p>
+                <p className="flex items-start">
+                  <span className="font-semibold min-w-[140px]">Location:</span>
+                  <span>Copenhagen, Denmark</span>
+                </p>
+                <p className="flex items-start">
+                  <span className="font-semibold min-w-[140px]">2021 Presidents:</span>
+                  <span>Vincenzo Giordano (RCUN) and Charlotte Katrine Melchiorsen (KR)</span>
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* Benefits */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">

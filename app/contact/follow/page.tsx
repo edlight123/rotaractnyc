@@ -85,6 +85,58 @@ export default function FollowPage() {
         </div>
       </section>
 
+      {/* Instagram Feed */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-8"
+            >
+              <h2 className="text-3xl font-bold mb-4 text-rotaract-darkpink">Latest from Instagram</h2>
+              <p className="text-gray-700">
+                See our most recent posts and stories
+              </p>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="bg-gray-50 p-8 rounded-lg shadow-md"
+            >
+              {/* Instagram embed container */}
+              <div className="flex justify-center">
+                <iframe
+                  src="https://www.instagram.com/rotaractnyc/embed"
+                  width="100%"
+                  height="700"
+                  frameBorder="0"
+                  scrolling="no"
+                  allowTransparency={true}
+                  className="rounded-lg max-w-xl"
+                  title="Instagram Feed"
+                ></iframe>
+              </div>
+              
+              <div className="text-center mt-6">
+                <a
+                  href="http://instagram.com/rotaractnyc"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-rotaract-pink hover:text-rotaract-darkpink font-semibold transition-colors"
+                >
+                  <FaInstagram className="text-xl" />
+                  View Full Profile on Instagram
+                </a>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* Why Follow */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
