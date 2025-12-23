@@ -19,9 +19,11 @@ export default function Home() {
     <div className="bg-white">
       {/* Hero Section */}
       <section className="relative pt-28 md:pt-32 pb-16 md:pb-24 overflow-hidden bg-white">
-        {/* subtle accent */}
-        <div className="absolute -top-40 -right-40 h-[520px] w-[520px] rounded-full bg-rotaract-pink/10 blur-3xl" />
-        <div className="absolute -bottom-56 -left-56 h-[640px] w-[640px] rounded-full bg-rotaract-darkpink/10 blur-3xl" />
+        <div className="absolute inset-0 z-0">
+          <HeroCarousel images={activityImages} variant="background" />
+        </div>
+        <div className="absolute inset-0 z-10 bg-black/55" />
+        <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/50 via-black/45 to-black/60" />
         
         <motion.div
           initial={{ opacity: 0, y: 50 }}
@@ -29,22 +31,17 @@ export default function Home() {
           transition={{ duration: 0.8 }}
           className="relative z-20 text-center px-4 max-w-5xl mx-auto"
         >
-          <p className="text-sm md:text-base font-semibold tracking-wide text-rotaract-pink mb-4">
+          <p className="text-sm md:text-base font-semibold tracking-wide text-white/90 mb-4">
             Welcome to
           </p>
 
-          <h1 className="text-4xl md:text-6xl font-bold mb-5 tracking-tight text-rotaract-darkpink">
+          <h1 className="text-4xl md:text-6xl font-bold mb-5 tracking-tight text-white">
             the Rotaract Club of New York at the United Nations
           </h1>
           
-          <p className="text-lg md:text-xl mb-12 max-w-3xl mx-auto leading-relaxed">
-            A Rotary-sponsored service club for young professionals ages 18 to 30,
-            developing leadership skills by helping local and international communities.
+          <p className="text-lg md:text-xl mb-12 max-w-3xl mx-auto leading-relaxed text-white/90">
+            Service, Fellowship, Diversity, <span className="font-bold tracking-wide">EQUITY</span>
           </p>
-
-          <div className="mx-auto mb-10 max-w-4xl">
-            <HeroCarousel images={activityImages} />
-          </div>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -55,7 +52,7 @@ export default function Home() {
             </Link>
             <Link
               href="/contact-us"
-              className="px-8 py-4 bg-white hover:bg-gray-50 border border-rotaract-pink/30 text-rotaract-darkpink font-semibold rounded-lg transition-colors"
+              className="px-8 py-4 bg-white/10 hover:bg-white/15 border border-white/40 text-white font-semibold rounded-lg transition-colors backdrop-blur-sm"
             >
               Get Involved
             </Link>

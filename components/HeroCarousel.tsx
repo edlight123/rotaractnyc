@@ -12,9 +12,11 @@ type CarouselImage = {
 export function HeroCarousel({
   images,
   intervalMs = 4500,
+  variant = 'card',
 }: {
   images: CarouselImage[]
   intervalMs?: number
+  variant?: 'card' | 'background'
 }) {
   const safeImages = useMemo(() => images.filter((img) => Boolean(img?.src)), [images])
   const [activeIndex, setActiveIndex] = useState(0)
@@ -30,6 +32,51 @@ export function HeroCarousel({
   }, [intervalMs, safeImages.length])
 
   if (safeImages.length === 0) return null
+
+  if (variant === 'background') {
+    return (
+      <div className="absolute inset-0">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={activeIndex}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6 }}
+            className="absolute inset-0"
+          >
+            <Image
+              src={safeImages[activeIndex].src}
+              alt={safeImages[activeIndex].alt}
+              fill
+              sizes="100vw"
+              className="object-cover"
+              priority={activeIndex === 0}
+            />
+          </motion.div>
+        </AnimatePresence>
+
+        {safeImages.length > 1 && (
+          <div className="absolute bottom-5 left-0 right-0 z-10 flex items-center justify-center gap-2">
+            {safeImages.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                aria-label={`Show slide ${index + 1}`}
+                onClick={() => setActiveIndex(index)}
+                className={
+                  'h-2.5 w-2.5 rounded-full transition-colors ' +
+                  (index === activeIndex
+                    ? 'bg-white'
+                    : 'bg-white/40 hover:bg-white/70')
+                }
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="w-full">
