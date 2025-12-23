@@ -1,53 +1,12 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 import { FaCalendar, FaUser } from 'react-icons/fa'
+import { RCUN_NEWS } from '@/lib/rcunNews'
 
 export default function NewsPage() {
-  const newsArticles = [
-    {
-      title: 'Successful Holiday Charity Drive',
-      date: 'December 15, 2023',
-      author: 'Rotaract NYC',
-      excerpt: 'Our annual holiday charity drive was a tremendous success, collecting donations for over 50 local families in need. Thank you to all our members and supporters who contributed!',
-      category: 'Service Projects'
-    },
-    {
-      title: 'New Board Members Elected',
-      date: 'November 30, 2023',
-      author: 'Rotaract NYC',
-      excerpt: 'We are excited to announce our newly elected board members for the upcoming year. Congratulations to all who were elected and thank you for your commitment to leading our club.',
-      category: 'Club News'
-    },
-    {
-      title: 'UN Youth Summit Highlights',
-      date: 'November 20, 2023',
-      author: 'Rotaract NYC',
-      excerpt: 'Members of our club had the privilege of attending the UN Youth Summit, where we engaged with global youth leaders on topics of sustainability, peace, and development.',
-      category: 'Events'
-    },
-    {
-      title: 'Central Park Environmental Cleanup',
-      date: 'October 28, 2023',
-      author: 'Rotaract NYC',
-      excerpt: 'Over 20 members participated in our Central Park cleanup initiative, removing trash and helping maintain the beauty of this iconic NYC landmark.',
-      category: 'Service Projects'
-    },
-    {
-      title: 'Professional Development Workshop Series',
-      date: 'October 15, 2023',
-      author: 'Rotaract NYC',
-      excerpt: 'Launched our new professional development workshop series focusing on leadership skills, public speaking, and career advancement strategies.',
-      category: 'Professional Development'
-    },
-    {
-      title: 'Sister Club Partnership Established',
-      date: 'September 30, 2023',
-      author: 'Rotaract NYC',
-      excerpt: 'We are thrilled to announce a new sister club partnership that will enable collaborative projects and cultural exchange opportunities.',
-      category: 'Club News'
-    },
-  ]
+  const newsArticles = RCUN_NEWS
 
   return (
     <div className="min-h-screen">
@@ -78,7 +37,7 @@ export default function NewsPage() {
           <div className="max-w-4xl mx-auto space-y-8">
             {newsArticles.map((article, index) => (
               <motion.article
-                key={index}
+                key={article.slug}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -94,14 +53,25 @@ export default function NewsPage() {
                     <span>{article.date}</span>
                   </div>
                 </div>
-                <h2 className="text-2xl font-bold mb-3 text-rotaract-darkpink hover:text-rotaract-pink transition-colors cursor-pointer">
-                  {article.title}
-                </h2>
+                <Link href={`/rcun-news/${article.slug}`} className="group inline-block">
+                  <h2 className="text-2xl font-bold mb-3 text-rotaract-darkpink group-hover:text-rotaract-pink transition-colors">
+                    {article.title}
+                  </h2>
+                </Link>
                 <div className="flex items-center text-gray-600 text-sm mb-4">
                   <FaUser className="mr-2" />
                   <span>{article.author}</span>
                 </div>
                 <p className="text-gray-700 leading-relaxed">{article.excerpt}</p>
+
+                <div className="mt-6">
+                  <Link
+                    href={`/rcun-news/${article.slug}`}
+                    className="inline-flex items-center font-semibold text-rotaract-pink hover:text-rotaract-darkpink transition-colors"
+                  >
+                    Read more
+                  </Link>
+                </div>
               </motion.article>
             ))}
           </div>
