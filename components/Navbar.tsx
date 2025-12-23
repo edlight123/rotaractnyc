@@ -3,11 +3,17 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FaBars, FaTimes } from 'react-icons/fa'
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false)
+  const pathname = usePathname()
+
+  const isActiveHref = (href: string) => pathname === href
+  const isMenuItemActive = (item: { href: string; submenu?: { href: string }[] }) =>
+    isActiveHref(item.href) || (item.submenu?.some((s) => isActiveHref(s.href)) ?? false)
 
   const menuItems = [
     { name: 'Home', href: '/' },
@@ -63,21 +69,35 @@ const Navbar = () => {
               <div key={item.name} className="relative group">
                 <Link
                   href={item.href}
-                  className="text-gray-800 hover:text-rotaract-pink font-medium transition-colors py-2"
+                  className={
+                    'font-medium transition-colors py-2 ' +
+                    (isMenuItemActive(item)
+                      ? 'text-rotaract-pink'
+                      : 'text-gray-800 hover:text-rotaract-pink')
+                  }
                 >
                   {item.name}
                 </Link>
                 {item.submenu && (
                   <div className="absolute top-full left-0 mt-2 w-56 bg-white border border-gray-100 shadow-xl rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 overflow-hidden">
-                    {item.submenu.map((subitem) => (
+                    {item.submenu.map((subitem) => {
+                      const subIsActive = isActiveHref(subitem.href)
+
+                      return (
                       <Link
                         key={subitem.name}
                         href={subitem.href}
-                        className="block px-4 py-3 text-gray-700 hover:bg-rotaract-pink/10 hover:text-rotaract-darkpink transition-colors"
+                        className={
+                          'block px-4 py-3 transition-colors ' +
+                          (subIsActive
+                            ? 'bg-rotaract-pink/10 text-rotaract-darkpink'
+                            : 'text-gray-700 hover:bg-rotaract-pink/10 hover:text-rotaract-darkpink')
+                        }
                       >
                         {subitem.name}
                       </Link>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -112,23 +132,37 @@ const Navbar = () => {
                 <div key={item.name} className="py-2">
                   <Link
                     href={item.href}
-                    className="block text-gray-800 hover:text-rotaract-pink font-medium py-2"
+                    className={
+                      'block font-medium py-2 ' +
+                      (isMenuItemActive(item)
+                        ? 'text-rotaract-pink'
+                        : 'text-gray-800 hover:text-rotaract-pink')
+                    }
                     onClick={() => setIsOpen(false)}
                   >
                     {item.name}
                   </Link>
                   {item.submenu && (
                     <div className="pl-4 space-y-2">
-                      {item.submenu.map((subitem) => (
+                      {item.submenu.map((subitem) => {
+                        const subIsActive = isActiveHref(subitem.href)
+
+                        return (
                         <Link
                           key={subitem.name}
                           href={subitem.href}
-                          className="block text-gray-600 hover:text-rotaract-pink py-1"
+                          className={
+                            'block py-1 ' +
+                            (subIsActive
+                              ? 'text-rotaract-pink'
+                              : 'text-gray-600 hover:text-rotaract-pink')
+                          }
                           onClick={() => setIsOpen(false)}
                         >
                           {subitem.name}
                         </Link>
-                      ))}
+                        )
+                      })}
                     </div>
                   )}
                 </div>

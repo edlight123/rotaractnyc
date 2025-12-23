@@ -22,8 +22,8 @@ export default function Home() {
         <div className="absolute inset-0 z-0">
           <HeroCarousel images={activityImages} variant="background" />
         </div>
-        <div className="absolute inset-0 z-10 bg-black/55" />
-        <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/50 via-black/45 to-black/60" />
+        <div className="absolute inset-0 z-10 bg-black/35" />
+        <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/25 via-black/25 to-black/40" />
         
         <motion.div
           initial={{ opacity: 0, y: 50 }}
@@ -40,7 +40,7 @@ export default function Home() {
           </h1>
           
           <p className="text-lg md:text-xl mb-12 max-w-3xl mx-auto leading-relaxed text-white/90">
-            Service, Fellowship, Diversity, <span className="font-bold tracking-wide">Equity</span>
+            Service, Fellowship, Diversity, Equity
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
