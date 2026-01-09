@@ -4,9 +4,58 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { FaCalendar, FaUser } from 'react-icons/fa'
 import { RCUN_NEWS } from '@/lib/rcunNews'
+import { useEffect, useState } from 'react'
+
+type PostsResponseRow = Record<string, unknown>
 
 export default function NewsPage() {
-  const newsArticles = RCUN_NEWS
+  const [newsArticles, setNewsArticles] = useState(RCUN_NEWS)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function run() {
+      try {
+        const res = await fetch('/api/public/posts')
+        if (!res.ok) return
+        const json: unknown = await res.json()
+        const rows =
+          typeof json === 'object' &&
+          json &&
+          Array.isArray((json as { posts?: unknown }).posts)
+            ? ((json as { posts: unknown[] }).posts as unknown[])
+            : []
+
+        if (!cancelled && rows.length > 0) {
+          setNewsArticles(
+            rows
+              .map((p) => {
+                const obj: PostsResponseRow = typeof p === 'object' && p ? (p as PostsResponseRow) : {}
+                const slug = String(obj.slug ?? obj.id ?? '')
+                const contentRaw = obj.content
+                return {
+                  slug,
+                  title: String(obj.title ?? ''),
+                  date: String(obj.date ?? ''),
+                  author: String(obj.author ?? 'Rotaract NYC'),
+                  category: String(obj.category ?? 'News'),
+                  excerpt: String(obj.excerpt ?? ''),
+                  content: Array.isArray(contentRaw) ? contentRaw.map((x) => String(x)) : [],
+                }
+              })
+              .filter((p) => p.slug)
+          )
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
     <div className="min-h-screen">
@@ -104,7 +153,7 @@ export default function NewsPage() {
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-6 text-rotaract-darkpink">Follow Us on Social Media</h2>
           <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
-            Get real-time updates and see what we're up to
+            Get real-time updates and see what we&apos;re up to
           </p>
           <a
             href="/contact/follow"

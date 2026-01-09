@@ -2,30 +2,55 @@
 
 import { motion } from 'framer-motion'
 import Image from 'next/image'
+import { DEFAULT_GALLERY } from '@/lib/content/gallery'
+import { useEffect, useState } from 'react'
+
+type GalleryResponseRow = Record<string, unknown>
 
 export default function GalleryPage() {
-  const images = [
-    {
-      src: '/53cde13b1a312d32c08a429715695a65.jpg',
-      alt: 'Rotaract NYC members at community service event',
-      title: 'Community Service'
-    },
-    {
-      src: '/b220fe440206d474a74b2a2467d410ac.jpg',
-      alt: 'Rotaract NYC networking event',
-      title: 'Networking Event'
-    },
-    {
-      src: '/ce9ea973f79cb6988ad3e2945e3a87ae.jpg',
-      alt: 'Rotaract NYC team building activity',
-      title: 'Team Building'
-    },
-    {
-      src: '/f16b74a04b626f30222c37c4d15d7c80.jpg',
-      alt: 'Rotaract NYC social gathering',
-      title: 'Social Gathering'
-    },
-  ]
+  const [images, setImages] = useState([...DEFAULT_GALLERY].sort((a, b) => a.order - b.order))
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function run() {
+      try {
+        const res = await fetch('/api/public/gallery')
+        if (!res.ok) return
+        const json: unknown = await res.json()
+        const rows =
+          typeof json === 'object' &&
+          json &&
+          Array.isArray((json as { items?: unknown }).items)
+            ? ((json as { items: unknown[] }).items as unknown[])
+            : []
+
+        if (!cancelled && rows.length > 0) {
+          const mapped = rows
+            .map((g) => {
+              const obj: GalleryResponseRow = typeof g === 'object' && g ? (g as GalleryResponseRow) : {}
+              const order = Number(obj.order)
+              return {
+                id: String(obj.id ?? ''),
+                title: String(obj.title ?? ''),
+                alt: String(obj.alt ?? ''),
+                imageUrl: String(obj.imageUrl ?? ''),
+                order: Number.isFinite(order) ? order : 1,
+              }
+            })
+            .filter((g) => g.id)
+          setImages(mapped.sort((a, b) => a.order - b.order))
+        }
+      } catch {
+        // ignore and keep defaults
+      }
+    }
+
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
     <div className="min-h-screen">
@@ -62,7 +87,7 @@ export default function GalleryPage() {
               >
                 <div className="relative h-80">
                   <Image
-                    src={image.src}
+                    src={image.imageUrl}
                     alt={image.alt}
                     fill
                     className="object-cover group-hover:scale-110 transition-transform duration-300"
@@ -85,7 +110,7 @@ export default function GalleryPage() {
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-6 text-rotaract-darkpink">More Photos Coming Soon</h2>
             <p className="text-lg text-gray-700 mb-8">
-              We're constantly updating our gallery with new photos from our events and activities. Follow us on social media to see the latest updates!
+              We&apos;re constantly updating our gallery with new photos from our events and activities. Follow us on social media to see the latest updates!
             </p>
             <div className="flex justify-center space-x-4">
               <a

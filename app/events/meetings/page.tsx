@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { FaCalendar, FaMapMarkerAlt, FaClock, FaInfoCircle } from 'react-icons/fa'
+import { FaCalendar, FaMapMarkerAlt, FaInfoCircle } from 'react-icons/fa'
 
 export default function MeetingsPage() {
   return (
@@ -126,7 +126,7 @@ export default function MeetingsPage() {
             >
               <h3 className="text-2xl font-bold mb-4 text-rotaract-darkpink">Past General Meetings</h3>
               <p className="text-gray-700 mb-4">
-                We've hosted engaging discussions on a variety of important topics, including:
+                We&apos;ve hosted engaging discussions on a variety of important topics, including:
               </p>
               <ul className="grid md:grid-cols-2 gap-3 text-gray-700 mb-4">
                 <li>• Climate Change & Carbon Fee and Dividend</li>
@@ -155,7 +155,7 @@ export default function MeetingsPage() {
               <div className="relative">
                 <h3 className="text-2xl font-bold mb-4 text-rotaract-darkpink">First Time Visitors Welcome!</h3>
                 <p className="mb-4 text-gray-700">
-                Interested in learning more about Rotaract NYC? You're welcome to attend a meeting as our guest! No RSVP required, but feel free to email us if you have any questions.
+                Interested in learning more about Rotaract NYC? You&apos;re welcome to attend a meeting as our guest! No RSVP required, but feel free to email us if you have any questions.
                 </p>
                 <p className="text-sm text-gray-700">
                   Contact us at:{" "}

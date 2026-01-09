@@ -5,25 +5,41 @@ Copy these to your Vercel project settings:
 ## Required Environment Variables
 
 ```
-MONGODB_URI=mongodb+srv://your-username:your-password@cluster.mongodb.net/rotaractnyc?retryWrites=true&w=majority
-NEXTAUTH_SECRET=generate-a-secure-random-string-here
-NEXTAUTH_URL=https://your-project-name.vercel.app
-ADMIN_EMAIL=admin@rotaractnyc.org
-ADMIN_PASSWORD=your-secure-password-here
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=rotaractnyc-ac453.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=rotaractnyc-ac453
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=rotaractnyc-ac453.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
+
+# Comma-separated list of admin emails allowed into /admin
+ADMIN_ALLOWLIST=tojacquet97@gmail.com
+
+# Firebase Admin credentials for server-side access (recommended)
+# Option A: paste the full service account JSON string
+FIREBASE_SERVICE_ACCOUNT={"type":"service_account",...}
+
+# Option B: base64-encoded service account JSON (often easier for Vercel)
+FIREBASE_SERVICE_ACCOUNT_BASE64=...
+
+# Option C: split values (only if you prefer not to use JSON/base64)
+FIREBASE_ADMIN_PROJECT_ID=rotaractnyc-ac453
+FIREBASE_ADMIN_CLIENT_EMAIL=...@rotaractnyc-ac453.iam.gserviceaccount.com
+FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 ```
 
-## How to Generate NEXTAUTH_SECRET
+## Notes
 
-Run this command:
-```bash
-openssl rand -base64 32
-```
+- The public site can read data via server routes using Firebase Admin.
+- Admin writes are protected by `ADMIN_ALLOWLIST` + Firebase ID token verification.
 
-Or use this online: https://generate-secret.vercel.app/32
+## Firebase rules (recommended)
 
-## MongoDB Setup
+This repo includes locked-down default rules because the app accesses Firestore/Storage via server-side API routes.
 
-1. Create a free MongoDB Atlas account: https://www.mongodb.com/cloud/atlas
-2. Create a new cluster
-3. Get your connection string
-4. Replace the MONGODB_URI value above with your connection string
+- Firestore rules: `firestore.rules`
+- Storage rules: `storage.rules`
+
+Deploy:
+
+`npx firebase deploy --only firestore:rules,storage`

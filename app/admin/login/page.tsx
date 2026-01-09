@@ -1,9 +1,10 @@
 'use client'
 
-import { signIn } from 'next-auth/react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { getFirebaseAuth, isFirebaseClientConfigured } from '@/lib/firebase/client'
 
 export default function AdminLogin() {
   const router = useRouter()
@@ -18,19 +19,41 @@ export default function AdminLogin() {
     setError('')
 
     try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
+      if (!isFirebaseClientConfigured()) {
+        setError('Firebase is not configured. Missing NEXT_PUBLIC_FIREBASE_* env vars.')
+        return
+      }
+
+      const auth = getFirebaseAuth()
+      if (!auth) {
+        setError('Firebase Auth is not initialized.')
+        return
+      }
+
+      const credential = await signInWithEmailAndPassword(auth, email, password)
+      const idToken = await credential.user.getIdToken()
+
+      const res = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ idToken }),
       })
 
-      if (result?.error) {
-        setError('Invalid email or password')
-      } else {
-        router.push('/admin/dashboard')
+      if (res.status === 403) {
+        setError('This email is not allowed to access the admin portal.')
+        await auth.signOut()
+        return
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.')
+
+      if (!res.ok) {
+        setError('Unable to start admin session. Check Firebase Admin credentials.')
+        await auth.signOut()
+        return
+      }
+
+      router.push('/admin/dashboard')
+    } catch {
+      setError('Invalid email or password')
     } finally {
       setLoading(false)
     }
@@ -108,8 +131,7 @@ export default function AdminLogin() {
         </form>
 
         <div className="text-center text-xs text-gray-500 mt-4">
-          <p>Default credentials for demo:</p>
-          <p className="font-mono mt-1">admin@rotaractnyc.org / admin123</p>
+          <p>Sign in with a Firebase Auth admin account.</p>
         </div>
       </div>
     </div>

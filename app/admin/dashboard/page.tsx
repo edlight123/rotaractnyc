@@ -1,8 +1,6 @@
 'use client'
 
-import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
   FaUsers,
@@ -10,28 +8,24 @@ import {
   FaNewspaper,
   FaImages,
   FaCog,
+  FaFileAlt,
   FaSignOutAlt,
   FaChartLine,
   FaEnvelope,
 } from 'react-icons/fa'
+import { useAdminSession, adminSignOut } from '@/lib/admin/useAdminSession'
 
 export default function AdminDashboard() {
-  const { data: session, status } = useSession()
   const router = useRouter()
-  const [stats, setStats] = useState({
+  const session = useAdminSession()
+  const stats = {
     members: 45,
     events: 12,
     posts: 28,
     gallery: 156,
-  })
+  }
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/admin/login')
-    }
-  }, [status, router])
-
-  if (status === 'loading') {
+  if (session.status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rotaract-pink"></div>
@@ -39,7 +33,7 @@ export default function AdminDashboard() {
     )
   }
 
-  if (!session) {
+  if (session.status !== 'authenticated') {
     return null
   }
 
@@ -50,6 +44,7 @@ export default function AdminDashboard() {
     { name: 'Gallery', icon: <FaImages />, href: '/admin/gallery', count: stats.gallery },
     { name: 'Messages', icon: <FaEnvelope />, href: '/admin/messages', count: 8 },
     { name: 'Settings', icon: <FaCog />, href: '/admin/settings', count: null },
+    { name: 'Pages', icon: <FaFileAlt />, href: '/admin/pages', count: null },
   ]
 
   return (
@@ -60,7 +55,7 @@ export default function AdminDashboard() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-rotaract-darkpink">Admin Dashboard</h1>
-              <p className="text-gray-600 mt-1">Welcome back, {session.user?.name || 'Admin'}</p>
+              <p className="text-gray-600 mt-1">Welcome back, {session.email || 'Admin'}</p>
             </div>
             <div className="flex items-center gap-4">
               <Link
@@ -70,7 +65,10 @@ export default function AdminDashboard() {
                 View Site
               </Link>
               <button
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={async () => {
+                  await adminSignOut()
+                  router.push('/')
+                }}
                 className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
               >
                 <FaSignOutAlt />

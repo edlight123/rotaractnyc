@@ -1,11 +1,49 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { FaHandshake, FaUsers, FaGlobe, FaBalanceScale } from 'react-icons/fa'
+import { FaHandshake, FaUsers, FaBalanceScale } from 'react-icons/fa'
 import { MdDiversity3 } from 'react-icons/md'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { DEFAULT_PAGES } from '@/lib/content/pages'
 
 export default function MissionPage() {
+  const defaults = DEFAULT_PAGES.mission
+  const [heroTitle, setHeroTitle] = useState(defaults.heroTitle)
+  const [heroSubtitle, setHeroSubtitle] = useState(defaults.heroSubtitle)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function run() {
+      try {
+        const res = await fetch('/api/public/pages/mission')
+        if (!res.ok) return
+
+        const json: unknown = await res.json()
+        const page =
+          typeof json === 'object' &&
+          json &&
+          typeof (json as { page?: unknown }).page === 'object' &&
+          (json as { page?: unknown }).page
+            ? ((json as { page: unknown }).page as Record<string, unknown>)
+            : null
+
+        if (!page || cancelled) return
+
+        setHeroTitle(String(page.heroTitle ?? defaults.heroTitle))
+        setHeroSubtitle(String(page.heroSubtitle ?? defaults.heroSubtitle))
+      } catch {
+        // keep defaults
+      }
+    }
+
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [defaults.heroSubtitle, defaults.heroTitle])
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -18,10 +56,8 @@ export default function MissionPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-rotaract-darkpink tracking-tight">About Us</h1>
-            <p className="text-lg md:text-xl max-w-3xl mx-auto text-gray-700">
-              Empowering young leaders to create positive change in New York City and beyond
-            </p>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-rotaract-darkpink tracking-tight">{heroTitle}</h1>
+            <p className="text-lg md:text-xl max-w-3xl mx-auto text-gray-700">{heroSubtitle}</p>
           </motion.div>
         </div>
       </section>

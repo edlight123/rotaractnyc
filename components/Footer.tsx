@@ -1,7 +1,40 @@
 import Link from 'next/link'
 import { FaFacebook, FaLinkedin, FaInstagram } from 'react-icons/fa'
+import { DEFAULT_SETTINGS } from '@/lib/content/settings'
+import { getFirebaseAdminDb, isFirebaseAdminConfigured } from '@/lib/firebase/admin'
 
-const Footer = () => {
+async function getSettings() {
+  if (!isFirebaseAdminConfigured()) return DEFAULT_SETTINGS
+
+  try {
+    const doc = await getFirebaseAdminDb().collection('settings').doc('site').get()
+    if (!doc.exists) return DEFAULT_SETTINGS
+
+    const data: unknown = doc.data()
+    const obj = typeof data === 'object' && data ? (data as Record<string, unknown>) : {}
+
+    const addressLinesRaw = obj.addressLines
+    const addressLines = Array.isArray(addressLinesRaw)
+      ? addressLinesRaw.map((x) => String(x)).filter(Boolean)
+      : DEFAULT_SETTINGS.addressLines
+
+    return {
+      contactEmail: String(obj.contactEmail ?? DEFAULT_SETTINGS.contactEmail),
+      addressLines,
+      facebookUrl: String(obj.facebookUrl ?? DEFAULT_SETTINGS.facebookUrl),
+      instagramUrl: String(obj.instagramUrl ?? DEFAULT_SETTINGS.instagramUrl),
+      linkedinUrl: String(obj.linkedinUrl ?? DEFAULT_SETTINGS.linkedinUrl),
+      meetingLabel: String(obj.meetingLabel ?? DEFAULT_SETTINGS.meetingLabel),
+      meetingTime: String(obj.meetingTime ?? DEFAULT_SETTINGS.meetingTime),
+    }
+  } catch {
+    return DEFAULT_SETTINGS
+  }
+}
+
+const Footer = async () => {
+  const settings = await getSettings()
+
   return (
     <footer className="bg-white border-t border-gray-100">
       <div className="container mx-auto px-4 py-12">
@@ -46,12 +79,15 @@ const Footer = () => {
           <div>
             <h3 className="text-xl font-bold mb-4 text-rotaract-darkpink">Contact</h3>
             <ul className="space-y-2 text-gray-700">
-              <li>216 East 45th Street</li>
-              <li>New York, NY 10017</li>
-              <li>United States</li>
+              {settings.addressLines.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
               <li>
-                <a href="mailto:rotaractnewyorkcity@gmail.com" className="hover:text-rotaract-pink transition-colors">
-                  rotaractnewyorkcity@gmail.com
+                <a
+                  href={`mailto:${settings.contactEmail}`}
+                  className="hover:text-rotaract-pink transition-colors"
+                >
+                  {settings.contactEmail}
                 </a>
               </li>
             </ul>
@@ -62,7 +98,7 @@ const Footer = () => {
             <h3 className="text-xl font-bold mb-4 text-rotaract-darkpink">Follow Us</h3>
             <div className="flex space-x-4">
               <a
-                href="https://www.facebook.com/rotaractnewyorkcity/"
+                href={settings.facebookUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-gray-200 text-2xl text-gray-700 hover:border-rotaract-pink/30 hover:text-rotaract-pink transition-colors"
@@ -70,7 +106,7 @@ const Footer = () => {
                 <FaFacebook />
               </a>
               <a
-                href="https://www.linkedin.com/company/rotaract-at-the-un-nyc/"
+                href={settings.linkedinUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-gray-200 text-2xl text-gray-700 hover:border-rotaract-pink/30 hover:text-rotaract-pink transition-colors"
@@ -78,7 +114,7 @@ const Footer = () => {
                 <FaLinkedin />
               </a>
               <a
-                href="http://instagram.com/rotaractnyc"
+                href={settings.instagramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-gray-200 text-2xl text-gray-700 hover:border-rotaract-pink/30 hover:text-rotaract-pink transition-colors"
@@ -88,8 +124,8 @@ const Footer = () => {
             </div>
             <div className="mt-6">
               <p className="text-sm text-gray-600">
-                Weekly Meetings:<br />
-                <span className="text-rotaract-darkpink font-semibold">Thursday 7PM - 8PM</span>
+                {settings.meetingLabel}<br />
+                <span className="text-rotaract-darkpink font-semibold">{settings.meetingTime}</span>
               </p>
             </div>
           </div>

@@ -2,8 +2,48 @@
 
 import { motion } from 'framer-motion'
 import { FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa'
+import { useState } from 'react'
 
 export default function ContactPage() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+    setSuccess(false)
+
+    const form = new FormData(e.currentTarget)
+    const payload = {
+      name: String(form.get('name') || ''),
+      email: String(form.get('email') || ''),
+      subject: String(form.get('subject') || ''),
+      message: String(form.get('message') || ''),
+    }
+
+    try {
+      const res = await fetch('/api/public/contact', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) {
+        setError('Unable to send your message. Please try again.')
+        return
+      }
+
+      e.currentTarget.reset()
+      setSuccess(true)
+    } catch {
+      setError('Unable to send your message. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -91,7 +131,19 @@ export default function ContactPage() {
               className="bg-white p-8 rounded-lg shadow-lg"
             >
               <h2 className="text-3xl font-bold mb-6 text-rotaract-darkpink text-center">Send Us a Message</h2>
-              <form className="space-y-6">
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                {error ? (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    {error}
+                  </div>
+                ) : null}
+
+                {success ? (
+                  <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
+                    Message sent. Thanks for reaching out!
+                  </div>
+                ) : null}
+
                 <div>
                   <label htmlFor="name" className="block text-gray-700 font-semibold mb-2">
                     Name *
@@ -150,14 +202,12 @@ export default function ContactPage() {
 
                 <button
                   type="submit"
+                  disabled={loading}
                   className="w-full bg-rotaract-pink text-white font-semibold py-3 rounded-lg hover:bg-rotaract-darkpink transition-colors"
                 >
-                  Send Message
+                  {loading ? 'Sending…' : 'Send Message'}
                 </button>
               </form>
-              <p className="text-gray-600 text-sm mt-4 text-center">
-                Note: This is a demo form. Please email us directly at rotaractnewyorkcity@gmail.com
-              </p>
             </motion.div>
           </div>
         </div>

@@ -1,0 +1,11 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // This app reads/writes Firestore via server-side API routes using the Firebase Admin SDK.
+    // Default posture: deny all direct client access.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

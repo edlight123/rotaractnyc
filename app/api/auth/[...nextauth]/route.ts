@@ -1,61 +1,21 @@
-import NextAuth, { NextAuthOptions } from 'next-auth'
-import CredentialsProvider from 'next-auth/providers/credentials'
-import bcrypt from 'bcryptjs'
+import { NextResponse } from 'next/server'
 
-const authOptions: NextAuthOptions = {
-  providers: [
-    CredentialsProvider({
-      name: 'Credentials',
-      credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null
-        }
-
-        // For demo purposes - in production, use database
-        const adminEmail = process.env.ADMIN_EMAIL || 'admin@rotaractnyc.org'
-        const adminPassword = process.env.ADMIN_PASSWORD || 'admin123'
-
-        if (credentials.email === adminEmail) {
-          const isValid = await bcrypt.compare(credentials.password, await bcrypt.hash(adminPassword, 10))
-          
-          if (isValid || credentials.password === adminPassword) {
-            return {
-              id: '1',
-              email: adminEmail,
-              name: 'Admin',
-            }
-          }
-        }
-
-        return null
-      },
-    }),
-  ],
-  pages: {
-    signIn: '/admin/login',
-  },
-  session: {
-    strategy: 'jwt',
-  },
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id
-      }
-      return token
+export async function GET() {
+  return NextResponse.json(
+    {
+      error: 'Deprecated endpoint. Admin auth has migrated from NextAuth to Firebase session cookies.',
+      use: '/api/auth/session',
     },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string
-      }
-      return session
-    },
-  },
+    { status: 410 }
+  )
 }
 
-const handler = NextAuth(authOptions)
-export { handler as GET, handler as POST }
+export async function POST() {
+  return NextResponse.json(
+    {
+      error: 'Deprecated endpoint. Admin auth has migrated from NextAuth to Firebase session cookies.',
+      use: '/api/auth/session',
+    },
+    { status: 410 }
+  )
+}

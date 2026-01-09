@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { FaHandshake, FaUsers, FaGlobe, FaBalanceScale } from 'react-icons/fa'
+import { FaHandshake, FaUsers, FaBalanceScale } from 'react-icons/fa'
 import { MdDiversity3 } from 'react-icons/md'
 import Link from 'next/link'
 

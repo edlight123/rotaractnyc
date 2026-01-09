@@ -1,20 +1,20 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
+import { useAdminSession } from '@/lib/admin/useAdminSession'
 
 export default function AdminPage() {
-  const { data: session, status } = useSession()
+  const session = useAdminSession()
   const router = useRouter()
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (session.status === 'unauthenticated') {
       router.push('/admin/login')
-    } else if (status === 'authenticated') {
+    } else if (session.status === 'authenticated') {
       router.push('/admin/dashboard')
     }
-  }, [status, router])
+  }, [session.status, router])
 
   return (
     <div className="min-h-screen flex items-center justify-center">

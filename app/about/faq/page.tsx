@@ -2,58 +2,76 @@
 
 import { motion } from 'framer-motion'
 import { FaQuestionCircle } from 'react-icons/fa'
+import { useEffect, useMemo, useState } from 'react'
+import { DEFAULT_PAGES, type FaqItem } from '@/lib/content/pages'
+
+type FaqRow = {
+  question: string
+  answer: string
+}
 
 export default function FAQPage() {
-  const faqs = [
-    {
-      question: 'I am visiting NYC for a short period of time. Do you have any events I can attend?',
-      answer: 'Please see our Events page for a list of events. All of those events are open to Rotaractors, Rotarians, and those who support Rotaract and Rotary\'s mission. Feel free to come! Due to the number of requests we receive from visitors to NYC, it is difficult to schedule additional events if there is not an event planned for the time you are here. For now, please feel free to post on our Facebook page to connect with other visitors.'
-    },
-    {
-      question: 'I am not a member of the Rotaract Club at the United Nations. Can I attend your meetings and/or events?',
-      answer: 'All of our events that are on our Events page are open to Rotaractors, Rotarians, and those who support Rotaract and Rotary\'s mission.'
-    },
-    {
-      question: 'I am visiting NYC and I am looking for a place to stay. Can your members host me?',
-      answer: 'Due to the number of requests we receive for hosts, we cannot offer this service.'
-    },
-    {
-      question: 'I would like to send your club a gift from my club. Do you accept gifts?',
-      answer: 'While we see it as a great compliment that you would like to send us a gift, we only have a PO Box mailing address. If you would like to show support for our club, we ask that you support us by joining in our post-Rotary UN Day fundraising efforts or our international project.'
-    },
-    {
-      question: 'What is Rotaract?',
-      answer: 'Rotaract is a Rotary-sponsored service club for young men and women ages 18 to 30. Rotaract clubs are either community or university based, and they\'re sponsored by a local Rotary club. This makes them true partners in service and creates a special mentoring relationship.'
-    },
-    {
-      question: 'How much does membership cost?',
-      answer: 'Membership dues vary by year. Please contact us for current membership fee information. Dues help cover meeting costs, materials, and club activities.'
-    },
-    {
-      question: 'When and where do you meet?',
-      answer: 'We typically meet twice a month in Manhattan. Meeting locations and times are posted on our events page. Members receive email notifications about all meetings and events.'
-    },
-    {
-      question: 'Do I need to attend every meeting?',
-      answer: 'While regular attendance is encouraged, we understand members have busy schedules. We ask that members make an effort to attend meetings when possible and participate in at least one service project per year.'
-    },
-    {
-      question: 'What kind of service projects does the club do?',
-      answer: 'Our projects range from local community service to international initiatives. Past projects have included food drives, environmental cleanups, fundraising for global causes, and educational programs.'
-    },
-    {
-      question: 'Can I join if I don\'t live in New York City?',
-      answer: 'While we prefer members who can regularly attend in-person meetings in NYC, we may accommodate members from nearby areas. Contact us to discuss your situation.'
-    },
-    {
-      question: 'What is the connection to the United Nations?',
-      answer: 'Our club has special access to UN events and programs through our sponsoring Rotary club\'s relationship with the United Nations. This provides unique opportunities for members to engage with international issues.'
-    },
-    {
-      question: 'How can I get involved in leadership?',
-      answer: 'We encourage all members to take on leadership roles. Board positions are elected annually, and there are many committee chair positions available throughout the year. Express your interest to current board members.'
-    },
-  ]
+  const defaults = DEFAULT_PAGES.faq
+  const defaultFaqs = useMemo(() => {
+    const data = defaults.data as { faqs?: FaqItem[] } | undefined
+    return (data?.faqs ?? []).map((f) => ({ question: f.question, answer: f.answer }))
+  }, [defaults.data])
+
+  const [heroTitle, setHeroTitle] = useState(defaults.heroTitle)
+  const [heroSubtitle, setHeroSubtitle] = useState(defaults.heroSubtitle)
+  const [faqs, setFaqs] = useState<FaqRow[]>(defaultFaqs)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function run() {
+      try {
+        const res = await fetch('/api/public/pages/faq')
+        if (!res.ok) return
+        const json: unknown = await res.json()
+        const page =
+          typeof json === 'object' &&
+          json &&
+          typeof (json as { page?: unknown }).page === 'object' &&
+          (json as { page?: unknown }).page
+            ? ((json as { page: unknown }).page as Record<string, unknown>)
+            : null
+
+        if (!page) return
+
+        const newHeroTitle = String(page.heroTitle ?? defaults.heroTitle)
+        const newHeroSubtitle = String(page.heroSubtitle ?? defaults.heroSubtitle)
+
+        const data = (page.data as unknown) ?? {}
+        const faqsRaw =
+          typeof data === 'object' && data && Array.isArray((data as { faqs?: unknown }).faqs)
+            ? ((data as { faqs: unknown[] }).faqs as unknown[])
+            : []
+
+        const mapped = faqsRaw
+          .map((x): FaqRow => {
+            const obj = typeof x === 'object' && x ? (x as Record<string, unknown>) : {}
+            return {
+              question: String(obj.question ?? ''),
+              answer: String(obj.answer ?? ''),
+            }
+          })
+          .filter((f) => f.question && f.answer)
+
+        if (cancelled) return
+        setHeroTitle(newHeroTitle)
+        setHeroSubtitle(newHeroSubtitle)
+        if (mapped.length > 0) setFaqs(mapped)
+      } catch {
+        // keep defaults
+      }
+    }
+
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [defaults.heroSubtitle, defaults.heroTitle])
 
   return (
     <div className="min-h-screen">
@@ -67,10 +85,8 @@ export default function FAQPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-rotaract-darkpink tracking-tight">Frequently Asked Questions</h1>
-            <p className="text-lg md:text-xl max-w-3xl mx-auto text-gray-700">
-              Find answers to common questions about our club
-            </p>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-rotaract-darkpink tracking-tight">{heroTitle}</h1>
+            <p className="text-lg md:text-xl max-w-3xl mx-auto text-gray-700">{heroSubtitle}</p>
           </motion.div>
         </div>
       </section>
@@ -106,7 +122,7 @@ export default function FAQPage() {
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-6 text-rotaract-darkpink">Still Have Questions?</h2>
           <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
-            We're here to help! Reach out to us and we'll be happy to answer any other questions you may have.
+            We&apos;re here to help! Reach out to us and we&apos;ll be happy to answer any other questions you may have.
           </p>
           <a
             href="/contact"

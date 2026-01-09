@@ -3,49 +3,68 @@
 import { motion } from 'framer-motion'
 import { FaCalendar, FaMapMarkerAlt, FaClock } from 'react-icons/fa'
 import Link from 'next/link'
+import { DEFAULT_EVENTS, type EventCategory, type SiteEvent } from '@/lib/content/events'
+import { useEffect, useState } from 'react'
+
+type EventsResponseRow = Record<string, unknown>
 
 export default function EventsPage() {
-  const upcomingEvents = [
-    {
-      title: 'Monthly General Meeting',
-      date: 'Every 2nd Thursday',
-      time: '7:00 PM - 9:00 PM',
-      location: 'Manhattan, NY',
-      description: 'Join us for our regular meeting to discuss club business, upcoming projects, and network with fellow members.'
-    },
-    {
-      title: 'Community Service Day',
-      date: 'TBD',
-      time: 'All Day',
-      location: 'Various Locations',
-      description: 'Participate in hands-on service projects that make a real difference in our community.'
-    },
-    {
-      title: 'Networking Social',
-      date: 'Monthly',
-      time: '6:00 PM - 8:00 PM',
-      location: 'TBD',
-      description: 'Casual networking event for members to connect and build professional relationships.'
-    },
-  ]
+  const [events, setEvents] = useState<SiteEvent[]>(DEFAULT_EVENTS)
 
-  const pastEvents = [
-    {
-      title: 'Holiday Charity Drive',
-      date: 'December 2023',
-      description: 'Collected donations for local families in need during the holiday season.'
-    },
-    {
-      title: 'UN Youth Summit',
-      date: 'November 2023',
-      description: 'Attended special summit at the United Nations focusing on youth leadership and global issues.'
-    },
-    {
-      title: 'Central Park Cleanup',
-      date: 'October 2023',
-      description: 'Environmental service project cleaning and maintaining Central Park trails.'
-    },
-  ]
+  useEffect(() => {
+    let cancelled = false
+
+    async function run() {
+      try {
+        const res = await fetch('/api/public/events')
+        if (!res.ok) return
+        const json: unknown = await res.json()
+        const rows =
+          typeof json === 'object' &&
+          json &&
+          Array.isArray((json as { events?: unknown }).events)
+            ? ((json as { events: unknown[] }).events as unknown[])
+            : []
+
+        if (!cancelled && rows.length > 0) {
+          setEvents(
+            rows
+              .map((e): SiteEvent => {
+                const obj: EventsResponseRow = typeof e === 'object' && e ? (e as EventsResponseRow) : {}
+                const order = Number(obj.order)
+                const category: EventCategory = obj.category === 'past' ? 'past' : 'upcoming'
+                return {
+                  id: String(obj.id ?? ''),
+                  category,
+                  title: String(obj.title ?? ''),
+                  date: String(obj.date ?? ''),
+                  time: obj.time ? String(obj.time) : '',
+                  location: obj.location ? String(obj.location) : '',
+                  description: String(obj.description ?? ''),
+                  order: Number.isFinite(order) ? order : 1,
+                }
+              })
+              .filter((e) => e.id)
+          )
+        }
+      } catch {
+        // ignore and keep defaults
+      }
+    }
+
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const upcomingEvents = events.filter((e) => e.category === 'upcoming').sort(
+    (a, b) => a.order - b.order
+  )
+
+  const pastEvents = events.filter((e) => e.category === 'past').sort(
+    (a, b) => a.order - b.order
+  )
 
   return (
     <div className="min-h-screen">
@@ -87,14 +106,18 @@ export default function EventsPage() {
                     <FaCalendar className="text-rotaract-pink mr-2" />
                     <span>{event.date}</span>
                   </div>
-                  <div className="flex items-center text-gray-600">
-                    <FaClock className="text-rotaract-pink mr-2" />
-                    <span>{event.time}</span>
-                  </div>
-                  <div className="flex items-center text-gray-600">
-                    <FaMapMarkerAlt className="text-rotaract-pink mr-2" />
-                    <span>{event.location}</span>
-                  </div>
+                  {event.time ? (
+                    <div className="flex items-center text-gray-600">
+                      <FaClock className="text-rotaract-pink mr-2" />
+                      <span>{event.time}</span>
+                    </div>
+                  ) : null}
+                  {event.location ? (
+                    <div className="flex items-center text-gray-600">
+                      <FaMapMarkerAlt className="text-rotaract-pink mr-2" />
+                      <span>{event.location}</span>
+                    </div>
+                  ) : null}
                 </div>
                 <p className="text-gray-700">{event.description}</p>
               </motion.div>
