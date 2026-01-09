@@ -60,8 +60,39 @@ export default function AdminLogin() {
       }
 
       router.push('/admin/dashboard')
-    } catch {
-      setError('Invalid email or password')
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code
+
+      if (code === 'auth/user-not-found') {
+        setError(
+          'No Firebase Auth user exists for this email. Create the user in Firebase Console → Authentication → Users, or use a password reset if already invited.'
+        )
+        return
+      }
+
+      if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+        setError('Incorrect password for this email.')
+        return
+      }
+
+      if (code === 'auth/invalid-email') {
+        setError('That email address is not valid.')
+        return
+      }
+
+      if (code === 'auth/operation-not-allowed') {
+        setError(
+          'Email/Password sign-in is disabled for this Firebase project. Enable it in Firebase Console → Authentication → Sign-in method.'
+        )
+        return
+      }
+
+      if (code === 'auth/too-many-requests') {
+        setError('Too many attempts. Please wait a bit and try again.')
+        return
+      }
+
+      setError('Unable to sign in. Double-check the email/password and Firebase project configuration.')
     } finally {
       setLoading(false)
     }
