@@ -13,7 +13,7 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 NEXT_PUBLIC_FIREBASE_APP_ID=...
 
 # Comma-separated list of admin emails allowed into /admin
-ADMIN_ALLOWLIST=tojacquet97@gmail.com
+ADMIN_ALLOWLIST=tojacquet97@gmail.com,admin@rotaractnyc.org
 
 # Firebase Admin credentials for server-side access (recommended)
 # Option A: paste the full service account JSON string
