@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { getFirebaseAdminAuth, isFirebaseAdminConfigured } from '@/lib/firebase/admin'
+import { getFirebaseAdminAuth, getFirebaseAdminConfigStatus, isFirebaseAdminConfigured } from '@/lib/firebase/admin'
 import { isEmailAllowed } from '@/lib/firebase/allowlist'
 import { ADMIN_SESSION_COOKIE, ADMIN_SESSION_MAX_AGE_SECONDS } from '@/lib/firebase/session'
 
@@ -34,11 +34,17 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  if (!isFirebaseAdminConfigured()) {
-    return NextResponse.json(
-      { error: 'Firebase Admin not configured' },
-      { status: 500 }
-    )
+  try {
+    if (!isFirebaseAdminConfigured()) {
+      const status = getFirebaseAdminConfigStatus()
+      return NextResponse.json(
+        { error: status.ok ? 'Firebase Admin not configured' : status.error },
+        { status: 500 }
+      )
+    }
+  } catch (err: unknown) {
+    const message = (err as { message?: string })?.message || 'Firebase Admin configuration error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 
   const { idToken } = (await req.json().catch(() => ({}))) as { idToken?: string }
@@ -70,8 +76,10 @@ export async function POST(req: NextRequest) {
     })
 
     return res
-  } catch {
-    return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+  } catch (err: unknown) {
+    const message = (err as { message?: string })?.message
+    // Most Firebase Auth errors should map to 401 for the client.
+    return NextResponse.json({ error: message || 'Invalid token' }, { status: 401 })
   }
 }
 

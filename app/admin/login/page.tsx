@@ -54,7 +54,9 @@ export default function AdminLogin() {
       }
 
       if (!res.ok) {
-        setError('Unable to start admin session. Check Firebase Admin credentials.')
+        const payload = (await res.json().catch(() => null)) as null | { error?: string }
+        const details = payload?.error ? ` (${payload.error})` : ''
+        setError(`Unable to start admin session. Check Firebase Admin credentials.${details}`)
         await auth.signOut()
         return
       }
