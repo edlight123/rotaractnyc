@@ -26,6 +26,13 @@ FIREBASE_SERVICE_ACCOUNT_BASE64=...
 FIREBASE_ADMIN_PROJECT_ID=rotaractnyc-ac453
 FIREBASE_ADMIN_CLIENT_EMAIL=...@rotaractnyc-ac453.iam.gserviceaccount.com
 FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+
+# Resend (email notifications for contact form)
+RESEND_API_KEY=...
+# Must be a verified sender, e.g. "Rotaract NYC <noreply@rotaractnyc.org>"
+RESEND_FROM=...
+# Optional: comma-separated recipients for contact notifications
+RESEND_CONTACT_TO=rotaractnewyorkcity@gmail.com
 ```
 
 ## Notes

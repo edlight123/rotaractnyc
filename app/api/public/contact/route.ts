@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { FieldValue } from 'firebase-admin/firestore'
 import { getFirebaseAdminDb, isFirebaseAdminConfigured } from '@/lib/firebase/admin'
+import { DEFAULT_SETTINGS } from '@/lib/content/settings'
+import { isResendConfigured, sendContactEmail } from '@/lib/resend'
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   if (!isFirebaseAdminConfigured()) {
@@ -37,5 +41,27 @@ export async function POST(req: NextRequest) {
     createdAt: FieldValue.serverTimestamp(),
   })
 
-  return NextResponse.json({ ok: true, id: ref.id })
+  let emailSent = false
+  if (isResendConfigured()) {
+    const from = process.env.RESEND_FROM as string
+    const to = process.env.RESEND_CONTACT_TO || process.env.CONTACT_TO || DEFAULT_SETTINGS.contactEmail
+
+    try {
+      await sendContactEmail({
+        from,
+        to,
+        replyTo: email,
+        subject,
+        name,
+        email,
+        message,
+        messageId: ref.id,
+      })
+      emailSent = true
+    } catch (err) {
+      console.error('Resend contact email failed', err)
+    }
+  }
+
+  return NextResponse.json({ ok: true, id: ref.id, emailSent })
 }
