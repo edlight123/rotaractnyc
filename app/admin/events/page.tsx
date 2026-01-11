@@ -45,6 +45,43 @@ export default function AdminEventsPage() {
     order: 1,
   })
 
+  const hasCalendarDate = Boolean(form.startDate)
+
+  const formatDisplayDateFromStartDate = (isoDate: string) => {
+    const parts = isoDate.split('-').map((p) => Number(p))
+    if (parts.length !== 3) return ''
+    const [year, month, day] = parts
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return ''
+    const dt = new Date(Date.UTC(year, month - 1, day))
+    if (Number.isNaN(dt.getTime())) return ''
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }).format(dt)
+  }
+
+  const formatDisplayTimeFromCalendar = (startTime?: string, endTime?: string) => {
+    const to12h = (t: string) => {
+      const [hhRaw, mmRaw] = t.split(':')
+      const hh = Number(hhRaw)
+      const mm = Number(mmRaw)
+      if (!Number.isFinite(hh) || !Number.isFinite(mm)) return ''
+      const hour12 = ((hh + 11) % 12) + 1
+      const ampm = hh >= 12 ? 'PM' : 'AM'
+      const mmPadded = String(mm).padStart(2, '0')
+      return `${hour12}:${mmPadded} ${ampm}`
+    }
+
+    if (!startTime) return ''
+    const start = to12h(startTime)
+    if (!start) return ''
+    if (!endTime) return start
+    const end = to12h(endTime)
+    return end ? `${start} - ${end}` : start
+  }
+
   const refresh = useCallback(async () => {
     setLoadingData(true)
     setError(null)
@@ -156,12 +193,22 @@ export default function AdminEventsPage() {
     setError(null)
     try {
       const isEdit = Boolean(editingId)
+
+      const generatedDate =
+        !form.date && form.startDate ? formatDisplayDateFromStartDate(form.startDate) : ''
+      const generatedTime =
+        !form.time && form.startTime
+          ? formatDisplayTimeFromCalendar(form.startTime, form.endTime)
+          : ''
+
       const res = await fetch('/api/admin/events', {
         method: isEdit ? 'PUT' : 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           ...(isEdit ? { id: editingId } : {}),
           ...form,
+          date: form.date || generatedDate,
+          time: form.time || generatedTime,
           order: Number(form.order) || 1,
         }),
       })
@@ -302,26 +349,40 @@ export default function AdminEventsPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Date (text)</label>
-                  <input
-                    value={form.date}
-                    onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    placeholder="Every 2nd Thursday"
-                  />
-                </div>
+                {!hasCalendarDate ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Date (text)</label>
+                      <input
+                        value={form.date}
+                        onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Every 2nd Thursday"
+                      />
+                    </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Time</label>
-                    <input
-                      value={form.time}
-                      onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                      placeholder="7:00 PM - 9:00 PM"
-                    />
-                  </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Time (text)</label>
+                        <input
+                          value={form.time}
+                          onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
+                          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          placeholder="7:00 PM - 9:00 PM"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Location</label>
+                        <input
+                          value={form.location}
+                          onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+                          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          placeholder="Manhattan, NY"
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : (
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Location</label>
                     <input
@@ -331,7 +392,7 @@ export default function AdminEventsPage() {
                       placeholder="Manhattan, NY"
                     />
                   </div>
-                </div>
+                )}
 
                 <div className="border border-gray-100 rounded-lg p-4 bg-gray-50">
                   <div className="text-sm font-semibold text-gray-800">Calendar (optional)</div>
@@ -394,7 +455,7 @@ export default function AdminEventsPage() {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={save}
-                    disabled={saving || !form.title || !form.date || !form.description}
+                    disabled={saving || !form.title || (!form.date && !form.startDate) || !form.description}
                     className="px-4 py-2 bg-rotaract-pink text-white rounded-lg hover:bg-rotaract-darkpink disabled:opacity-50"
                   >
                     {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Create Event'}
