@@ -1,9 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { FaArrowLeft, FaNewspaper, FaSignOutAlt } from 'react-icons/fa'
-import { useAdminSession, adminSignOut } from '@/lib/admin/useAdminSession'
+import { useAdminSession } from '@/lib/admin/useAdminSession'
 import { getFriendlyAdminApiError } from '@/lib/admin/apiError'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { slugify } from '@/lib/slugify'
@@ -31,7 +29,6 @@ type PostRow = {
 }
 
 export default function AdminPostsPage() {
-  const router = useRouter()
   const session = useAdminSession()
 
   const [loadingData, setLoadingData] = useState(true)
@@ -97,8 +94,10 @@ export default function AdminPostsPage() {
   }, [])
 
   useEffect(() => {
-    if (session.status === 'unauthenticated') router.push('/admin/login')
-  }, [router, session.status])
+    if (session.status === 'unauthenticated') {
+      window.location.href = '/admin/login'
+    }
+  }, [session.status])
 
   useEffect(() => {
     if (session.status === 'authenticated') refresh()
@@ -206,98 +205,78 @@ export default function AdminPostsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-100">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-rotaract-darkpink flex items-center gap-2">
-                <FaNewspaper /> News & Articles
-              </h1>
-              <p className="text-gray-600 mt-1">Create, edit, and publish news and article updates</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link
-                href="/admin/dashboard"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-rotaract-pink/30 text-rotaract-darkpink rounded-lg transition-colors"
-              >
-                <FaArrowLeft /> Dashboard
-              </Link>
-              <button
-                onClick={async () => {
-                  await adminSignOut()
-                  router.push('/')
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-              >
-                <FaSignOutAlt /> Sign Out
-              </button>
-            </div>
+    <div className="p-4 lg:p-8">
+      <div className="mx-auto max-w-7xl space-y-8">
+        {/* Breadcrumbs & Heading */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <nav className="mb-2 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+              <Link href="/admin/dashboard" className="hover:text-primary">Dashboard</Link>
+              <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+              <span className="font-medium text-slate-900 dark:text-white">News & Articles</span>
+            </nav>
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">News & Articles</h2>
+            <p className="text-slate-500 dark:text-slate-400">Create, edit, and publish news and article updates.</p>
           </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <h2 className="text-xl font-bold text-rotaract-darkpink">All Articles</h2>
+          {mode === 'list' && (
             <button
               onClick={startNew}
-              className="px-4 py-2 bg-rotaract-pink text-white rounded-lg hover:bg-rotaract-darkpink"
+              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-blue-700 transition-colors"
             >
+              <span className="material-symbols-outlined text-[18px]">add</span>
               New Article
             </button>
-          </div>
+          )}
+        </div>
 
-          {error ? (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
-            </div>
-          ) : null}
+        <div className="space-y-6">\n          {error && (\n            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">\n              {error}\n            </div>\n          )}
 
           {mode === 'list' ? (
-            loadingData ? (
-              <div className="text-gray-600">Loading…</div>
-            ) : sorted.length === 0 ? (
-              <div className="text-gray-600">No posts yet.</div>
-            ) : (
-              <div className="space-y-3">
-                {sorted.map((p) => (
-                  <button
-                    key={p.slug}
-                    type="button"
-                    onClick={() => startEdit(p)}
-                    className="w-full text-left border border-gray-100 rounded-lg p-4 bg-white shadow-sm hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="text-sm text-gray-500">
-                          {p.published ? 'published' : 'draft'} · {p.category}
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">All Articles</h3>
+              {loadingData ? (
+                <div className="text-slate-600 dark:text-slate-400">Loading…</div>
+              ) : sorted.length === 0 ? (
+                <div className="text-slate-600 dark:text-slate-400">No posts yet.</div>
+              ) : (
+                <div className="space-y-3">
+                  {sorted.map((p) => (
+                    <button
+                      key={p.slug}
+                      type="button"
+                      onClick={() => startEdit(p)}
+                      className="w-full text-left border border-slate-200 rounded-lg p-4 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800/50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+                            {p.published ? 'published' : 'draft'} · {p.category}
+                          </div>
+                          <div className="text-lg font-semibold text-slate-900 dark:text-white">{p.title}</div>
+                          <div className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                            {p.date ? <span>{p.date}</span> : <span className="italic">No publish date</span>} · {p.author}
+                          </div>
+                          <div className="mt-1 text-xs text-slate-500">/{p.slug}</div>
+                          {p.excerpt && <p className="mt-2 text-slate-700 dark:text-slate-300 text-sm">{p.excerpt}</p>}
                         </div>
-                        <div className="text-lg font-semibold text-rotaract-darkpink">{p.title}</div>
-                        <div className="mt-1 text-sm text-gray-600">
-                          {p.date ? <span>{p.date}</span> : <span className="italic">No publish date</span>} · {p.author}
+                        <div className="shrink-0 px-3 py-2 text-sm bg-primary text-white rounded-lg hover:bg-blue-700">
+                          Edit
                         </div>
-                        <div className="mt-1 text-xs text-gray-500">/{p.slug}</div>
                       </div>
-                      <div className="shrink-0 px-3 py-2 text-sm bg-white border border-rotaract-pink/30 text-rotaract-darkpink rounded-lg">
-                        Edit
-                      </div>
-                    </div>
-                    {p.excerpt ? <p className="mt-2 text-gray-700 text-sm">{p.excerpt}</p> : null}
-                  </button>
-                ))}
-              </div>
-            )
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           ) : (
-            <div>
-              <div className="flex items-center justify-between gap-4 mb-4">
-                <h3 className="text-lg font-bold text-rotaract-darkpink">
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex items-center justify-between gap-4 mb-6">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                   {mode === 'edit' ? 'Edit Article' : 'New Article'}
                 </h3>
                 <button
                   onClick={backToList}
-                  className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50"
+                  className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
                 >
                   Back to List
                 </button>
@@ -306,7 +285,7 @@ export default function AdminPostsPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Slug</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Slug</label>
                     <input
                       value={form.slug}
                       onChange={(e) => {
@@ -314,17 +293,18 @@ export default function AdminPostsPage() {
                         setSlugManuallyEdited(true)
                         setForm((f) => ({ ...f, slug: value }))
                       }}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:border-slate-700"
                       placeholder="my-post-slug"
                       disabled={Boolean(editingSlug)}
                     />
                   </div>
                   <div className="flex items-end gap-2">
-                    <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                    <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                       <input
                         type="checkbox"
                         checked={form.published}
                         onChange={(e) => setForm((f) => ({ ...f, published: e.target.checked }))}
+                        className="rounded"
                       />
                       Published
                     </label>
@@ -332,7 +312,7 @@ export default function AdminPostsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Title</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Title</label>
                   <input
                     value={form.title}
                     onChange={(e) => {
@@ -344,65 +324,65 @@ export default function AdminPostsPage() {
                         return shouldAutoUpdateSlug ? { ...f, title, slug: nextAutoSlug } : { ...f, title }
                       })
                     }}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:border-slate-700"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Publish Date</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Publish Date</label>
                     <input
                       value={form.date}
                       onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:border-slate-700"
                       placeholder={formatPublishedDate(new Date())}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Category</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category</label>
                     <input
                       value={form.category}
                       onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:border-slate-700"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Author</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Author</label>
                     <input
                       value={form.author}
                       onChange={(e) => setForm((f) => ({ ...f, author: e.target.value }))}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:border-slate-700"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Excerpt</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Excerpt</label>
                     <input
                       value={form.excerpt}
                       onChange={(e) => setForm((f) => ({ ...f, excerpt: e.target.value }))}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:border-slate-700"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Content (paragraphs)</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Content (paragraphs)</label>
                   <textarea
                     value={form.contentText}
                     onChange={(e) => setForm((f) => ({ ...f, contentText: e.target.value }))}
                     rows={10}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:border-slate-700"
                     placeholder="Write paragraphs separated by a blank line"
                   />
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 pt-4">
                   <button
                     onClick={save}
                     disabled={saving || !form.title.trim() || (!editingSlug && !form.slug.trim())}
-                    className="px-4 py-2 bg-rotaract-pink text-white rounded-lg hover:bg-rotaract-darkpink disabled:opacity-50"
+                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium"
                   >
                     {saving ? 'Saving…' : mode === 'edit' ? 'Save Changes' : 'Create Article'}
                   </button>
