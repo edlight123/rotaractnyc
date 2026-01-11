@@ -7,6 +7,22 @@ import { useAdminSession, adminSignOut } from '@/lib/admin/useAdminSession'
 import { getFriendlyAdminApiError } from '@/lib/admin/apiError'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+function slugifyTitle(input: string): string {
+  const normalized = (input || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+
+  const slug = normalized
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '')
+    .replace(/-{2,}/g, '-')
+
+  return slug.length > 80 ? slug.slice(0, 80).replace(/-+$/, '') : slug
+}
+
 type PostRow = {
   slug: string
   title: string
@@ -284,7 +300,13 @@ export default function AdminPostsPage() {
                   <label className="block text-sm font-medium text-gray-700">Title</label>
                   <input
                     value={form.title}
-                    onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                    onChange={(e) => {
+                      const title = e.target.value
+                      setForm((f) => {
+                        if (editingSlug) return { ...f, title }
+                        return { ...f, title, slug: slugifyTitle(title) }
+                      })
+                    }}
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
                   />
                 </div>
