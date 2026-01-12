@@ -2,8 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { FaArrowLeft, FaImages, FaSignOutAlt } from 'react-icons/fa'
-import { useAdminSession, adminSignOut } from '@/lib/admin/useAdminSession'
+import { useAdminSession } from '@/lib/admin/useAdminSession'
 import { getFriendlyAdminApiError } from '@/lib/admin/apiError'
 import DragDropFile from '@/components/admin/DragDropFile'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -27,6 +26,7 @@ export default function AdminGalleryPage() {
   const [error, setError] = useState<string | null>(null)
   const [items, setItems] = useState<GalleryRow[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [showForm, setShowForm] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [form, setForm] = useState<Omit<GalleryRow, 'id'>>({
     title: '',
@@ -86,15 +86,10 @@ export default function AdminGalleryPage() {
 
   const sorted = useMemo(() => [...items].sort((a, b) => a.order - b.order), [items])
 
-  if (session.status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rotaract-pink" />
-      </div>
-    )
+  const startNew = () => {
+    resetForm()
+    setShowForm(true)
   }
-
-  if (session.status !== 'authenticated') return null
 
   const startEdit = (row: GalleryRow) => {
     setEditingId(row.id)
@@ -106,11 +101,13 @@ export default function AdminGalleryPage() {
       storagePath: row.storagePath || '',
       order: row.order,
     })
+    setShowForm(true)
   }
 
   const resetForm = () => {
     setEditingId(null)
     setFile(null)
+    setShowForm(false)
     setForm({
       title: '',
       alt: '',
@@ -231,111 +228,132 @@ export default function AdminGalleryPage() {
     }
   }
 
+  if (session.status === 'loading') {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+      </div>
+    )
+  }
+
+  if (session.status !== 'authenticated') return null
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-100">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-rotaract-darkpink flex items-center gap-2">
-                <FaImages /> Gallery
-              </h1>
-              <p className="text-gray-600 mt-1">Manage gallery images</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link
-                href="/admin/dashboard"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-rotaract-pink/30 text-rotaract-darkpink rounded-lg transition-colors"
-              >
-                <FaArrowLeft /> Dashboard
-              </Link>
+    <div className="p-4 lg:p-8">
+      <div className="mx-auto max-w-7xl space-y-8">
+        {/* Breadcrumbs & Heading */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <nav className="mb-2 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+              <Link href="/admin/dashboard" className="hover:text-primary">Dashboard</Link>
+              <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+              <span className="font-medium text-slate-900 dark:text-white">Gallery</span>
+            </nav>
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Gallery</h2>
+            <p className="text-slate-500 dark:text-slate-400">Manage gallery images and media.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {!showForm && (
               <button
-                onClick={async () => {
-                  await adminSignOut()
-                  router.push('/')
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                onClick={startNew}
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-blue-700 transition-colors"
               >
-                <FaSignOutAlt /> Sign Out
+                <span className="material-symbols-outlined text-[18px]">add</span>
+                Add Image
               </button>
-            </div>
+            )}
+            <button
+              onClick={seed}
+              className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            >
+              <span className="material-symbols-outlined text-[18px]">backup</span>
+              Seed Defaults
+            </button>
           </div>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex flex-col md:flex-row md:items-start gap-6">
-            <div className="md:w-1/2">
-              <div className="flex items-center justify-between gap-4 mb-4">
-                <h2 className="text-xl font-bold text-rotaract-darkpink">
-                  {editingId ? 'Edit Item' : 'Add Item'}
-                </h2>
-                <button
-                  onClick={seed}
-                  className="px-3 py-2 text-sm bg-white border border-rotaract-pink/30 text-rotaract-darkpink rounded-lg hover:bg-gray-50"
-                >
-                  Seed Defaults
-                </button>
-              </div>
+        <div className="space-y-6">
+          {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-900/20 dark:text-red-400">
+              {error}
+            </div>
+          )}
 
-              {error ? (
-                <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                  {error}
-                </div>
-              ) : null}
+          {showForm && (
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <h3 className="mb-6 text-xl font-bold text-slate-900 dark:text-white">
+                {editingId ? 'Edit Image' : 'Add New Image'}
+              </h3>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Title</label>
-                  <input
-                    value={form.title}
-                    onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Alt text</label>
-                  <input
-                    value={form.alt}
-                    onChange={(e) => setForm((f) => ({ ...f, alt: e.target.value }))}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Order</label>
+                    <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Title
+                    </label>
+                    <input
+                      type="text"
+                      value={form.title}
+                      onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
+                      placeholder="Event photos 2024"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Alt Text
+                    </label>
+                    <input
+                      type="text"
+                      value={form.alt}
+                      onChange={(e) => setForm((f) => ({ ...f, alt: e.target.value }))}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
+                      placeholder="Description for accessibility"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Display Order
+                    </label>
                     <input
                       type="number"
                       value={form.order}
                       onChange={(e) => setForm((f) => ({ ...f, order: Number(e.target.value) }))}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
+                      placeholder="1"
+                      min="1"
                     />
                   </div>
+
                   <div>
                     <DragDropFile
-                      label="Upload image"
+                      label="Upload Image"
                       accept="image/*"
                       file={file}
                       onFile={setFile}
                       uploadedUrl={form.imageUrl || undefined}
-                      hint="Optional: upload to Firebase Storage."
+                      hint="Upload to Firebase Storage"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Image URL</label>
+                  <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Image URL
+                  </label>
                   <input
+                    type="text"
                     value={form.imageUrl}
                     onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    placeholder="https://... or /my-image.jpg"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
+                    placeholder="https://example.com/image.jpg"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    If you upload a file, this will be set automatically.
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    Auto-filled when you upload a file
                   </p>
                 </div>
 
@@ -343,62 +361,97 @@ export default function AdminGalleryPage() {
                   <button
                     onClick={save}
                     disabled={saving || uploading || !form.title || !form.alt || (!file && !form.imageUrl)}
-                    className="px-4 py-2 bg-rotaract-pink text-white rounded-lg hover:bg-rotaract-darkpink disabled:opacity-50"
+                    className="rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {uploading ? 'Uploading…' : saving ? 'Saving…' : editingId ? 'Save Changes' : 'Create Item'}
+                    {uploading ? (
+                      <span className="flex items-center gap-2">
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        Uploading...
+                      </span>
+                    ) : saving ? (
+                      <span className="flex items-center gap-2">
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        Saving...
+                      </span>
+                    ) : editingId ? (
+                      'Save Changes'
+                    ) : (
+                      'Create Image'
+                    )}
                   </button>
-                  {editingId ? (
-                    <button
-                      onClick={resetForm}
-                      className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                  ) : null}
+                  <button
+                    onClick={resetForm}
+                    className="rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
             </div>
+          )}
 
-            <div className="md:w-1/2">
-              <h2 className="text-xl font-bold text-rotaract-darkpink mb-4">All Items</h2>
-
-              {loadingData ? (
-                <div className="text-gray-600">Loading…</div>
-              ) : sorted.length === 0 ? (
-                <div className="text-gray-600">No gallery items yet.</div>
-              ) : (
-                <div className="space-y-3">
-                  {sorted.map((g) => (
-                    <div
-                      key={g.id}
-                      className="border border-gray-100 rounded-lg p-4 bg-white shadow-sm"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <div className="text-sm text-gray-500">order {g.order}</div>
-                          <div className="text-lg font-semibold text-rotaract-darkpink">{g.title}</div>
-                          <div className="text-sm text-gray-600 break-all">{g.imageUrl}</div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => startEdit(g)}
-                            className="px-3 py-2 text-sm bg-white border border-rotaract-pink/30 text-rotaract-darkpink rounded-lg hover:bg-gray-50"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => remove(g.id)}
-                            className="px-3 py-2 text-sm bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                Gallery Images ({sorted.length})
+              </h3>
             </div>
+
+            {loadingData ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+              </div>
+            ) : sorted.length === 0 ? (
+              <div className="py-12 text-center text-slate-500 dark:text-slate-400">
+                <span className="material-symbols-outlined mb-2 text-[48px] opacity-50">photo_library</span>
+                <p>No gallery images yet.</p>
+                <p className="text-sm">Click &quot;Add Image&quot; to get started.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {sorted.map((g) => (
+                  <div
+                    key={g.id}
+                    className="flex items-start justify-between gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800"
+                  >
+                    <div className="flex-1">
+                      <div className="mb-1 flex items-center gap-2">
+                        <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                          Order {g.order}
+                        </span>
+                      </div>
+                      <div className="mb-1 font-semibold text-slate-900 dark:text-white">{g.title}</div>
+                      <div className="mb-1 text-sm text-slate-600 dark:text-slate-400">{g.alt}</div>
+                      {g.imageUrl && (
+                        <div className="mt-2">
+                          <img
+                            src={g.imageUrl}
+                            alt={g.alt}
+                            className="h-24 w-auto rounded-lg border border-slate-200 object-cover dark:border-slate-700"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => startEdit(g)}
+                        className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">edit</span>
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => remove(g.id)}
+                        className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-100 dark:border-red-900 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
