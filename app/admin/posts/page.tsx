@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useAdminSession } from '@/lib/admin/useAdminSession'
 import { getFriendlyAdminApiError } from '@/lib/admin/apiError'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import { slugify } from '@/lib/slugify'
 import dynamic from 'next/dynamic'
 import 'react-quill/dist/quill.snow.css'
@@ -62,6 +62,49 @@ export default function AdminPostsPage() {
     contentHtml: '',
     published: true,
   })
+
+  // Predefined categories
+  const predefinedCategories = [
+    'Club News',
+    'Events',
+    'Community Service',
+    'Fundraising',
+    'International',
+    'Social',
+    'Professional Development',
+    'Announcements',
+  ]
+
+  // Get unique categories from existing posts
+  const existingCategories = useMemo(() => {
+    const categories = new Set(posts.map(p => p.category).filter(Boolean))
+    return Array.from(categories).sort()
+  }, [posts])
+
+  // Combine predefined and existing categories, remove duplicates
+  const allCategories = useMemo(() => {
+    const combined = new Set([...predefinedCategories, ...existingCategories])
+    return Array.from(combined).sort()
+  }, [existingCategories])
+
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
+  const [categoryInput, setCategoryInput] = useState('')
+  const [isCustomCategory, setIsCustomCategory] = useState(false)
+  const categoryDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
+        setShowCategoryDropdown(false)
+      }
+    }
+
+    if (showCategoryDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showCategoryDropdown])
 
   const refresh = useCallback(async () => {
     setLoadingData(true)
@@ -139,6 +182,8 @@ export default function AdminPostsPage() {
       contentHtml: row.content.join('<br><br>'),
       published: row.published,
     })
+    setCategoryInput(row.category)
+    setIsCustomCategory(!allCategories.includes(row.category))
   }
 
   const startNew = () => {
@@ -150,6 +195,8 @@ export default function AdminPostsPage() {
       contentHtml: '',
       published: true,
     })
+    setCategoryInput('Club News')
+    setIsCustomCategory(false)
   }
 
   const backToList = () => {
@@ -161,6 +208,9 @@ export default function AdminPostsPage() {
       contentHtml: '',
       published: true,
     })
+    setCategoryInput('')
+    setIsCustomCategory(false)
+    setShowCategoryDropdown(false)
   }
 
   const save = async () => {
@@ -297,14 +347,82 @@ export default function AdminPostsPage() {
 
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
+                  <div className="relative" ref={categoryDropdownRef}>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Category</label>
-                    <input
-                      value={form.category}
-                      onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
-                      placeholder="Club News"
-                    />
+                    <div className="relative">
+                      {isCustomCategory ? (
+                        <div className="flex gap-2">
+                          <input
+                            value={categoryInput}
+                            onChange={(e) => {
+                              setCategoryInput(e.target.value)
+                              setForm((f) => ({ ...f, category: e.target.value }))
+                            }}
+                            className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
+                            placeholder="Enter custom category"
+                          />
+                          <button
+                            onClick={() => {
+                              setIsCustomCategory(false)
+                              setCategoryInput(form.category)
+                              setShowCategoryDropdown(false)
+                            }}
+                            className="px-3 py-2.5 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+                            title="Use dropdown"
+                          >
+                            <span className="material-symbols-outlined text-[20px]">arrow_drop_down</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                            className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-left text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white flex items-center justify-between"
+                          >
+                            <span>{form.category || 'Select category'}</span>
+                            <span className="material-symbols-outlined text-[20px]">
+                              {showCategoryDropdown ? 'arrow_drop_up' : 'arrow_drop_down'}
+                            </span>
+                          </button>
+                          {showCategoryDropdown && (
+                            <div className="absolute z-10 mt-1 w-full rounded-lg border border-slate-300 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800 max-h-60 overflow-auto">
+                              {allCategories.map((cat) => (
+                                <button
+                                  key={cat}
+                                  type="button"
+                                  onClick={() => {
+                                    setForm((f) => ({ ...f, category: cat }))
+                                    setCategoryInput(cat)
+                                    setShowCategoryDropdown(false)
+                                  }}
+                                  className={`w-full text-left px-4 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-700 ${
+                                    form.category === cat
+                                      ? 'bg-primary/10 text-primary font-medium'
+                                      : 'text-slate-900 dark:text-white'
+                                  }`}
+                                >
+                                  {cat}
+                                </button>
+                              ))}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsCustomCategory(true)
+                                  setCategoryInput('')
+                                  setShowCategoryDropdown(false)
+                                  setForm((f) => ({ ...f, category: '' }))
+                                }}
+                                className="w-full text-left px-4 py-2.5 border-t border-slate-200 dark:border-slate-700 text-primary hover:bg-primary/10 font-medium flex items-center gap-2"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">add</span>
+                                Add New Category
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-end gap-2">
                     <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
