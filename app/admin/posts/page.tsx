@@ -229,7 +229,12 @@ export default function AdminPostsPage() {
           )}
         </div>
 
-        <div className="space-y-6">\n          {error && (\n            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">\n              {error}\n            </div>\n          )}
+        <div className="space-y-6">
+          {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              {error}
+            </div>
+          )}
 
           {mode === 'list' ? (
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">

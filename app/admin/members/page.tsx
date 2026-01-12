@@ -93,16 +93,6 @@ export default function AdminMembersPage() {
 
   const sorted = useMemo(() => [...members].sort((a, b) => a.order - b.order), [members])
 
-  if (session.status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rotaract-pink" />
-      </div>
-    )
-  }
-
-  if (session.status !== 'authenticated') return null
-
   const startEdit = (row: MemberRow) => {
     setEditingId(row.id)
     setShowForm(true)
@@ -246,6 +236,16 @@ export default function AdminMembersPage() {
     }
   }
 
+  if (session.status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rotaract-pink" />
+      </div>
+    )
+  }
+
+  if (session.status !== 'authenticated') return null
+
   return (
     <div className="p-4 lg:p-8">
       <div className="mx-auto max-w-7xl space-y-8">
@@ -365,7 +365,7 @@ export default function AdminMembersPage() {
                     <input
                       type="checkbox"
                       checked={form.active}
-                      onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked })}
+                      onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))}
                       className="rounded"
                     />
                     Active
@@ -440,6 +440,8 @@ export default function AdminMembersPage() {
             </div>
           )}
         </div>
+      </div>
+
       </div>
     </div>
   )
