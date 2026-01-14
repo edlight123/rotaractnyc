@@ -1,8 +1,6 @@
 'use client'
 
-import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { FaUser, FaClock, FaArrowRight, FaSearch, FaTimes } from 'react-icons/fa'
 import { RCUN_NEWS } from '@/lib/rcunNews'
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
@@ -21,26 +19,13 @@ interface NewsArticle {
   readTime?: string
 }
 
-const CATEGORIES = ['All', 'Service', 'Social', 'Professional', 'International', 'Leadership', 'Fundraising']
-
-const CATEGORY_COLORS: Record<string, string> = {
-  Service: 'bg-green-500 text-white border-green-500',
-  Social: 'bg-rotaract-gold text-white border-rotaract-gold',
-  Professional: 'bg-rotaract-blue text-white border-rotaract-blue',
-  International: 'bg-purple-600 text-white border-purple-600',
-  Leadership: 'bg-purple-700 text-white border-purple-700',
-  Fundraising: 'bg-red-500 text-white border-red-500',
-  Charity: 'bg-red-500 text-white border-red-500',
-  Internal: 'bg-gray-700 text-white border-gray-700',
-  News: 'bg-rotaract-pink text-white border-rotaract-pink',
+function formatTrendingRank(n: number) {
+  return String(n).padStart(2, '0')
 }
 
 export default function NewsPage() {
   const [newsArticles, setNewsArticles] = useState<NewsArticle[]>(RCUN_NEWS)
-  const [selectedCategory, setSelectedCategory] = useState('All')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showSearch, setShowSearch] = useState(false)
-  const [displayedCount, setDisplayedCount] = useState(9)
+  const [displayedCount, setDisplayedCount] = useState(4)
 
   useEffect(() => {
     let cancelled = false
@@ -64,6 +49,7 @@ export default function NewsPage() {
                 const obj: PostsResponseRow = typeof p === 'object' && p ? (p as PostsResponseRow) : {}
                 const slug = String(obj.slug ?? obj.id ?? '')
                 const contentRaw = obj.content
+                const imageUrl = String(obj.imageUrl ?? '')
                 return {
                   slug,
                   title: String(obj.title ?? ''),
@@ -72,7 +58,7 @@ export default function NewsPage() {
                   category: String(obj.category ?? 'News'),
                   excerpt: String(obj.excerpt ?? ''),
                   content: Array.isArray(contentRaw) ? contentRaw.map((x) => String(x)) : [],
-                  imageUrl: String(obj.imageUrl ?? ''),
+                  imageUrl: imageUrl || undefined,
                   readTime: String(obj.readTime ?? '5 min read'),
                 }
               })
@@ -90,320 +76,231 @@ export default function NewsPage() {
     }
   }, [])
 
-  const filteredArticles = newsArticles.filter((article) => {
-    const matchesCategory = selectedCategory === 'All' || article.category === selectedCategory
-    const matchesSearch = article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          article.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesCategory && matchesSearch
-  })
-
-  const featuredArticle = filteredArticles[0]
-  const regularArticles = filteredArticles.slice(1, displayedCount)
-  const hasMore = filteredArticles.length > displayedCount
-
-  const getCategoryColor = (category: string) => {
-    return CATEGORY_COLORS[category] || 'bg-gray-600 text-white border-gray-600'
-  }
+  const featuredArticle = newsArticles[0]
+  const feedArticles = newsArticles.slice(1, displayedCount)
+  const hasMore = newsArticles.length > displayedCount
+  const trendingArticles = newsArticles.slice(0, 3)
+  const categories = Array.from(new Set(newsArticles.map((a) => a.category).filter(Boolean))).slice(0, 12)
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero Section - Featured Story */}
-      <section className="relative pt-24 pb-12 md:pb-20 overflow-hidden bg-gradient-to-br from-gray-50 to-white">
-        <div className="container mx-auto px-4 lg:px-8 max-w-7xl relative">
-          {featuredArticle && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center"
-            >
-              {/* Image Side */}
-              <div className="lg:col-span-7 order-2 lg:order-1">
-                <Link href={`/rcun-news/${featuredArticle.slug}`}>
-                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-lg group cursor-pointer">
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
+    <div className="min-h-screen bg-background-light dark:bg-background-dark text-text-main dark:text-gray-100">
+      <main className="flex-grow w-full max-w-[1140px] mx-auto px-4 md:px-8 pt-24 pb-10">
+        <div className="mb-12 border-b border-gray-200/70 dark:border-gray-800 pb-6">
+          <p className="text-primary text-sm font-bold uppercase tracking-widest mb-2">The Blog</p>
+          <h1 className="text-5xl md:text-6xl font-medium tracking-tight italic">RCUN Chronicles</h1>
+          <p className="mt-4 text-xl text-text-muted dark:text-gray-400 max-w-2xl">
+            Exploring stories of service, community leadership, and the impact of Rotaract in New York City.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+          {/* Left Column: News Feed */}
+          <div className="lg:col-span-8 flex flex-col gap-10">
+            {featuredArticle ? (
+              <article className="group">
+                <Link
+                  href={`/rcun-news/${featuredArticle.slug}`}
+                  className="block relative overflow-hidden rounded-xl bg-surface-light dark:bg-surface-dark shadow-soft border border-gray-100 dark:border-gray-800 transition-all hover:shadow-soft-hover"
+                >
+                  <div className="w-full aspect-video bg-gray-200 overflow-hidden">
                     {featuredArticle.imageUrl ? (
-                      <Image
-                        src={featuredArticle.imageUrl}
-                        alt={featuredArticle.title}
-                        fill
-                        className="object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-rotaract-blue to-rotaract-pink flex items-center justify-center">
-                        <span className="text-white text-6xl font-bold opacity-20">RCUN</span>
+                      <div className="relative w-full h-full">
+                        <Image
+                          src={featuredArticle.imageUrl}
+                          alt={featuredArticle.title}
+                          fill
+                          sizes="(max-width: 1024px) 100vw, 740px"
+                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                          priority
+                        />
                       </div>
+                    ) : (
+                      <div className="w-full h-full bg-gray-200" />
                     )}
-                    <span className={`absolute top-4 left-4 lg:hidden ${getCategoryColor(featuredArticle.category)} px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider z-20 shadow-sm`}>
-                      {featuredArticle.category}
-                    </span>
                   </div>
-                </Link>
-              </div>
-              
-              {/* Content Side */}
-              <div className="lg:col-span-5 order-1 lg:order-2 flex flex-col justify-center">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="hidden lg:inline-block w-8 h-[2px] bg-rotaract-gold" />
-                  <span className="text-rotaract-gold font-bold uppercase tracking-widest text-xs">Featured Story</span>
-                </div>
-                <Link href={`/rcun-news/${featuredArticle.slug}`}>
-                  <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-6 hover:text-rotaract-blue transition-colors cursor-pointer">
-                    {featuredArticle.title}
-                  </h1>
-                </Link>
-                <p className="text-lg text-gray-600 leading-relaxed mb-8 line-clamp-3">
-                  {featuredArticle.excerpt}
-                </p>
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-3">
-                    <div className="size-10 rounded-full bg-gray-200 flex items-center justify-center">
-                      <FaUser className="text-gray-600 text-sm" />
-                    </div>
-                    <div className="text-sm">
-                      <p className="font-bold text-gray-900">{featuredArticle.author}</p>
-                      <p className="text-gray-500 text-xs">{featuredArticle.date}</p>
-                    </div>
-                  </div>
-                  <Link
-                    href={`/rcun-news/${featuredArticle.slug}`}
-                    className="flex items-center gap-2 text-sm font-bold text-rotaract-blue hover:translate-x-2 transition-transform duration-300"
-                  >
-                    Read Full Story <FaArrowRight />
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </div>
-      </section>
 
-      {/* Filters & Search Toolbar */}
-      <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-sm py-4 border-b border-gray-100 shadow-sm">
-        <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            {/* Category Filters */}
-            <div className="flex flex-wrap items-center gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
-              {CATEGORIES.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
-                    selectedCategory === category
-                      ? 'bg-gray-900 text-white shadow-md scale-105'
-                      : 'bg-gray-100 text-gray-600 hover:text-rotaract-blue hover:bg-blue-50'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-            
-            {/* Search Toggle */}
-            <button
-              onClick={() => setShowSearch(!showSearch)}
-              className="p-2 text-gray-500 hover:text-rotaract-blue transition-colors rounded-full hover:bg-gray-50"
-            >
-              {showSearch ? <FaTimes size={20} /> : <FaSearch size={20} />}
-            </button>
-          </div>
-          
-          {/* Search Bar */}
-          <AnimatePresence>
-            {showSearch && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-4 overflow-hidden"
-              >
-                <input
-                  type="text"
-                  placeholder="Search articles..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-rotaract-blue focus:ring-2 focus:ring-rotaract-blue/20 outline-none transition-all"
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
-
-      {/* News Grid */}
-      <section className="py-12 md:py-16">
-        <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <AnimatePresence mode="popLayout">
-              {regularArticles.map((article, index) => (
-                <motion.article
-                  key={article.slug}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="group flex flex-col h-full transition-all duration-300 hover:-translate-y-1"
-                >
-                  <Link href={`/rcun-news/${article.slug}`}>
-                    <div className="relative aspect-video overflow-hidden rounded-xl bg-gray-100 mb-5 shadow-sm group-hover:shadow-md transition-shadow">
-                      <div className="absolute top-3 left-3 z-10">
-                        <span className={`${getCategoryColor(article.category)} px-3 py-1 rounded text-xs font-bold uppercase tracking-wider shadow-sm border`}>
-                          {article.category}
+                  <div className="p-6 md:p-8">
+                    <div className="flex items-center gap-3 mb-3 text-xs font-bold uppercase tracking-wider">
+                      <span className="text-primary">Featured</span>
+                      <span className="w-1 h-1 rounded-full bg-gray-300" />
+                      <span className="text-text-muted dark:text-gray-400">{featuredArticle.date}</span>
+                    </div>
+                    <h2 className="text-3xl md:text-4xl font-bold leading-tight mb-3 group-hover:text-primary transition-colors">
+                      {featuredArticle.title}
+                    </h2>
+                    <p className="text-lg text-text-muted dark:text-gray-400 line-clamp-2 mb-4 leading-relaxed">
+                      {featuredArticle.excerpt}
+                    </p>
+                    <div className="flex items-center justify-between mt-6">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-gray-200" />
+                        <span className="text-sm font-medium text-text-main dark:text-gray-200">
+                          {featuredArticle.author || 'Rotaract NYC'}
                         </span>
                       </div>
+                      <span className="text-sm font-bold text-primary group-hover:translate-x-1 transition-transform">
+                        Read Full Story →
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </article>
+            ) : (
+              <div className="rounded-xl bg-surface-light dark:bg-surface-dark border border-gray-100 dark:border-gray-800 p-8 text-text-muted dark:text-gray-400">
+                No articles yet.
+              </div>
+            )}
+
+            <div className="flex flex-col gap-8">
+              {feedArticles.map((article) => (
+                <article
+                  key={article.slug}
+                  className="group flex flex-col sm:flex-row gap-6 items-start pb-8 border-b border-gray-200/70 dark:border-gray-800 last:border-0"
+                >
+                  <Link href={`/rcun-news/${article.slug}`} className="w-full sm:w-48 sm:shrink-0">
+                    <div className="aspect-[4/3] rounded-lg overflow-hidden bg-gray-100">
                       {article.imageUrl ? (
-                        <Image
-                          src={article.imageUrl}
-                          alt={article.title}
-                          fill
-                          className="object-cover transition-transform duration-700 group-hover:scale-110"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                          <span className="text-gray-400 text-4xl font-bold opacity-20">RCUN</span>
+                        <div className="relative w-full h-full">
+                          <Image
+                            src={article.imageUrl}
+                            alt={article.title}
+                            fill
+                            sizes="(max-width: 640px) 100vw, 192px"
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
                         </div>
+                      ) : (
+                        <div className="w-full h-full bg-gray-200" />
                       )}
                     </div>
                   </Link>
-                  
-                  <div className="flex flex-col flex-grow">
-                    <div className="flex items-center gap-2 text-xs text-gray-400 mb-3 font-medium">
-                      <FaClock className="text-[14px]" /> {article.readTime || '5 min read'}
-                      <span className="mx-1">•</span>
-                      <span>{article.date}</span>
-                    </div>
-                    
-                    <Link href={`/rcun-news/${article.slug}`}>
-                      <h3 className="text-xl font-bold text-gray-900 leading-tight mb-3 group-hover:text-rotaract-blue transition-colors cursor-pointer">
-                        {article.title}
-                      </h3>
-                    </Link>
-                    
-                    <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3 flex-grow">
-                      {article.excerpt}
-                    </p>
-                    
-                    <div className="mt-auto pt-2">
-                      <Link
-                        href={`/rcun-news/${article.slug}`}
-                        className="inline-flex items-center text-sm font-bold text-rotaract-gold hover:text-rotaract-blue transition-colors group/link"
-                      >
-                        Read More <FaArrowRight className="ml-2 transition-transform group-hover/link:translate-x-1" />
+
+                  <div className="flex-1 flex flex-col h-full justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-bold text-primary uppercase tracking-wide">
+                          {article.category || 'News'}
+                        </span>
+                        <span className="text-xs text-text-muted dark:text-gray-400">• {article.readTime || '5 min read'}</span>
+                      </div>
+
+                      <Link href={`/rcun-news/${article.slug}`}>
+                        <h3 className="text-xl md:text-2xl font-bold leading-tight mb-2 group-hover:text-primary transition-colors">
+                          {article.title}
+                        </h3>
                       </Link>
+
+                      <p className="text-text-muted dark:text-gray-400 text-sm md:text-base line-clamp-2 leading-relaxed">
+                        {article.excerpt}
+                      </p>
+                    </div>
+
+                    <div className="mt-4 flex items-center text-xs text-text-muted dark:text-gray-400 font-medium">
+                      <span>{article.date}</span>
+                      <span className="mx-2">·</span>
+                      <span>By {article.author || 'Rotaract NYC'}</span>
                     </div>
                   </div>
-                </motion.article>
+                </article>
               ))}
-            </AnimatePresence>
-          </div>
-
-          {/* Load More */}
-          {hasMore && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex justify-center mt-12"
-            >
-              <button
-                onClick={() => setDisplayedCount(displayedCount + 6)}
-                className="px-8 py-3 rounded-lg border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white transition-all font-medium text-sm tracking-wide shadow-sm hover:shadow-md"
-              >
-                Load More Articles
-              </button>
-            </motion.div>
-          )}
-
-          {/* No Results */}
-          {filteredArticles.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-16"
-            >
-              <p className="text-gray-500 text-lg">No articles found matching your criteria.</p>
-            </motion.div>
-          )}
-        </div>
-      </section>
-
-      {/* Newsletter Signup with Sidebar Style */}
-      <section className="py-16 bg-gray-50 border-t border-gray-100">
-        <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            {/* Newsletter */}
-            <div className="lg:col-span-2">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="bg-gradient-to-br from-rotaract-blue to-rotaract-pink p-8 rounded-2xl shadow-xl text-white"
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="text-4xl">📧</div>
-                  <h3 className="text-2xl font-bold">The Weekly Rotaract</h3>
-                </div>
-                <p className="text-white/90 text-sm mb-6 leading-relaxed">
-                  Get the latest updates on service projects, social events, and member spotlights directly to your inbox.
-                </p>
-                <Link
-                  href="/contact/newsletter"
-                  className="inline-block bg-white text-rotaract-blue font-bold px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  Subscribe Now
-                </Link>
-                <p className="text-xs text-white/70 mt-4">No spam, unsubscribe anytime.</p>
-              </motion.div>
             </div>
 
-            {/* Quick Links */}
+            <div className="mt-2 flex justify-center">
+              {hasMore ? (
+                <button
+                  type="button"
+                  onClick={() => setDisplayedCount((c) => c + 3)}
+                  className="px-8 py-3 rounded-lg border border-gray-200 dark:border-gray-700 text-text-main dark:text-white hover:border-primary hover:text-primary transition-all font-medium text-sm tracking-wide"
+                >
+                  Load More Articles
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Right Column: Sidebar */}
+          <aside className="lg:col-span-4 space-y-10 lg:sticky lg:top-24">
+            <div className="bg-surface-light dark:bg-surface-dark p-6 rounded-xl shadow-soft border border-gray-100 dark:border-gray-800">
+              <h3 className="text-xl font-bold mb-2">The Weekly Rotaract</h3>
+              <p className="text-text-muted dark:text-gray-400 text-sm mb-4 leading-relaxed">
+                Get the latest updates on service projects, social events, and member spotlights directly to your inbox.
+              </p>
+              <form className="flex flex-col gap-3" action="/newsletter-sign-up" method="get">
+                <input
+                  className="w-full px-4 py-2.5 rounded-lg bg-background-light dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm transition-all"
+                  placeholder="Your email address"
+                  required
+                  type="email"
+                  name="email"
+                />
+                <button
+                  className="w-full bg-primary hover:bg-primary-dark text-white font-medium py-2.5 rounded-lg transition-colors text-sm shadow-sm"
+                  type="submit"
+                >
+                  Subscribe
+                </button>
+              </form>
+              <p className="text-xs text-text-muted dark:text-gray-400 mt-3 text-center">No spam, unsubscribe anytime.</p>
+            </div>
+
             <div>
-              <h4 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-6 border-b border-gray-200 pb-2">
-                Trending Topics
+              <h4 className="text-sm font-bold uppercase tracking-widest text-text-muted dark:text-gray-400 mb-6 border-b border-gray-200/70 dark:border-gray-800 pb-2">
+                Trending Now
               </h4>
-              <ul className="flex flex-col gap-4">
-                {CATEGORIES.slice(1, 5).map((category, idx) => (
-                  <li key={category}>
-                    <button
-                      onClick={() => {
-                        setSelectedCategory(category)
-                        window.scrollTo({ top: 0, behavior: 'smooth' })
-                      }}
-                      className="group flex gap-4 items-start text-left w-full"
-                    >
-                      <span className="text-3xl font-light text-gray-300 group-hover:text-rotaract-blue transition-colors -mt-2">
-                        {String(idx + 1).padStart(2, '0')}
+              <ul className="flex flex-col gap-5">
+                {trendingArticles.map((a, idx) => (
+                  <li key={a.slug} className="group">
+                    <Link href={`/rcun-news/${a.slug}`} className="flex gap-4 items-start">
+                      <span className="text-3xl font-light text-gray-300 group-hover:text-primary transition-colors -mt-2">
+                        {formatTrendingRank(idx + 1)}
                       </span>
                       <div>
-                        <h5 className="text-base font-bold leading-snug text-gray-900 group-hover:text-rotaract-blue transition-colors">
-                          {category} Stories
-                        </h5>
-                        <span className="text-xs text-gray-500 mt-1 block">
-                          {newsArticles.filter(a => a.category === category).length} articles
+                        <h5 className="text-lg font-bold leading-snug group-hover:text-primary transition-colors">{a.title}</h5>
+                        <span className="text-xs text-text-muted dark:text-gray-400 mt-1 block">
+                          {a.date}{a.readTime ? ` · ${a.readTime}` : ''}
                         </span>
                       </div>
-                    </button>
+                    </Link>
                   </li>
                 ))}
               </ul>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Social Media */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-6 text-rotaract-darkpink">Follow Us on Social Media</h2>
-          <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
-            Get real-time updates and see what we&apos;re up to
-          </p>
-          <a
-            href="/contact/follow"
-            className="inline-block bg-white text-rotaract-pink font-semibold px-8 py-3 rounded-full border-2 border-rotaract-pink hover:bg-rotaract-pink hover:text-white transition-all"
-          >
-            View Social Media Links
-          </a>
+            <div>
+              <h4 className="text-sm font-bold uppercase tracking-widest text-text-muted dark:text-gray-400 mb-6 border-b border-gray-200/70 dark:border-gray-800 pb-2">
+                Categories
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {categories.length > 0 ? (
+                  categories.map((c) => (
+                    <span
+                      key={c}
+                      className="px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-surface-light dark:bg-surface-dark text-text-main dark:text-gray-300 text-sm"
+                    >
+                      {c}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-sm text-text-muted dark:text-gray-400">No categories yet.</span>
+                )}
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden rounded-xl bg-primary text-white p-6 text-center">
+              <div className="absolute top-0 right-0 -mr-4 -mt-4 w-24 h-24 bg-white opacity-10 rounded-full blur-2xl" />
+              <div className="absolute bottom-0 left-0 -ml-4 -mb-4 w-24 h-24 bg-black opacity-10 rounded-full blur-2xl" />
+              <h4 className="text-xl font-bold mb-2 relative z-10">Become a Member</h4>
+              <p className="text-sm opacity-90 mb-4 relative z-10">Join a network of young professionals dedicated to service.</p>
+              <Link
+                href="/membership-requirements"
+                className="bg-white text-primary text-sm font-bold py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors relative z-10 w-full inline-flex justify-center"
+              >
+                Apply Now
+              </Link>
+            </div>
+          </aside>
         </div>
-      </section>
+      </main>
     </div>
   )
 }
