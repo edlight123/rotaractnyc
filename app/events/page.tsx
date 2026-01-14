@@ -48,6 +48,8 @@ export default function EventsPage() {
   const [showUpcoming, setShowUpcoming] = useState(true)
   const [showPast, setShowPast] = useState(true)
   const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(new Date()))
+  const [viewMode, setViewMode] = useState<'list' | 'month'>('list')
+  const [activeYmd, setActiveYmd] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -124,9 +126,9 @@ export default function EventsPage() {
       })
   }, [events, query, showPast, showUpcoming])
 
-  const eventsByYmd = useMemo(() => {
+  const visibleEventsByYmd = useMemo(() => {
     const map = new Map<string, SiteEvent[]>()
-    for (const e of events) {
+    for (const e of filteredEvents) {
       if (!e.startDate) continue
       const key = e.startDate
       const arr = map.get(key) ?? []
@@ -134,7 +136,36 @@ export default function EventsPage() {
       map.set(key, arr)
     }
     return map
-  }, [events])
+  }, [filteredEvents])
+
+  useEffect(() => {
+    // Close the day popover when month/view changes.
+    setActiveYmd(null)
+  }, [calendarMonth, viewMode])
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setActiveYmd(null)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [])
+
+  function formatEventTime(event: SiteEvent) {
+    if (event.time) return event.time
+    const start = event.startTime ? event.startTime : ''
+    const end = event.endTime ? event.endTime : ''
+    if (start && end) return `${start} - ${end}`
+    return start || end || ''
+  }
+
+  function openEventFromCalendar(eventId: string) {
+    setViewMode('list')
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`event-${eventId}`)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
 
   const monthLabel = useMemo(() => {
     return calendarMonth.toLocaleString('en-US', { month: 'long', year: 'numeric' })
@@ -195,10 +226,19 @@ export default function EventsPage() {
               </button>
               <button
                 type="button"
-                className="flex items-center gap-2 rounded-lg border border-transparent bg-surface-light px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:border-primary/30 dark:bg-surface-dark dark:text-slate-200"
+                aria-pressed={viewMode === 'month'}
+                onClick={() => setViewMode((v) => (v === 'month' ? 'list' : 'month'))}
+                className={
+                  'flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-all dark:bg-surface-dark ' +
+                  (viewMode === 'month'
+                    ? 'border-primary/40 bg-primary/10 text-primary hover:border-primary/60'
+                    : 'border-transparent bg-surface-light text-slate-700 hover:border-primary/30 dark:text-slate-200')
+                }
               >
-                <span className="material-symbols-outlined text-[20px]">calendar_view_month</span>
-                Month View
+                <span className="material-symbols-outlined text-[20px]">
+                  {viewMode === 'month' ? 'view_agenda' : 'calendar_view_month'}
+                </span>
+                {viewMode === 'month' ? 'List View' : 'Month View'}
               </button>
             </div>
           </div>
@@ -315,7 +355,9 @@ export default function EventsPage() {
                       {calendarCells.map((cell, idx) => {
                         const todayYmd = toYmdLocal(new Date())
                         const isToday = cell.ymd ? cell.ymd === todayYmd : false
-                        const hasEvent = cell.ymd ? (eventsByYmd.get(cell.ymd)?.length ?? 0) > 0 : false
+                        const hasEvent = cell.ymd
+                          ? (visibleEventsByYmd.get(cell.ymd)?.length ?? 0) > 0
+                          : false
 
                         return (
                           <div
@@ -355,6 +397,172 @@ export default function EventsPage() {
 
           {/* Events Grid */}
           <section className="min-w-0 flex-1">
+            {viewMode === 'month' ? (
+              <section className="mb-10">
+                <div className="overflow-visible rounded-2xl border border-slate-200 bg-surface-light shadow-soft dark:border-slate-700 dark:bg-surface-dark dark:shadow-none">
+                  <div className="flex items-center justify-between border-b border-slate-200 p-6 dark:border-slate-700">
+                    <h3 className="flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-white">
+                      {monthLabel}
+                      {startOfMonth(new Date()).getFullYear() === calendarMonth.getFullYear() &&
+                      startOfMonth(new Date()).getMonth() === calendarMonth.getMonth() ? (
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-primary">
+                          Current
+                        </span>
+                      ) : null}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCalendarMonth((d) => addMonths(d, -1))}
+                        className="flex h-9 w-9 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+                        aria-label="Previous month"
+                      >
+                        <span className="material-symbols-outlined">chevron_left</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCalendarMonth((d) => addMonths(d, 1))}
+                        className="flex h-9 w-9 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+                        aria-label="Next month"
+                      >
+                        <span className="material-symbols-outlined">chevron_right</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-6">
+                    <div className="mb-4 grid grid-cols-7">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+                        <div
+                          key={d}
+                          className="py-2 text-center text-xs font-bold uppercase tracking-widest text-slate-400"
+                        >
+                          {d}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="relative grid grid-cols-7 gap-x-2 gap-y-4 md:gap-x-4">
+                      {calendarCells.map((cell, idx) => {
+                        const todayYmd = toYmdLocal(new Date())
+                        const isToday = cell.ymd ? cell.ymd === todayYmd : false
+                        const isActive = cell.ymd ? cell.ymd === activeYmd : false
+                        const dayEvents = cell.ymd ? visibleEventsByYmd.get(cell.ymd) ?? [] : []
+
+                        if (!cell.inMonth) {
+                          return (
+                            <div
+                              key={`filler-${idx}`}
+                              className="flex aspect-square flex-col items-center justify-start pt-2 opacity-30"
+                            >
+                              {cell.day}
+                            </div>
+                          )
+                        }
+
+                        return (
+                          <div key={cell.ymd ?? `day-${idx}`} className="relative">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!cell.ymd) return
+                                setActiveYmd((prev) => (prev === cell.ymd ? null : cell.ymd))
+                              }}
+                              className={
+                                'flex aspect-square w-full flex-col items-center justify-start rounded-xl pt-2 transition-colors ' +
+                                (isActive
+                                  ? 'bg-primary text-white shadow-glow'
+                                  : 'hover:bg-surface-light dark:hover:bg-slate-700')
+                              }
+                              aria-label={cell.ymd ? `Select ${cell.ymd}` : 'Select day'}
+                            >
+                              <span
+                                className={
+                                  'text-sm ' +
+                                  (isActive
+                                    ? 'font-bold'
+                                    : 'font-medium text-slate-700 dark:text-slate-300')
+                                }
+                              >
+                                {cell.day}
+                              </span>
+
+                              {dayEvents.length > 0 ? (
+                                <div
+                                  className={
+                                    'mt-2 h-1.5 w-1.5 rounded-full ' +
+                                    (isActive ? 'bg-white' : 'bg-primary')
+                                  }
+                                />
+                              ) : null}
+
+                              {!isActive && isToday ? (
+                                <div className="mt-2 h-1.5 w-1.5 rounded-full bg-primary/40" />
+                              ) : null}
+                            </button>
+
+                            {isActive && activeYmd && dayEvents.length > 0 ? (
+                              <div className="absolute left-1/2 z-50 w-[280px] -translate-x-1/2 -translate-y-2 sm:w-[320px]">
+                                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xl dark:border-slate-600 dark:bg-surface-dark">
+                                  <div className="mb-3 flex items-start justify-between gap-3">
+                                    <span className="rounded bg-primary/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+                                      {dayEvents[0].category === 'upcoming'
+                                        ? 'Upcoming'
+                                        : 'Past'}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setActiveYmd(null)}
+                                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                      aria-label="Close"
+                                    >
+                                      <span className="material-symbols-outlined text-[18px]">
+                                        close
+                                      </span>
+                                    </button>
+                                  </div>
+
+                                  <h4 className="mb-1 text-lg font-bold text-slate-900 dark:text-white">
+                                    {dayEvents[0].title}
+                                  </h4>
+
+                                  {formatEventTime(dayEvents[0]) ? (
+                                    <div className="mb-1 flex items-center gap-2 text-sm text-text-muted">
+                                      <span className="material-symbols-outlined text-[16px]">
+                                        schedule
+                                      </span>
+                                      {formatEventTime(dayEvents[0])}
+                                    </div>
+                                  ) : null}
+
+                                  {dayEvents[0].location ? (
+                                    <div className="mb-4 flex items-center gap-2 text-sm text-text-muted">
+                                      <span className="material-symbols-outlined text-[16px]">
+                                        location_on
+                                      </span>
+                                      {dayEvents[0].location}
+                                    </div>
+                                  ) : null}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => openEventFromCalendar(dayEvents[0].id)}
+                                    className="flex h-9 w-full items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary transition-colors hover:bg-primary/20"
+                                  >
+                                    View Details
+                                  </button>
+                                </div>
+                              </div>
+                            ) : null}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </section>
+            ) : null}
+
             <div className="mb-6 flex items-end justify-between">
               <div>
                 <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
@@ -394,6 +602,7 @@ export default function EventsPage() {
                 return (
                   <article
                     key={event.id}
+                    id={`event-${event.id}`}
                     className="break-inside-avoid overflow-hidden rounded-2xl border border-slate-200 bg-surface-light shadow-soft transition-shadow hover:shadow-soft-hover dark:border-slate-700 dark:bg-surface-dark"
                   >
                     <div className="relative border-b border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-900/20">
