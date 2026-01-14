@@ -211,7 +211,7 @@ export function ArticleView({ article: initialArticle, slug }: ArticleViewProps)
             <div className="bg-gray-50 rounded-2xl p-12 text-center">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Article Not Found</h2>
               <p className="text-gray-600 mb-6">
-                The article you're looking for doesn't exist yet in our database.
+                The article you&apos;re looking for doesn&apos;t exist yet in our database.
               </p>
               <div className="bg-white rounded-lg p-6 text-left max-w-md mx-auto mb-6">
                 <p className="text-sm text-gray-600 mb-2">Requested path:</p>
@@ -220,7 +220,7 @@ export function ArticleView({ article: initialArticle, slug }: ArticleViewProps)
                 </code>
               </div>
               <p className="text-sm text-gray-500">
-                If this article should exist, please let us know and we'll add it to our content database.
+                If this article should exist, please let us know and we&apos;ll add it to our content database.
               </p>
             </div>
           )}

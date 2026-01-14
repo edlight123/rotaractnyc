@@ -1,78 +1,85 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { FaGlobeAmericas, FaHandshake, FaInstagram, FaGlobe, FaMapMarkerAlt, FaSearch, FaPlus, FaMinus, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 import { useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
+
+// Material Symbols Icon Component
+const MaterialIcon = ({ icon, className = '', filled = false }: { icon: string; className?: string; filled?: boolean }) => (
+  <span className={`material-symbols-outlined ${filled ? 'filled-icon' : ''} ${className}`} style={{ 
+    fontVariationSettings: filled ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" : "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24"
+  }}>
+    {icon}
+  </span>
+)
 
 // Sample sister club data
 interface SisterClub {
   id: string
   name: string
+  location: string
   country: string
-  flag: string
   region: string
   image: string
-  description: string
-  instagram?: string
-  website?: string
+  latestCollab: string
+  collabIcon: string
+  isActive?: boolean
+  isNew?: boolean
 }
 
 const sisterClubs: SisterClub[] = [
   {
     id: '1',
-    name: 'Rotaract Club of London',
-    country: 'United Kingdom',
-    flag: '🇬🇧',
+    name: 'Rotaract Club of Berlin',
+    location: 'Berlin, Germany',
+    country: 'Germany',
     region: 'Europe',
-    image: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&h=600&fit=crop',
-    description: 'Founded in 1980. We focus on youth leadership and community service projects across Greater London, fostering international understanding through regular exchanges.',
-    instagram: '#',
-    website: '#',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAlVRH59PUAGnaveWQFnVWzj9_9EbUA3S9ELTQREE86jpqzDvYFM5GOiS88MOBMvRmJ5DLH8rfZs9DlicL9gQ2PphDwiVSbWBrCraGCc4DtiRF_AqSSWrL6ycs-WZqA14WYdObzPspiNH-NWG6YS7gla4N7CHBrrXxtvByFTqO28IlT82nByxxQVmR8yxHCtQomEaJuQUKYFswlwVop5Tv7YWKVGROj_xJEl4yMI8_AY32ZZi5ZYW7bE3BPFZqPA7O2aS4th3fwhBY',
+    latestCollab: 'Joint Winter Fundraiser 2023',
+    collabIcon: 'handshake',
+    isActive: true,
   },
   {
     id: '2',
     name: 'Rotaract Club of Tokyo',
+    location: 'Tokyo, Japan',
     country: 'Japan',
-    flag: '🇯🇵',
     region: 'Asia Pacific',
-    image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&h=600&fit=crop',
-    description: 'A vibrant community of young professionals dedicated to preserving cultural heritage while innovating for future social impact in the heart of Tokyo.',
-    instagram: '#',
-    website: '#',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBIS8WZEaGcHIJtvoUHwlrBnNXUUbJhtRYSFoIXdepkyO80qBmchhNPSz22ux3mx8x1XJOVuH-ICFuEij4t4HGJ78vQjW9GbuUZkuTFKIw1fdae2kBxCaaAjaj9Tb2p0WqsPMBkncBVmsqRwCOaepkEeH7ZNm9yo7mswJdsx1GXhl_YCBmfZT1iB6H0Xb4H2-Yy0GeXInLYM2ln5Q9MTtGG1OlDdlZdFopKKzHkSWX9PpEezaIflNDU276ORGd4hgD7XB7DZ5QpV2A',
+    latestCollab: 'Sakura Tree Planting Initiative',
+    collabIcon: 'forest',
   },
   {
     id: '3',
-    name: 'Rotaract Club of Berlin',
-    country: 'Germany',
-    flag: '🇩🇪',
-    region: 'Europe',
-    image: 'https://images.unsplash.com/photo-1560969184-10fe8719e047?w=800&h=600&fit=crop',
-    description: 'Connecting change-makers in the heart of Europe. Our club emphasizes environmental sustainability and digital innovation in service.',
-    instagram: '#',
-    website: '#',
+    name: 'Rotaract Club of São Paulo',
+    location: 'São Paulo, Brazil',
+    country: 'Brazil',
+    region: 'Americas',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAqIKGaJFo0B0NjXuI9KAvZpr7Uw_kwKpcWLqfM00osil6GfMV06YuPRt7B1pUDbWdtFvdZ8WfEefBWszXgut9p5C23RWLVAvJvQ_eDPVEDahlsQ9gr6cEzGDemscqErIRMxOmtiBVYaCXuf_bU0qEdzc4qvmXvvW2QBYMDC1UfhSUS8ex7mDZ8QhxIcMYAPAa1_6i8HR4RIdBnz1d7p1C-RbV1SV_zJ3dGvwf4KljVbterOhG_jC8splifnBXvljeVJupX8CNvdUw',
+    latestCollab: 'Community Food Drive 2024',
+    collabIcon: 'volunteer_activism',
+    isNew: true,
   },
   {
     id: '4',
-    name: 'Rotaract Club of Sydney',
-    country: 'Australia',
-    flag: '🇦🇺',
-    region: 'Asia Pacific',
-    image: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=800&h=600&fit=crop',
-    description: 'Active in environmental conservation and Indigenous community support. Join us for our famous "Beach Cleanup & BBQ" monthly events.',
-    instagram: '#',
-    website: '#',
+    name: 'Rotaract Club of London',
+    location: 'London, United Kingdom',
+    country: 'United Kingdom',
+    region: 'Europe',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBwRlgVj9zZXlRTtXyO856zQn6BJtBunx_eAJKEeI36umdg3gJTZ_NunlHOLBgjsAO3SgLnT9PwypNgrXgTBhkAPLW57Qqx3kmNVkUkh_FB5jHiKXNFP6rf--sVLF-YD4loMGXRHjU9CnIKZ2JD0c_jZ4ufH2IaSk0vK1mCzPDtuRhyZKluk3_ae-rJF1PWY08R8XkWQ4B0kA1-ylYkKaQr2ErRNGT7joNEJioKyzjRItVpnFBwt8PF584yxTn9m-dH7XqpsuLa6BU',
+    latestCollab: 'Intl. Peace Conference',
+    collabIcon: 'forum',
   },
   {
     id: '5',
-    name: 'Rotaract Club of Cape Town',
-    country: 'South Africa',
-    flag: '🇿🇦',
-    region: 'Africa',
-    image: 'https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=800&h=600&fit=crop',
-    description: 'Working together to uplift local communities through education initiatives and mentorship programs. Join the movement!',
-    instagram: '#',
-    website: '#',
+    name: 'Rotaract Club of Mumbai',
+    location: 'Mumbai, India',
+    country: 'India',
+    region: 'Asia Pacific',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAvx1sYnBEWjbQLGw48xwK7coj7rT4K3XYv6Ibiv7c252JwG2JD5hezURurJbiHaG8zDGNSgAkIws-c8SHnAOv3pOsmpFYT5Vu5m_eLA2NUfoqo5LRiqI_QvrVeCdyit3SRbclW-2v9SJjiRuFwOftjHaglTnJcwymiOcBv3uGTBH0qbaRaTy1yZbZS7cHel7EgY32CtDk1YGiOwoPKrqQICp35WM6Zv_EWgZP2ZE9hNn_hSEvaLDg9ZtJRzLEbcx2Q_b4PmIRYijY',
+    latestCollab: 'Rural Literacy Project',
+    collabIcon: 'school',
+    isActive: true,
   },
 ]
 
@@ -83,283 +90,198 @@ export default function SisterClubsPage() {
   const filteredClubs = sisterClubs.filter((club) => {
     const matchesSearch =
       club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      club.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
       club.country.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesRegion = selectedRegion === 'All Regions' || club.region === selectedRegion
     return matchesSearch && matchesRegion
   })
 
+  const regions = ['All Regions', 'Europe', 'Asia Pacific', 'Americas', 'Africa']
+
   return (
-    <main className="flex-grow flex flex-col">
-      {/* Immersive Map Hero Section */}
-      <section className="relative w-full h-[600px] bg-gray-100 overflow-hidden group">
-        {/* Map Background */}
-        <div 
-          className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-[20s] ease-linear group-hover:scale-105"
-          style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=1600&h=900&fit=crop')",
-            opacity: 0.3,
-          }}
-        >
-          <div className="absolute inset-0 bg-rotaract-pink/10 mix-blend-multiply"></div>
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white"></div>
-        </div>
-
-        {/* Floating UI Overlay: Heading */}
-        <div className="absolute top-10 left-4 md:left-10 lg:left-20 max-w-xl z-10">
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
-            className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/20"
-          >
-            <span className="inline-block py-1 px-3 rounded-full bg-rotaract-pink/10 text-rotaract-pink text-xs font-bold uppercase tracking-wider mb-4">
-              International Fellowship
-            </span>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight tracking-tight mb-3">
-              Connecting the World
-            </h1>
-            <p className="text-gray-600 text-lg leading-relaxed">
-              Explore the Rotaract Club of NYC&apos;s global network. Building bridges of friendship across oceans and borders.
-            </p>
-          </motion.div>
-        </div>
-
-        {/* Simulated Map Pins (Decorative) */}
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-          {/* Pin London */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-            className="absolute -top-20 -left-40 group/pin pointer-events-auto cursor-pointer"
-          >
-            <div className="relative flex flex-col items-center">
-              <div className="bg-white text-gray-800 text-xs font-bold py-1 px-3 rounded shadow-lg mb-2 opacity-0 group-hover/pin:opacity-100 transition-opacity whitespace-nowrap">
-                Rotaract London
+    <main className="flex-grow">
+      <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet"
+      />
+      
+      {/* Hero Section */}
+      <div className="relative bg-background-light dark:bg-background-dark pb-12 pt-12 md:pt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row gap-8 items-start md:items-center justify-between mb-8">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-4">
+                <MaterialIcon icon="public" className="text-sm" />
+                Global Network
               </div>
-              <FaMapMarkerAlt className="text-4xl text-rotaract-pink drop-shadow-lg animate-bounce" />
-              <div className="w-4 h-1 bg-black/20 rounded-full blur-[2px]"></div>
+              <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-4">
+                Sister Clubs & Partners
+              </h1>
+              <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed max-w-xl">
+                Collaborating across borders to create lasting change. Explore our active relationships and connect with our global family.
+              </p>
             </div>
-          </motion.div>
-
-          {/* Pin Tokyo */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.7, duration: 0.5 }}
-            className="absolute top-10 left-60 group/pin pointer-events-auto cursor-pointer"
-          >
-            <div className="relative flex flex-col items-center">
-              <div className="bg-white text-gray-800 text-xs font-bold py-1 px-3 rounded shadow-lg mb-2 opacity-0 group-hover/pin:opacity-100 transition-opacity whitespace-nowrap">
-                Rotaract Tokyo
+            
+            {/* Stats Card */}
+            <div className="hidden lg:block relative w-64 h-32 opacity-80">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent rounded-2xl blur-2xl"></div>
+              <div className="relative z-10 p-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-surface-dark rounded-xl shadow-sm flex items-center gap-4">
+                <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-full text-primary">
+                  <MaterialIcon icon="travel_explore" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">42</div>
+                  <div className="text-xs text-gray-500 font-medium uppercase tracking-wider">Active Partners</div>
+                </div>
               </div>
-              <FaMapMarkerAlt className="text-4xl text-rotaract-pink drop-shadow-lg animate-bounce" style={{ animationDelay: '0.5s' }} />
-              <div className="w-4 h-1 bg-black/20 rounded-full blur-[2px]"></div>
             </div>
-          </motion.div>
-
-          {/* Pin Berlin */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.9, duration: 0.5 }}
-            className="absolute -top-10 -left-10 group/pin pointer-events-auto cursor-pointer"
-          >
-            <div className="relative flex flex-col items-center">
-              <div className="bg-white text-gray-800 text-xs font-bold py-1 px-3 rounded shadow-lg mb-2 opacity-0 group-hover/pin:opacity-100 transition-opacity whitespace-nowrap">
-                Rotaract Berlin
-              </div>
-              <FaMapMarkerAlt className="text-4xl text-rotaract-pink drop-shadow-lg animate-bounce" style={{ animationDelay: '1s' }} />
-              <div className="w-4 h-1 bg-black/20 rounded-full blur-[2px]"></div>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Floating UI Overlay: Stats */}
-        <div className="absolute bottom-10 right-4 md:right-10 lg:right-20 z-10">
-          <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="flex gap-4"
-          >
-            <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-white/20 min-w-[140px] text-center transform hover:-translate-y-1 transition-transform">
-              <p className="text-gray-600 text-sm font-semibold uppercase tracking-wide">Sister Clubs</p>
-              <p className="text-rotaract-pink text-4xl font-black mt-1">25</p>
-            </div>
-            <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-white/20 min-w-[140px] text-center transform hover:-translate-y-1 transition-transform">
-              <p className="text-gray-600 text-sm font-semibold uppercase tracking-wide">Countries</p>
-              <p className="text-rotaract-pink text-4xl font-black mt-1">18</p>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Map Controls */}
-        <div className="absolute bottom-10 left-4 md:left-10 z-10 flex flex-col gap-2">
-          <button
-            aria-label="Zoom In"
-            className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 text-gray-700 transition-colors"
-          >
-            <FaPlus />
-          </button>
-          <button
-            aria-label="Zoom Out"
-            className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 text-gray-700 transition-colors"
-          >
-            <FaMinus />
-          </button>
-        </div>
-      </section>
-
-      {/* Directory Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 -mt-8 relative z-20">
-        {/* Search & Filter Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white p-4 rounded-2xl shadow-lg border border-gray-100 mb-12 flex flex-col md:flex-row gap-4 items-center justify-between"
-        >
-          <div className="relative flex-1 w-full md:max-w-xl">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <FaSearch className="text-gray-400" />
-            </div>
-            <input
-              className="block w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-rotaract-pink focus:bg-white transition-all shadow-inner"
-              placeholder="Search by club name, city, or country..."
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
           </div>
-          <div className="flex gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-            {['All Regions', 'Europe', 'Asia Pacific', 'Americas', 'Africa'].map((region) => (
-              <button
-                key={region}
-                onClick={() => setSelectedRegion(region)}
-                className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold shadow-md transition-colors ${
-                  selectedRegion === region
-                    ? 'bg-rotaract-pink text-white'
-                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                {region}
-              </button>
-            ))}
-          </div>
-        </motion.div>
 
-        {/* Club Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredClubs.map((club, idx) => (
-            <motion.article
+          {/* Toolbar: Search & Filter */}
+          <div className="sticky top-20 z-40 mt-8 p-1">
+            <div className="bg-white dark:bg-surface-dark rounded-xl shadow-soft p-2 md:p-3 flex flex-col md:flex-row gap-3 items-center border border-gray-100 dark:border-gray-700">
+              {/* Search */}
+              <div className="relative w-full md:w-96 group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <MaterialIcon icon="search" className="text-gray-400 group-focus-within:text-primary transition-colors" />
+                </div>
+                <input
+                  className="block w-full pl-10 pr-3 py-2.5 border-none rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-primary/50 text-sm transition-all"
+                  placeholder="Search by club name, city, or project..."
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              {/* Divider */}
+              <div className="hidden md:block w-px h-8 bg-gray-200 dark:bg-gray-700 mx-2"></div>
+
+              {/* Filters */}
+              <div className="flex flex-1 w-full overflow-x-auto gap-2 pb-1 md:pb-0 scrollbar-hide">
+                {regions.map((region) => (
+                  <button
+                    key={region}
+                    onClick={() => setSelectedRegion(region)}
+                    className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      selectedRegion === region
+                        ? 'bg-primary text-white shadow-md shadow-primary/20'
+                        : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent hover:border-gray-200 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    {region}
+                  </button>
+                ))}
+              </div>
+
+              {/* View Toggle */}
+              <div className="hidden md:flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+                <button className="p-1.5 rounded-md bg-white dark:bg-gray-600 text-primary shadow-sm">
+                  <MaterialIcon icon="grid_view" className="text-[20px]" />
+                </button>
+                <button className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                  <MaterialIcon icon="list" className="text-[20px]" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Grid Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+          {filteredClubs.map((club) => (
+            <article
               key={club.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl border border-gray-100 transition-all duration-300 flex flex-col h-full"
+              className="group relative flex flex-col bg-surface-light dark:bg-surface-dark rounded-xl overflow-hidden shadow-soft hover:shadow-soft-hover border border-gray-100 dark:border-gray-800 transition-all duration-300 hover:-translate-y-1"
             >
               <div className="relative h-48 overflow-hidden">
                 <Image
-                  alt={club.name}
-                  className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+                  alt={`${club.name} - Group photo`}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   src={club.image}
                   width={800}
                   height={600}
                   unoptimized
                 />
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-1.5 rounded-lg shadow-sm">
-                  <span aria-label={`${club.country} Flag`} className="text-2xl leading-none" role="img">
-                    {club.flag}
-                  </span>
-                </div>
-              </div>
-              <div className="p-6 flex flex-col flex-1">
-                <div className="flex items-center gap-2 mb-3">
-                  <FaGlobeAmericas className="text-rotaract-pink text-sm" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-gray-600">{club.country}</span>
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-rotaract-pink transition-colors">
-                  {club.name}
-                </h3>
-                <p className="text-gray-600 text-sm mb-6 line-clamp-3">{club.description}</p>
-                <div className="mt-auto pt-5 border-t border-gray-100 flex items-center justify-between">
-                  <div className="flex gap-3">
-                    {club.instagram && (
-                      <a
-                        aria-label="Instagram"
-                        className="text-gray-400 hover:text-rotaract-pink transition-colors"
-                        href={club.instagram}
-                      >
-                        <FaInstagram className="w-5 h-5" />
-                      </a>
-                    )}
-                    {club.website && (
-                      <a
-                        aria-label="Website"
-                        className="text-gray-400 hover:text-rotaract-pink transition-colors"
-                        href={club.website}
-                      >
-                        <FaGlobe className="w-5 h-5" />
-                      </a>
-                    )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60"></div>
+                
+                {/* Active Badge */}
+                {club.isActive && (
+                  <div className="absolute top-4 right-4 bg-white/90 dark:bg-black/80 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <span className="text-xs font-bold text-gray-800 dark:text-gray-200">Active</span>
                   </div>
-                  <a
-                    className="text-xs font-bold text-rotaract-pink hover:text-rotaract-darkpink transition-colors flex items-center"
-                    href="#"
+                )}
+                
+                {/* New Partner Badge */}
+                {club.isNew && (
+                  <div className="absolute top-4 left-4 bg-[#FFB3A7] text-white px-3 py-1 rounded-full shadow-lg transform -rotate-2">
+                    <span className="text-xs font-bold uppercase tracking-wide">New Partner</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-5 flex flex-col flex-1">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white leading-tight mb-1 group-hover:text-primary transition-colors">
+                      {club.name}
+                    </h3>
+                    <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-sm font-medium">
+                      <MaterialIcon icon="location_on" className="text-[18px] text-primary/70" filled />
+                      {club.location}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 mb-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-700/50">
+                  <div className="flex items-start gap-2">
+                    <MaterialIcon icon={club.collabIcon} className="text-primary text-sm mt-0.5" />
+                    <div>
+                      <p className="text-xs font-bold text-primary uppercase tracking-wide mb-0.5">Latest Collab</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">{club.latestCollab}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-800 flex gap-3">
+                  <button className="flex-1 bg-primary hover:bg-primary-dark text-white font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 group/btn">
+                    <MaterialIcon icon="mail" className="text-[20px]" />
+                    <span>Message Club</span>
+                  </button>
+                  <button
+                    aria-label="View Profile"
+                    className="aspect-square bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg flex items-center justify-center transition-colors"
                   >
-                    VIEW PROFILE
-                    <FaChevronRight className="text-[12px] ml-1" />
-                  </a>
+                    <MaterialIcon icon="arrow_forward" />
+                  </button>
                 </div>
               </div>
-            </motion.article>
+            </article>
           ))}
 
-          {/* Join CTA Card */}
-          <motion.article
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: filteredClubs.length * 0.1 }}
-            className="group bg-gray-50 rounded-2xl overflow-hidden shadow-none border-2 border-dashed border-gray-300 hover:border-rotaract-pink transition-all duration-300 flex flex-col items-center justify-center text-center p-8 h-full min-h-[400px]"
-          >
-            <div className="bg-white p-4 rounded-full mb-4 shadow-sm group-hover:scale-110 transition-transform">
-              <FaHandshake className="text-4xl text-rotaract-pink" />
+          {/* Call to Action Card: Become a Partner */}
+          <article className="group relative flex flex-col justify-center items-center bg-gray-50 dark:bg-gray-800/50 rounded-xl overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-primary dark:hover:border-primary transition-all duration-300 cursor-pointer min-h-[420px]">
+            <div className="text-center p-8">
+              <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 group-hover:bg-primary group-hover:text-white transition-colors">
+                <MaterialIcon icon="add_link" className="text-3xl" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Become a Partner</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 max-w-[200px] mx-auto">
+                Is your club looking to collaborate with Rotaract NYC? Let&apos;s connect.
+              </p>
+              <Link
+                href="/contact"
+                className="inline-block px-6 py-2.5 rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-primary font-bold text-sm shadow-sm group-hover:shadow-md transition-all"
+              >
+                Initiate Connection
+              </Link>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Become a Partner</h3>
-            <p className="text-gray-500 text-sm mb-6 max-w-xs">
-              Is your Rotaract club interested in forming a sister club relationship with NYC? Let&apos;s connect!
-            </p>
-            <a
-              href="/contact"
-              className="px-6 py-2.5 bg-rotaract-pink text-white text-sm font-bold rounded-lg shadow hover:bg-rotaract-darkpink transition-colors"
-            >
-              Get in Touch
-            </a>
-          </motion.article>
+          </article>
         </div>
-
-        {/* Pagination */}
-        <div className="mt-12 flex justify-center">
-          <nav className="flex items-center gap-2">
-            <button className="p-2 rounded-lg text-gray-400 hover:text-rotaract-pink hover:bg-gray-100 transition-colors disabled:opacity-50">
-              <FaChevronLeft />
-            </button>
-            <button className="w-10 h-10 rounded-lg bg-rotaract-pink text-white font-bold text-sm shadow-md">
-              1
-            </button>
-            <button className="w-10 h-10 rounded-lg text-gray-600 font-medium text-sm hover:bg-gray-100 transition-colors">
-              2
-            </button>
-            <button className="w-10 h-10 rounded-lg text-gray-600 font-medium text-sm hover:bg-gray-100 transition-colors">
-              3
-            </button>
-            <span className="text-gray-400 px-2">...</span>
-            <button className="p-2 rounded-lg text-gray-600 hover:text-rotaract-pink hover:bg-gray-100 transition-colors">
-              <FaChevronRight />
-            </button>
-          </nav>
-        </div>
-      </section>
+      </div>
     </main>
   )
 }

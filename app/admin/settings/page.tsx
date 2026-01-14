@@ -34,7 +34,9 @@ export default function AdminSettingsPage() {
   const [loadingData, setLoadingData] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [form, setForm] = useState<SiteSettings>(EMPTY)
+  const [activeTab, setActiveTab] = useState('general')
 
   const refresh = useCallback(async () => {
     setLoadingData(true)
@@ -95,6 +97,7 @@ export default function AdminSettingsPage() {
   const save = async () => {
     setSaving(true)
     setError(null)
+    setSuccess(null)
     try {
       const cleaned: SiteSettings = {
         ...form,
@@ -110,6 +113,8 @@ export default function AdminSettingsPage() {
         return
       }
       await refresh()
+      setSuccess('Settings saved successfully!')
+      setTimeout(() => setSuccess(null), 3000)
     } catch {
       setError('Unable to save settings.')
     } finally {
@@ -132,163 +137,340 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-100">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-rotaract-darkpink flex items-center gap-2">
-                <FaCog /> Settings
-              </h1>
-              <p className="text-gray-600 mt-1">Edit site-wide settings</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link
-                href="/admin/dashboard"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-rotaract-pink/30 text-rotaract-darkpink rounded-lg transition-colors"
-              >
-                <FaArrowLeft /> Dashboard
-              </Link>
-              <button
-                onClick={async () => {
-                  await adminSignOut()
-                  router.push('/')
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-              >
-                <FaSignOutAlt /> Sign Out
-              </button>
-            </div>
-          </div>
+    <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Top Bar */}
+      <header className="h-16 flex items-center justify-between px-8 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shrink-0">
+        <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+          <Link href="/admin/dashboard" className="hover:text-primary transition-colors">Dashboard</Link>
+          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+          <span className="font-medium text-slate-900 dark:text-white">Settings</span>
         </div>
-      </div>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={async () => {
+              await adminSignOut()
+              router.push('/')
+            }}
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+          >
+            <FaSignOutAlt className="w-5 h-5" />
+          </button>
+        </div>
+      </header>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between gap-4 mb-4">
-            <h2 className="text-xl font-bold text-rotaract-darkpink">Site Settings</h2>
-            <button
-              onClick={seed}
-              className="px-3 py-2 text-sm bg-white border border-rotaract-pink/30 text-rotaract-darkpink rounded-lg hover:bg-gray-50"
-            >
-              Seed Defaults
-            </button>
+      {/* Content Scroll Area */}
+      <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-6 md:p-10">
+        <div className="max-w-4xl mx-auto space-y-8 pb-20">
+          {/* Page Header */}
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Settings</h1>
+            <p className="text-slate-500 dark:text-slate-400 text-lg">Manage your club&apos;s profile and configuration</p>
           </div>
 
-          {error ? (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
-            </div>
-          ) : null}
-
-          {loadingData ? (
-            <div className="text-gray-600">Loading…</div>
-          ) : (
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Contact Email</label>
-                <input
-                  value={form.contactEmail}
-                  onChange={(e) => setForm((f) => ({ ...f, contactEmail: e.target.value }))}
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Address Lines</label>
-                <div className="mt-2 space-y-2">
-                  {form.addressLines.map((line, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <input
-                        value={line}
-                        onChange={(e) =>
-                          setForm((f) => ({
-                            ...f,
-                            addressLines: f.addressLines.map((x, i) => (i === idx ? e.target.value : x)),
-                          }))
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                      />
-                      <button
-                        onClick={() =>
-                          setForm((f) => ({
-                            ...f,
-                            addressLines: f.addressLines.filter((_, i) => i !== idx),
-                          }))
-                        }
-                        disabled={form.addressLines.length <= 1}
-                        className="px-3 py-2 text-sm bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    onClick={() => setForm((f) => ({ ...f, addressLines: [...f.addressLines, ''] }))}
-                    className="px-3 py-2 text-sm bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50"
-                  >
-                    Add Line
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Facebook URL</label>
-                  <input
-                    value={form.facebookUrl}
-                    onChange={(e) => setForm((f) => ({ ...f, facebookUrl: e.target.value }))}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">LinkedIn URL</label>
-                  <input
-                    value={form.linkedinUrl}
-                    onChange={(e) => setForm((f) => ({ ...f, linkedinUrl: e.target.value }))}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Instagram URL</label>
-                  <input
-                    value={form.instagramUrl}
-                    onChange={(e) => setForm((f) => ({ ...f, instagramUrl: e.target.value }))}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Meetings Label</label>
-                  <input
-                    value={form.meetingLabel}
-                    onChange={(e) => setForm((f) => ({ ...f, meetingLabel: e.target.value }))}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Meetings Time</label>
-                  <input
-                    value={form.meetingTime}
-                    onChange={(e) => setForm((f) => ({ ...f, meetingTime: e.target.value }))}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={save}
-                  disabled={saving || !form.contactEmail.trim()}
-                  className="px-4 py-2 bg-rotaract-pink text-white rounded-lg hover:bg-rotaract-darkpink disabled:opacity-50"
-                >
-                  {saving ? 'Saving…' : 'Save Settings'}
-                </button>
-              </div>
+          {/* Alerts */}
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg flex items-center gap-2">
+              <span className="material-symbols-outlined">error</span>
+              <span>{error}</span>
             </div>
           )}
+
+          {success && (
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg flex items-center gap-2">
+              <span className="material-symbols-outlined">check_circle</span>
+              <span>{success}</span>
+            </div>
+          )}
+
+          {/* Tab Navigation */}
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="border-b border-slate-200 dark:border-slate-800 px-6">
+              <nav className="flex gap-1 -mb-px">
+                <button
+                  onClick={() => setActiveTab('general')}
+                  className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'general'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px]">settings</span>
+                    General
+                  </span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('social')}
+                  className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'social'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px]">share</span>
+                    Social Media
+                  </span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('meetings')}
+                  className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'meetings'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px]">event</span>
+                    Meetings
+                  </span>
+                </button>
+              </nav>
+            </div>
+
+            {loadingData ? (
+              <div className="p-8 flex items-center justify-center">
+                <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+                  <span>Loading settings...</span>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* General Tab */}
+                {activeTab === 'general' && (
+                  <div className="p-8 space-y-8">
+                    <div className="flex flex-col md:flex-row md:items-start gap-6 md:gap-12">
+                      <div className="md:w-1/3">
+                        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">Contact Information</h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                          Primary contact details for your club
+                        </p>
+                      </div>
+                      <div className="md:w-2/3 space-y-6">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                            Contact Email
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <span className="material-symbols-outlined text-slate-400 text-[20px]">mail</span>
+                            </div>
+                            <input
+                              type="email"
+                              value={form.contactEmail}
+                              onChange={(e) => setForm((f) => ({ ...f, contactEmail: e.target.value }))}
+                              className="block w-full pl-10 rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
+                              placeholder="contact@rotaractnyc.org"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                            Address
+                          </label>
+                          <div className="space-y-2">
+                            {form.addressLines.map((line, idx) => (
+                              <div key={idx} className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={line}
+                                  onChange={(e) =>
+                                    setForm((f) => ({
+                                      ...f,
+                                      addressLines: f.addressLines.map((x, i) => (i === idx ? e.target.value : x)),
+                                    }))
+                                  }
+                                  className="block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
+                                  placeholder={`Address line ${idx + 1}`}
+                                />
+                                {form.addressLines.length > 1 && (
+                                  <button
+                                    onClick={() =>
+                                      setForm((f) => ({
+                                        ...f,
+                                        addressLines: f.addressLines.filter((_, i) => i !== idx),
+                                      }))
+                                    }
+                                    className="px-3 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                  >
+                                    <span className="material-symbols-outlined text-[20px]">delete</span>
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                            <button
+                              onClick={() => setForm((f) => ({ ...f, addressLines: [...f.addressLines, ''] }))}
+                              className="text-sm font-medium text-primary hover:text-primary-hover flex items-center gap-1"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">add</span>
+                              Add line
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Social Media Tab */}
+                {activeTab === 'social' && (
+                  <div className="p-8 space-y-8">
+                    <div className="flex flex-col md:flex-row md:items-start gap-6 md:gap-12">
+                      <div className="md:w-1/3">
+                        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">Social Presence</h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                          Connect your social media profiles to increase engagement
+                        </p>
+                      </div>
+                      <div className="md:w-2/3 space-y-5">
+                        {/* Facebook */}
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                            Facebook URL
+                          </label>
+                          <div className="flex rounded-lg shadow-sm">
+                            <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 text-sm">
+                              <span className="material-symbols-outlined text-[18px]">facebook</span>
+                            </span>
+                            <input
+                              type="text"
+                              value={form.facebookUrl}
+                              onChange={(e) => setForm((f) => ({ ...f, facebookUrl: e.target.value }))}
+                              className="flex-1 block w-full min-w-0 rounded-none rounded-r-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
+                              placeholder="https://facebook.com/rotaractnyc"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Instagram */}
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                            Instagram URL
+                          </label>
+                          <div className="flex rounded-lg shadow-sm">
+                            <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 text-sm">
+                              <span className="material-symbols-outlined text-[18px]">photo_camera</span>
+                            </span>
+                            <input
+                              type="text"
+                              value={form.instagramUrl}
+                              onChange={(e) => setForm((f) => ({ ...f, instagramUrl: e.target.value }))}
+                              className="flex-1 block w-full min-w-0 rounded-none rounded-r-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
+                              placeholder="https://instagram.com/rotaractnyc"
+                            />
+                          </div>
+                        </div>
+
+                        {/* LinkedIn */}
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                            LinkedIn URL
+                          </label>
+                          <div className="flex rounded-lg shadow-sm">
+                            <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 text-sm">
+                              <span className="material-symbols-outlined text-[18px]">work</span>
+                            </span>
+                            <input
+                              type="text"
+                              value={form.linkedinUrl}
+                              onChange={(e) => setForm((f) => ({ ...f, linkedinUrl: e.target.value }))}
+                              className="flex-1 block w-full min-w-0 rounded-none rounded-r-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
+                              placeholder="https://linkedin.com/company/rotaractnyc"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Meetings Tab */}
+                {activeTab === 'meetings' && (
+                  <div className="p-8 space-y-8">
+                    <div className="flex flex-col md:flex-row md:items-start gap-6 md:gap-12">
+                      <div className="md:w-1/3">
+                        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">Meeting Information</h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                          Configure your regular meeting schedule
+                        </p>
+                      </div>
+                      <div className="md:w-2/3 space-y-6">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                            Meeting Label
+                          </label>
+                          <input
+                            type="text"
+                            value={form.meetingLabel}
+                            onChange={(e) => setForm((f) => ({ ...f, meetingLabel: e.target.value }))}
+                            className="block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
+                            placeholder="e.g., General Meetings"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                            Meeting Time
+                          </label>
+                          <input
+                            type="text"
+                            value={form.meetingTime}
+                            onChange={(e) => setForm((f) => ({ ...f, meetingTime: e.target.value }))}
+                            className="block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
+                            placeholder="e.g., Every Tuesday at 7:00 PM"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Footer */}
+                <div className="bg-slate-50 dark:bg-slate-800/50 px-8 py-5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+                  <button
+                    onClick={seed}
+                    className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-primary transition-colors"
+                  >
+                    Reset to defaults
+                  </button>
+                  <div className="flex items-center gap-3">
+                    <Link
+                      href="/admin/dashboard"
+                      className="px-5 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      Cancel
+                    </Link>
+                    <button
+                      onClick={save}
+                      disabled={saving || !form.contactEmail.trim()}
+                      className="px-5 py-2.5 text-sm font-medium text-white bg-primary hover:bg-primary-hover rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {saving ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-[18px]">save</span>
+                          Save Changes
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Helper Links */}
+          <div className="flex justify-center gap-6 text-sm text-slate-400">
+            <Link href="/admin/dashboard" className="hover:text-primary transition-colors">Back to Dashboard</Link>
+            <span className="text-slate-300">•</span>
+            <a href="#" className="hover:text-primary transition-colors">Documentation</a>
+          </div>
         </div>
       </div>
     </div>

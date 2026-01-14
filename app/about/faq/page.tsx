@@ -181,7 +181,6 @@ export default function FAQPage() {
                       key={index}
                       question={faq.question}
                       answer={faq.answer}
-                      index={index}
                     />
                   ))}
                 </div>

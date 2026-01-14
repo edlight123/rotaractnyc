@@ -1,5 +1,8 @@
 'use client'
 
+import { motion } from 'framer-motion'
+import Link from 'next/link'
+
 export default function MissionPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

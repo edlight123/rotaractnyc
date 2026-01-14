@@ -88,7 +88,7 @@ export default function BoardPage() {
       </section>
 
       {/* Director Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 xl:gap-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 xl:gap-10 mb-24">
         {sorted.map((member) => (
           <article
             key={member.id}
@@ -156,6 +156,165 @@ export default function BoardPage() {
           </article>
         ))}
       </div>
+
+      {/* Committee Structure Section */}
+      <section className="mb-24">
+        <div className="text-center mb-12">
+          <span className="inline-block py-1 px-3 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-2">
+            Our Structure
+          </span>
+          <h2 className="text-3xl md:text-4xl font-bold text-[#101918] dark:text-white mb-4">
+            Committees & Teams
+          </h2>
+          <p className="text-lg text-[#57606a] dark:text-[#a0aeb2] max-w-2xl mx-auto">
+            Our club operates through dedicated committees, each focusing on specific areas of impact.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Committee 1 */}
+          <div className="bg-white dark:bg-[#1c2b29] p-6 rounded-lg border border-[#E0E2E5] dark:border-[#2a3836] hover:shadow-lg transition-shadow">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-primary uppercase tracking-wide">Committee</p>
+                <h3 className="text-lg font-bold text-[#101918] dark:text-white">Community Service</h3>
+              </div>
+            </div>
+            <p className="text-sm text-[#57606a] dark:text-[#a0aeb2] mb-4">
+              Plans and executes hands-on service projects that directly impact NYC communities.
+            </p>
+            <div className="pt-4 border-t border-[#E0E2E5] dark:border-[#2a3836]">
+              <p className="text-xs font-semibold text-[#57606a] dark:text-[#a0aeb2] mb-2">Committee Chair</p>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-[#E0E2E5] dark:bg-[#2a3836]"></div>
+                <span className="text-sm font-medium text-[#101918] dark:text-white">Sarah Jenkins</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Committee 2 */}
+          <div className="bg-white dark:bg-[#1c2b29] p-6 rounded-lg border border-[#E0E2E5] dark:border-[#2a3836] hover:shadow-lg transition-shadow">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2 0V17a1 1 0 001 1z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-primary uppercase tracking-wide">Committee</p>
+                <h3 className="text-lg font-bold text-[#101918] dark:text-white">Professional Dev.</h3>
+              </div>
+            </div>
+            <p className="text-sm text-[#57606a] dark:text-[#a0aeb2] mb-4">
+              Organizes workshops, networking events, and mentorship programs for career growth.
+            </p>
+            <div className="pt-4 border-t border-[#E0E2E5] dark:border-[#2a3836]">
+              <p className="text-xs font-semibold text-[#57606a] dark:text-[#a0aeb2] mb-2">Committee Chair</p>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-[#E0E2E5] dark:bg-[#2a3836]"></div>
+                <span className="text-sm font-medium text-[#101918] dark:text-white">Marcus Reid</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Committee 3 */}
+          <div className="bg-white dark:bg-[#1c2b29] p-6 rounded-lg border border-[#E0E2E5] dark:border-[#2a3836] hover:shadow-lg transition-shadow">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M3 6a3 3 0 013-3h10a1 1 0 01.8 1.6L14.25 8l2.55 3.4A1 1 0 0116 13H6a1 1 0 00-1 1v3a1 1 0 11-2 0V6z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-primary uppercase tracking-wide">Committee</p>
+                <h3 className="text-lg font-bold text-[#101918] dark:text-white">International</h3>
+              </div>
+            </div>
+            <p className="text-sm text-[#57606a] dark:text-[#a0aeb2] mb-4">
+              Coordinates global partnerships and international service initiatives.
+            </p>
+            <div className="pt-4 border-t border-[#E0E2E5] dark:border-[#2a3836]">
+              <p className="text-xs font-semibold text-[#57606a] dark:text-[#a0aeb2] mb-2">Committee Chair</p>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-[#E0E2E5] dark:bg-[#2a3836]"></div>
+                <span className="text-sm font-medium text-[#101918] dark:text-white">Priya Patel</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Elections/How to Run Section */}
+      <section className="bg-gray-50 dark:bg-[#1c2b29] rounded-2xl p-8 md:p-12 border border-[#E0E2E5] dark:border-[#2a3836]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div>
+            <span className="inline-block py-1 px-3 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-4">
+              Elections 2024
+            </span>
+            <h2 className="text-3xl font-bold text-[#101918] dark:text-white mb-4">
+              Interested in Leadership?
+            </h2>
+            <p className="text-[#57606a] dark:text-[#a0aeb2] text-lg mb-8">
+              Running for a position on the Executive Board or becoming a Committee Chair is a great way to develop professional skills and give back to the community.
+            </p>
+            <div className="flex gap-4">
+              <button className="bg-primary hover:bg-primary-dark text-white font-bold py-3 px-6 rounded-lg shadow-md transition-colors flex items-center gap-2">
+                Apply Now
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </button>
+              <button className="bg-white dark:bg-transparent border border-[#E0E2E5] dark:border-[#2a3836] text-[#101918] dark:text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-50 dark:hover:bg-[#2a3836] transition-colors">
+                Learn More
+              </button>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            {/* Step Cards */}
+            <div className="bg-white dark:bg-[#0c1415] p-6 rounded-xl shadow-sm border border-[#E0E2E5] dark:border-[#2a3836] flex gap-4">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
+                1
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-[#101918] dark:text-white mb-1">Check Eligibility</h3>
+                <p className="text-sm text-[#57606a] dark:text-[#a0aeb2]">
+                  Must be an active member for at least 6 months and in good standing with attendance.
+                </p>
+              </div>
+            </div>
+            
+            <div className="bg-white dark:bg-[#0c1415] p-6 rounded-xl shadow-sm border border-[#E0E2E5] dark:border-[#2a3836] flex gap-4">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
+                2
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-[#101918] dark:text-white mb-1">Submit Nomination</h3>
+                <p className="text-sm text-[#57606a] dark:text-[#a0aeb2]">
+                  Complete the nomination form by October 15th, including a brief platform statement.
+                </p>
+              </div>
+            </div>
+            
+            <div className="bg-white dark:bg-[#0c1415] p-6 rounded-xl shadow-sm border border-[#E0E2E5] dark:border-[#2a3836] flex gap-4">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
+                3
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-[#101918] dark:text-white mb-1">Club Election</h3>
+                <p className="text-sm text-[#57606a] dark:text-[#a0aeb2]">
+                  Present your platform at the November general meeting followed by a club vote.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
   )
 }
