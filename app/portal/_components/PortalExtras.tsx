@@ -52,7 +52,7 @@ export default function PortalExtras() {
   };
 
   return (
-    <aside className="hidden lg:flex flex-col gap-6 sticky top-8 h-fit">
+    <aside className="hidden lg:block w-[320px] shrink-0 sticky top-24 space-y-6">
       {/* Member of the Month Card */}
       <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700 relative overflow-hidden group">
         {/* Badge */}

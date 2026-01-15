@@ -109,7 +109,7 @@ export default function CommunityFeed() {
   };
 
   return (
-    <main className="flex flex-col min-w-0 gap-6">
+    <main className="flex-1 w-full lg:max-w-[720px] mx-auto flex flex-col gap-6">
       {/* Page Heading & Greeting */}
       <div className="flex flex-col gap-1 pb-2">
         <h2 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white tracking-tight">

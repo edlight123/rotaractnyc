@@ -16,9 +16,11 @@ export default function PortalDashboard() {
   }
 
   return (
-    <>
-      <CommunityFeed />
-      <PortalExtras />
-    </>
+    <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+        <CommunityFeed />
+        <PortalExtras />
+      </div>
+    </main>
   );
 }

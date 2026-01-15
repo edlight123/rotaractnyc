@@ -98,9 +98,10 @@ export default function DirectoryPage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+      <div className="space-y-8">
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="max-w-2xl">
           <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight mb-4">
             Our Community
@@ -174,7 +175,8 @@ export default function DirectoryPage() {
           <p className="text-slate-500 dark:text-slate-400">Try adjusting your search or filters</p>
         </div>
       )}
-    </div>
+      </div>
+    </main>
   );
 }
 
