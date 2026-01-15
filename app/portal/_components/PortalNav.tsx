@@ -15,6 +15,7 @@ export default function PortalNav() {
     { href: '/portal/announcements', label: 'Feed' },
     { href: '/portal/events', label: 'Calendar' },
     { href: '/portal/directory', label: 'Directory' },
+    { href: '/portal/docs', label: 'Resources' },
   ];
 
   // Add Finance tab if user has treasurer+ role
