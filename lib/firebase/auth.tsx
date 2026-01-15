@@ -63,10 +63,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
           if (userDoc.exists()) {
             setUserData({ uid: firebaseUser.uid, ...userDoc.data() } as User);
           } else {
+            // User document doesn't exist yet - will be created by admin
             setUserData(null);
           }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
+        } catch (error: any) {
+          // Ignore permission errors on first sign-in
+          if (error?.code !== 'permission-denied') {
+            console.error('Error fetching user data:', error);
+          }
           setUserData(null);
         }
       } else {
