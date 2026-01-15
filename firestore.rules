@@ -2,8 +2,98 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // This app reads/writes Firestore via server-side API routes using the Firebase Admin SDK.
-    // Default posture: deny all direct client access.
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserRole() {
+      return request.auth.token.role;
+    }
+    
+    function isMember() {
+      return isAuthenticated() && getUserRole() in ['MEMBER', 'BOARD', 'TREASURER', 'ADMIN'];
+    }
+    
+    function isBoard() {
+      return isAuthenticated() && getUserRole() in ['BOARD', 'TREASURER', 'ADMIN'];
+    }
+    
+    function isTreasurer() {
+      return isAuthenticated() && getUserRole() in ['TREASURER', 'ADMIN'];
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'ADMIN';
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Members can read all active users
+      allow read: if isMember();
+      // Users can update their own profile (limited fields)
+      allow update: if isAuthenticated() && request.auth.uid == userId
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status']);
+      // Only admins can create users or change role/status
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin();
+    }
+    
+    // Events collection
+    match /events/{eventId} {
+      // Members can read member-visible events, board can read all
+      allow read: if (isMember() && resource.data.visibility == 'member')
+                  || (isBoard() && resource.data.visibility in ['member', 'board'])
+                  || resource.data.visibility == 'public';
+      // Board can create/edit events
+      allow create, update, delete: if isBoard();
+      
+      // RSVPs subcollection
+      match /rsvps/{userId} {
+        // Members can read all RSVPs for an event
+        allow read: if isMember();
+        // Members can only write their own RSVP
+        allow write: if isAuthenticated() && request.auth.uid == userId;
+      }
+    }
+    
+    // Announcements collection
+    match /announcements/{announcementId} {
+      // Members can read member-visible, board can read all
+      allow read: if (isMember() && resource.data.visibility == 'member')
+                  || (isBoard() && resource.data.visibility in ['member', 'board']);
+      // Board can create/edit announcements
+      allow create, update, delete: if isBoard();
+    }
+    
+    // Documents collection
+    match /documents/{documentId} {
+      // Members can read member-visible, board can read all
+      allow read: if (isMember() && resource.data.visibility == 'member')
+                  || (isBoard() && resource.data.visibility in ['member', 'board']);
+      // Board can create/edit documents
+      allow create, update, delete: if isBoard();
+    }
+    
+    // Transactions collection
+    match /transactions/{transactionId} {
+      // Members can read member-visible, board can read all
+      allow read: if (isMember() && resource.data.visibility == 'member')
+                  || (isBoard() && resource.data.visibility in ['member', 'board']);
+      // Only treasurer/admin can create/edit transactions
+      allow create, update, delete: if isTreasurer();
+    }
+    
+    // Monthly summaries collection
+    match /monthlySummaries/{monthId} {
+      // All members can read monthly summaries
+      allow read: if isMember();
+      // Only treasurer/admin can write summaries
+      allow create, update, delete: if isTreasurer();
+    }
+    
+    // Deny all other access
     match /{document=**} {
       allow read, write: if false;
     }
