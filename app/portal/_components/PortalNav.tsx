@@ -11,6 +11,7 @@ export default function PortalNav() {
   const { user, userData, signOut } = useAuth();
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState('');
+  const showAdminLink = isAdmin(userData?.role);
 
   const navItems = [
     { href: '/portal/announcements', label: 'Feed' },
@@ -91,6 +92,16 @@ export default function PortalNav() {
             </nav>
 
             <div className="flex items-center gap-3 pl-6 border-l border-gray-200 dark:border-gray-800">
+              {showAdminLink ? (
+                <Link
+                  href="/admin"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 text-sm font-medium text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+                  <span className="hidden sm:inline">Admin</span>
+                </Link>
+              ) : null}
+
               <button className="relative p-1 text-gray-500 hover:text-primary dark:hover:text-white transition-colors">
                 <span className="material-symbols-outlined">notifications</span>
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-[#141414]"></span>
