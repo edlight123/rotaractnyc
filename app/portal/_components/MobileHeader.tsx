@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/firebase/auth';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { canManageFinances } from '@/lib/portal/roles';
 
@@ -36,10 +37,16 @@ export default function MobileHeader() {
     <>
       <header className="md:hidden flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
         <div className="flex items-center gap-2">
-          <div className="bg-[#17b0cf]/20 p-2 rounded-lg">
-            <span className="material-symbols-outlined text-[#17b0cf]">diversity_2</span>
-          </div>
-          <h1 className="font-bold text-lg tracking-tight">Rotaract NYC</h1>
+          <Link href="/portal" className="flex items-center">
+            <Image
+              src="/Rotaract%20Logo%20(1).png"
+              alt="Rotaract NYC Member Portal"
+              width={140}
+              height={36}
+              className="h-9 w-auto"
+              priority
+            />
+          </Link>
         </div>
         <button 
           className="p-2 text-gray-500"

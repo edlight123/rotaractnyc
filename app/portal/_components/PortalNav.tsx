@@ -40,18 +40,15 @@ export default function PortalNav() {
           {/* Logo & Brand */}
           <div className="flex items-center gap-3">
             <Link href="/portal">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center">
                 <Image
                   src="/Rotaract%20Logo%20(1).png"
-                  alt="Rotaract NYC"
-                  width={32}
-                  height={32}
-                  className="h-8 w-8"
+                  alt="Rotaract NYC Member Portal"
+                  width={140}
+                  height={36}
+                  className="h-9 w-auto"
                   priority
                 />
-                <h1 className="hidden sm:block text-xl font-bold tracking-tight text-primary dark:text-white">
-                  Rotaract<span className="font-normal text-gray-500 ml-1">Portal</span>
-                </h1>
               </div>
             </Link>
           </div>

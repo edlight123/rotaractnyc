@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/lib/firebase/auth';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { canManageFinances } from '@/lib/portal/roles';
 
@@ -37,13 +38,14 @@ export default function PortalSidebar() {
         <div className="flex flex-col gap-8">
           {/* Brand */}
           <Link href="/portal" className="flex items-center gap-3 px-2">
-            <div className="size-10 rounded-full bg-gradient-to-tr from-[#17b0cf] to-cyan-400 flex items-center justify-center text-white shadow-lg shadow-[#17b0cf]/30">
-              <span className="material-symbols-outlined text-[20px]">diversity_2</span>
-            </div>
-            <div className="flex flex-col">
-              <h1 className="text-gray-900 dark:text-white text-base font-bold leading-none">Rotaract NYC</h1>
-              <p className="text-[#17b0cf] text-xs font-medium mt-1">Member Portal</p>
-            </div>
+            <Image
+              src="/Rotaract%20Logo%20(1).png"
+              alt="Rotaract NYC Member Portal"
+              width={160}
+              height={40}
+              className="h-10 w-auto"
+              priority
+            />
           </Link>
 
           {/* Nav Links */}
