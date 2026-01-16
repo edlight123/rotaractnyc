@@ -10,11 +10,12 @@ export default function RouteChrome({
 }) {
   const pathname = usePathname()
   const isAdminRoute = pathname.startsWith('/admin')
+  const isPortalRoute = pathname.startsWith('/portal')
 
   return (
     <>
-      {!isAdminRoute ? <Navbar /> : null}
-      <main className={isAdminRoute ? 'min-h-screen' : 'min-h-screen pt-[var(--nav-height)]'}>
+      {!isAdminRoute && !isPortalRoute ? <Navbar /> : null}
+      <main className={isAdminRoute || isPortalRoute ? 'min-h-screen' : 'min-h-screen pt-[var(--nav-height)]'}>
         {children}
       </main>
     </>

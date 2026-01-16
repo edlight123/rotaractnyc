@@ -2,9 +2,10 @@
 
 import { useAuth } from '@/lib/firebase/auth';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { canManageFinances } from '@/lib/portal/roles';
+import { canManageFinances, isAdmin } from '@/lib/portal/roles';
 
 export default function PortalNav() {
   const { user, userData, signOut } = useAuth();
@@ -38,21 +39,20 @@ export default function PortalNav() {
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo & Brand */}
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 text-rotaract-blue">
-              <svg className="w-full h-full" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path 
-                  d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" 
-                  fill="currentColor" 
-                  stroke="currentColor" 
-                  strokeLinejoin="round" 
-                  strokeWidth="2"
-                />
-              </svg>
-            </div>
             <Link href="/portal">
-              <h1 className="hidden sm:block text-xl font-bold tracking-tight text-primary dark:text-white">
-                Rotaract<span className="font-normal text-gray-500 ml-1">Portal</span>
-              </h1>
+              <div className="flex items-center gap-3">
+                <Image
+                  src="/Rotaract%20Logo%20(1).png"
+                  alt="Rotaract NYC"
+                  width={32}
+                  height={32}
+                  className="h-8 w-8"
+                  priority
+                />
+                <h1 className="hidden sm:block text-xl font-bold tracking-tight text-primary dark:text-white">
+                  Rotaract<span className="font-normal text-gray-500 ml-1">Portal</span>
+                </h1>
+              </div>
             </Link>
           </div>
 
@@ -117,6 +117,17 @@ export default function PortalNav() {
                     <p className="text-sm font-medium text-gray-900 dark:text-white">{userData?.name || user?.displayName}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{userData?.role || 'Member'}</p>
                   </div>
+
+                  {isAdmin(userData?.role) ? (
+                    <Link
+                      href="/admin"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] flex items-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+                      Admin
+                    </Link>
+                  ) : null}
+
                   <button
                     onClick={handleSignOut}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] flex items-center gap-2"

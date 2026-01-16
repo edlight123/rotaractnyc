@@ -104,10 +104,10 @@ const Navbar = () => {
               </div>
             ))}
             <Link
-              href="/admin"
+              href="/portal/login"
               className="px-6 py-2 bg-rotaract-pink hover:bg-rotaract-darkpink text-white font-semibold rounded-lg transition-colors shadow-sm"
             >
-              Admin
+              Member Login
             </Link>
           </div>
 
@@ -169,11 +169,11 @@ const Navbar = () => {
                 </div>
               ))}
               <Link
-                href="/admin"
+                href="/portal/login"
                 className="block mt-4 px-6 py-2 bg-rotaract-pink text-white font-semibold rounded-lg text-center"
                 onClick={() => setIsOpen(false)}
               >
-                Admin
+                Member Login
               </Link>
             </motion.div>
           )}
