@@ -12,6 +12,7 @@ export default function PortalNav() {
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState('');
   const showAdminLink = isAdmin(userData?.role);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const navItems = [
     { href: '/portal/announcements', label: 'Feed' },
@@ -102,10 +103,27 @@ export default function PortalNav() {
                 </Link>
               ) : null}
 
-              <button className="relative p-1 text-gray-500 hover:text-primary dark:hover:text-white transition-colors">
+              <button
+                onClick={() => setShowNotifications((v) => !v)}
+                className="relative p-1 text-gray-500 hover:text-primary dark:hover:text-white transition-colors"
+                aria-label="Notifications"
+              >
                 <span className="material-symbols-outlined">notifications</span>
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-[#141414]"></span>
               </button>
+
+              {showNotifications ? (
+                <div className="absolute right-4 top-16 w-72 bg-white dark:bg-[#1e1e1e] rounded-lg shadow-lg border border-gray-200 dark:border-[#2a2a2a] p-3">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</p>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">No notifications yet.</p>
+                  <button
+                    onClick={() => setShowNotifications(false)}
+                    className="mt-3 w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#2a2a2a] text-sm font-semibold"
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : null}
               
               <div className="relative group">
                 <div 

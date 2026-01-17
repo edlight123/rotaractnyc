@@ -107,6 +107,15 @@ export default function CommunityFeed() {
     void createPost(postText.trim());
   };
 
+  const copyText = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert('Copied');
+    } catch {
+      alert(text);
+    }
+  };
+
   const createPost = async (body: string) => {
     const app = getFirebaseClientApp();
     if (!app) return;
@@ -183,18 +192,21 @@ export default function CommunityFeed() {
                 <button 
                   className="p-2 text-[#17b0cf] hover:bg-[#17b0cf]/10 rounded-full transition-colors" 
                   title="Add Photo"
+                  onClick={() => alert('Photo attachments are not implemented yet.')}
                 >
                   <span className="material-symbols-outlined">image</span>
                 </button>
                 <button 
                   className="p-2 text-[#17b0cf] hover:bg-[#17b0cf]/10 rounded-full transition-colors" 
                   title="Add Event"
+                  onClick={() => alert('Event attachments are not implemented yet.')}
                 >
                   <span className="material-symbols-outlined">event</span>
                 </button>
                 <button 
                   className="p-2 text-[#17b0cf] hover:bg-[#17b0cf]/10 rounded-full transition-colors" 
                   title="Attach Link"
+                  onClick={() => alert('Link attachments are not implemented yet.')}
                 >
                   <span className="material-symbols-outlined">link</span>
                 </button>
@@ -243,7 +255,11 @@ export default function CommunityFeed() {
                     <p className="text-xs text-gray-500">{post.author.role} • {post.timestamp}</p>
                   </div>
                 </div>
-                <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <button
+                  onClick={() => void copyText(post.content.body)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  title="Copy post text"
+                >
                   <span className="material-symbols-outlined">more_horiz</span>
                 </button>
               </div>
@@ -330,7 +346,10 @@ export default function CommunityFeed() {
 
               {/* Announcement CTA */}
               {post.content.type === 'announcement' && (
-                <button className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-bold backdrop-blur-sm transition-colors">
+                <button
+                  onClick={() => alert('Say hello is coming soon.')}
+                  className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-bold backdrop-blur-sm transition-colors"
+                >
                   Say Hello 👋
                 </button>
               )}
@@ -340,7 +359,10 @@ export default function CommunityFeed() {
             {post.content.type !== 'announcement' && (
               <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
                 <div className="flex gap-4">
-                  <button className="flex items-center gap-2 group">
+                  <button
+                    onClick={() => alert('Reactions are coming soon.')}
+                    className="flex items-center gap-2 group"
+                  >
                     <div className="p-2 rounded-full group-hover:bg-pink-50 dark:group-hover:bg-pink-900/30 transition-colors">
                       <span className="material-symbols-outlined text-gray-500 group-hover:text-pink-500 transition-colors text-[20px]">
                         favorite
@@ -350,7 +372,10 @@ export default function CommunityFeed() {
                       {post.reactions.likes}
                     </span>
                   </button>
-                  <button className="flex items-center gap-2 group">
+                  <button
+                    onClick={() => alert('Comments are coming soon.')}
+                    className="flex items-center gap-2 group"
+                  >
                     <div className="p-2 rounded-full group-hover:bg-[#17b0cf]/10 transition-colors">
                       <span className="material-symbols-outlined text-gray-500 group-hover:text-[#17b0cf] transition-colors text-[20px]">
                         chat_bubble
@@ -361,7 +386,11 @@ export default function CommunityFeed() {
                     </span>
                   </button>
                 </div>
-                <button className="text-gray-400 hover:text-[#17b0cf] transition-colors">
+                <button
+                  onClick={() => void copyText(post.content.body)}
+                  className="text-gray-400 hover:text-[#17b0cf] transition-colors"
+                  title="Copy post text"
+                >
                   <span className="material-symbols-outlined">share</span>
                 </button>
               </div>

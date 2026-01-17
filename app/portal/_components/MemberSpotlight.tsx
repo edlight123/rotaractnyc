@@ -66,6 +66,7 @@ export default function MemberSpotlight() {
         quote:
           (member as unknown as { spotlightQuote?: string }).spotlightQuote ||
           'Proud to be part of Rotaract NYC!',
+        email: member.email,
       };
     }
 
@@ -75,6 +76,7 @@ export default function MemberSpotlight() {
       photoURL:
         'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop',
       quote: 'Welcome to the members portal.',
+      email: null,
     };
   }, [member]);
 
@@ -101,7 +103,16 @@ export default function MemberSpotlight() {
         <p className="text-sm leading-relaxed opacity-90 mb-4">
           "{spotlightMember.quote}"
         </p>
-        <button className="w-full py-2 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-bold transition-colors backdrop-blur-sm">
+        <button
+          onClick={() => {
+            if (spotlightMember.email) {
+              window.location.href = `mailto:${spotlightMember.email}`;
+            } else {
+              window.location.href = '/portal/directory';
+            }
+          }}
+          className="w-full py-2 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-bold transition-colors backdrop-blur-sm"
+        >
           Say Hello
         </button>
       </div>

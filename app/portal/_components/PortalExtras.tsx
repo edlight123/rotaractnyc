@@ -103,9 +103,12 @@ export default function PortalExtras() {
               <p className="text-sm font-bold text-gray-900 dark:text-white">Sarah's Birthday</p>
               <p className="text-xs text-gray-500">Turning 26 • Tomorrow</p>
             </div>
-            <button className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded hover:bg-[#EE8899] hover:text-white transition-colors">
+            <Link
+              href="/portal/directory"
+              className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded hover:bg-[#EE8899] hover:text-white transition-colors"
+            >
               Gift
-            </button>
+            </Link>
           </div>
           
           {/* Anniversary Item */}

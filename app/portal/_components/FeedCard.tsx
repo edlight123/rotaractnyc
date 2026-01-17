@@ -20,6 +20,15 @@ interface FeedCardProps {
 
 export default function FeedCard({ announcement, author }: FeedCardProps) {
   const { user } = useAuth();
+    const copyAnnouncement = async () => {
+      const text = `${announcement.title}\n\n${announcement.body}`;
+      try {
+        await navigator.clipboard.writeText(text);
+        alert('Copied');
+      } catch {
+        alert(text);
+      }
+    };
   const [acknowledged, setAcknowledged] = useState(false);
   const [acknowledgedCount, setAcknowledgedCount] = useState(0);
   const [loadingAck, setLoadingAck] = useState(true);
@@ -144,7 +153,11 @@ export default function FeedCard({ announcement, author }: FeedCardProps) {
             </div>
           </div>
         </div>
-        <button className="text-gray-400 hover:text-primary dark:hover:text-white transition-colors">
+        <button
+          onClick={() => void copyAnnouncement()}
+          className="text-gray-400 hover:text-primary dark:hover:text-white transition-colors"
+          title="Copy"
+        >
           <span className="material-symbols-outlined">more_horiz</span>
         </button>
       </div>

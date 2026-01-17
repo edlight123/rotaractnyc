@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/lib/firebase/auth';
 import { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { addDoc, collection, query, where, getDocs, orderBy, serverTimestamp } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
 import { getFirebaseClientApp } from '@/lib/firebase/client';
 import { Document } from '@/types/portal';
@@ -17,13 +17,20 @@ import {
 } from 'react-icons/fi';
 
 export default function DocumentsPage() {
-  const { loading } = useAuth();
+  const { loading, user, userData } = useAuth();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [categories, setCategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadCategory, setUploadCategory] = useState('Minutes');
+  const [uploadUrl, setUploadUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
+
+  const canUpload = userData?.role === 'BOARD' || userData?.role === 'TREASURER' || userData?.role === 'ADMIN';
 
   useEffect(() => {
     if (!loading) {
@@ -118,6 +125,41 @@ export default function DocumentsPage() {
   // Pinned documents (first 3)
   const pinnedDocs = documents.slice(0, 3);
 
+  const submitUpload = async () => {
+    if (!canUpload) {
+      alert('Only board members can add documents.');
+      return;
+    }
+    if (!user?.uid) return;
+    if (!uploadTitle.trim() || !uploadCategory.trim() || !uploadUrl.trim()) return;
+
+    const app = getFirebaseClientApp();
+    if (!app) return;
+    const db = getFirestore(app);
+
+    setUploading(true);
+    try {
+      await addDoc(collection(db, 'documents'), {
+        title: uploadTitle.trim(),
+        category: uploadCategory.trim(),
+        url: uploadUrl.trim(),
+        visibility: 'member',
+        createdBy: user.uid,
+        createdAt: serverTimestamp(),
+        seeded: false,
+      });
+      setUploadOpen(false);
+      setUploadTitle('');
+      setUploadCategory('Minutes');
+      setUploadUrl('');
+      window.location.reload();
+    } catch (e) {
+      console.error('Error uploading document:', e);
+      alert('Failed to add document.');
+      setUploading(false);
+    }
+  };
+
   if (loading || loadingData) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -146,12 +188,88 @@ export default function DocumentsPage() {
               className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary w-64 shadow-sm transition-all"
             />
           </div>
-          <button className="bg-primary hover:bg-primary-dark text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-sm shadow-primary/30 transition-all active:scale-95">
+          <button
+            onClick={() => {
+              if (!canUpload) {
+                alert('Only board members can add documents.');
+                return;
+              }
+              setUploadOpen(true);
+            }}
+            className="bg-primary hover:bg-primary-dark text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-sm shadow-primary/30 transition-all active:scale-95"
+          >
             <FiUpload className="text-[20px]" />
             <span>Upload</span>
           </button>
         </div>
       </div>
+
+      {uploadOpen ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => (uploading ? null : setUploadOpen(false))} />
+          <div className="relative w-full max-w-xl rounded-2xl bg-white border border-slate-200 shadow-xl p-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-text-main">Add a document link</h2>
+              <button
+                onClick={() => (uploading ? null : setUploadOpen(false))}
+                className="text-slate-400 hover:text-text-main"
+                aria-label="Close"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-3">
+              <div>
+                <label className="block text-sm font-semibold text-text-main mb-1">Title</label>
+                <input
+                  value={uploadTitle}
+                  onChange={(e) => setUploadTitle(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200"
+                  placeholder="e.g., January Meeting Minutes"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-text-main mb-1">Category</label>
+                <input
+                  value={uploadCategory}
+                  onChange={(e) => setUploadCategory(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200"
+                  placeholder="e.g., Minutes"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-text-main mb-1">URL</label>
+                <input
+                  value={uploadUrl}
+                  onChange={(e) => setUploadUrl(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200"
+                  placeholder="https://…"
+                />
+                <p className="mt-1 text-xs text-text-muted">This does not upload a file; it saves a link.</p>
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => (uploading ? null : setUploadOpen(false))}
+                className="px-4 py-2 rounded-lg border border-slate-200 text-sm font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitUpload}
+                disabled={uploading || !uploadTitle.trim() || !uploadCategory.trim() || !uploadUrl.trim()}
+                className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {uploading ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Pinned Resources Section */}
       {pinnedDocs.length > 0 && (
