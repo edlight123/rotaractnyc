@@ -22,19 +22,21 @@ export default function PortalExtras() {
     
     try {
       const eventsRef = collection(db, 'events');
-      const eventsSnapshot = await getDocs(eventsRef);
-      
       const now = Timestamp.now();
-      const events = eventsSnapshot.docs
-        .map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }))
-        .filter((e: any) => e.visibility === 'member' && e.startAt >= now)
-        .sort((a: any, b: any) => a.startAt.seconds - b.startAt.seconds);
-      
-      if (events.length > 0) {
-        setNextEvent(events[0] as Event);
+      const nextEventQuery = query(
+        eventsRef,
+        where('visibility', '==', 'member'),
+        where('startAt', '>=', now),
+        orderBy('startAt', 'asc'),
+        limit(1)
+      );
+      const snapshot = await getDocs(nextEventQuery);
+      const doc = snapshot.docs[0];
+
+      if (doc) {
+        setNextEvent({ id: doc.id, ...doc.data() } as Event);
+      } else {
+        setNextEvent(null);
       }
     } catch (err) {
       console.error('Error loading next event:', err);
