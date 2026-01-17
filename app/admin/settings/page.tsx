@@ -33,6 +33,7 @@ export default function AdminSettingsPage() {
 
   const [loadingData, setLoadingData] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [seeding, setSeeding] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [form, setForm] = useState<SiteSettings>(EMPTY)
@@ -136,6 +137,26 @@ export default function AdminSettingsPage() {
     }
   }
 
+  const seedPortal = async () => {
+    setSeeding(true)
+    setError(null)
+    setSuccess(null)
+    try {
+      const res = await fetch('/api/admin/seed-portal', { method: 'POST' })
+      if (!res.ok) {
+        setError(await getFriendlyAdminApiError(res, 'Portal seed failed.'))
+        return
+      }
+      const result = await res.json()
+      setSuccess(`Portal data seeded successfully! Created/updated: ${result.createdOrUpdated.users} users, ${result.createdOrUpdated.portalEvents} events, ${result.createdOrUpdated.announcements} announcements, ${result.createdOrUpdated.documents} documents, ${result.createdOrUpdated.communityPosts} posts, ${result.createdOrUpdated.transactions} transactions`)
+      setTimeout(() => setSuccess(null), 5000)
+    } catch {
+      setError('Portal seed failed.')
+    } finally {
+      setSeeding(false)
+    }
+  }
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Top Bar */}
@@ -205,6 +226,19 @@ export default function AdminSettingsPage() {
                     activeTab === 'social'
                       ? 'border-primary text-primary'
                       : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300'
+                <button
+                  onClick={() => setActiveTab('portal')}
+                  className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'portal'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px]">database</span>
+                    Portal Data
+                  </span>
+                </button>
                   }`}
                 >
                   <span className="flex items-center gap-2">
@@ -412,7 +446,71 @@ export default function AdminSettingsPage() {
 
                         <div>
                           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                            Meeting Time
+                  
+
+                {/* Portal Data Tab */}
+                {activeTab === 'portal' && (
+                  <div className="p-8 space-y-8">
+                    <div className="flex flex-col md:flex-row md:items-start gap-6 md:gap-12">
+                      <div className="md:w-1/3">
+                        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">Member Portal Data</h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                          Generate sample data for testing the member portal
+                        </p>
+                      </div>
+                      <div className="md:w-2/3 space-y-6">
+                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                          <div className="flex gap-3">
+                            <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-[20px] mt-0.5">info</span>
+                            <div className="flex-1">
+                              <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-1">
+                                What does this do?
+                              </h3>
+                              <p className="text-sm text-blue-700 dark:text-blue-400 leading-relaxed">
+                                This will create sample data in the member portal (Firestore) including users, events, 
+                                announcements, documents, community posts, and financial transactions. 
+                                Safe to run multiple times—uses deterministic IDs.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <p className="text-sm text-slate-600 dark:text-slate-300">
+                            Click below to populate the member portal with test data:
+                          </p>
+                          <ul className="text-sm text-slate-500 dark:text-slate-400 space-y-1 ml-5 list-disc">
+                            <li>5 active member profiles</li>
+                            <li>2 upcoming portal events</li>
+                            <li>2 member announcements</li>
+                            <li>2 shared documents</li>
+                            <li>3 community feed posts</li>
+                            <li>2 financial transactions</li>
+                            <li>1 monthly financial summary</li>
+                          </ul>
+                        </div>
+
+                        <button
+                          onClick={seedPortal}
+                          disabled={seeding}
+                          className="w-full px-6 py-3 text-sm font-medium text-white bg-primary hover:bg-primary-hover rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                          {seeding ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                              Seeding Portal Data...
+                            </>
+                          ) : (
+                            <>
+                              <span className="material-symbols-outlined text-[18px]">cloud_upload</span>
+                              Seed Portal Data
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}          Meeting Time
                           </label>
                           <input
                             type="text"
