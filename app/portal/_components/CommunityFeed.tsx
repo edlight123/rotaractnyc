@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/lib/firebase/auth';
 import { collection, addDoc, getDocs, limit, orderBy, query, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getFirebaseClientApp } from '@/lib/firebase/client';
 
 interface Post {
@@ -35,6 +36,9 @@ export default function CommunityFeed() {
   const { user, userData } = useAuth();
   const [postText, setPostText] = useState('');
   const [posts, setPosts] = useState<Post[]>([]);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,9 +106,30 @@ export default function CommunityFeed() {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const handlePost = () => {
-    if (!postText.trim()) return;
-    void createPost(postText.trim());
+  const handlePost = async () => {
+    if (!postText.trim() && selectedImages.length === 0) return;
+    setUploadingImages(true);
+    try {
+      await createPost(postText.trim(), selectedImages);
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validImages = files.filter(f => f.type.startsWith('image/') && f.size <= 10 * 1024 * 1024);
+    
+    if (validImages.length + selectedImages.length > 4) {
+      alert('You can only upload up to 4 images');
+      return;
+    }
+    
+    setSelectedImages(prev => [...prev, ...validImages].slice(0, 4));
+  };
+
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const copyText = async (text: string) => {
@@ -116,7 +141,7 @@ export default function CommunityFeed() {
     }
   };
 
-  const createPost = async (body: string) => {
+  const createPost = async (body: string, images: File[] = []) => {
     const app = getFirebaseClientApp();
     if (!app) return;
     const db = getFirestore(app);
@@ -127,16 +152,34 @@ export default function CommunityFeed() {
       const authorPhotoURL = userData?.photoURL || user?.photoURL || null;
       const authorUid = user?.uid || null;
 
+      let imageUrls: string[] = [];
+      
+      // Upload images if any
+      if (images.length > 0) {
+        const storage = getStorage(app);
+        const uploadPromises = images.map(async (file) => {
+          const storageRef = ref(storage, `community-posts/${user?.uid}/${Date.now()}-${file.name}`);
+          await uploadBytes(storageRef, file);
+          return getDownloadURL(storageRef);
+        });
+        imageUrls = await Promise.all(uploadPromises);
+      }
+
       // Optimistic UI
       const optimistic: Post = {
         id: `local-${Date.now()}`,
         author: { name: authorName, role: authorRole, photoUrl: authorPhotoURL || undefined },
         timestamp: 'Just now',
-        content: { body, type: 'text' },
+        content: { 
+          body, 
+          type: imageUrls.length > 0 ? 'images' : 'text',
+          images: imageUrls.length > 0 ? imageUrls : undefined
+        },
         reactions: { likes: 0, comments: 0 },
       };
       setPosts((prev) => [optimistic, ...prev]);
       setPostText('');
+      setSelectedImages([]);
 
       await addDoc(collection(db, 'communityPosts'), {
         authorUid,
@@ -145,8 +188,8 @@ export default function CommunityFeed() {
         authorPhotoURL,
         title: null,
         body,
-        type: 'text',
-        images: null,
+        type: imageUrls.length > 0 ? 'images' : 'text',
+        images: imageUrls.length > 0 ? imageUrls : null,
         document: null,
         likesCount: 0,
         commentsCount: 0,
@@ -154,6 +197,7 @@ export default function CommunityFeed() {
       });
     } catch (err) {
       console.error('Error creating post:', err);
+      alert('Failed to create post. Please try again.');
     }
   };
 
@@ -187,12 +231,43 @@ export default function CommunityFeed() {
               value={postText}
               onChange={(e) => setPostText(e.target.value)}
             />
+
+            {/* Image Previews */}
+            {selectedImages.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {selectedImages.map((file, idx) => (
+                  <div key={idx} className="relative group">
+                    <div 
+                      className="aspect-square rounded-lg bg-cover bg-center border border-gray-200 dark:border-gray-700"
+                      style={{ backgroundImage: `url(${URL.createObjectURL(file)})` }}
+                    />
+                    <button
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">close</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageSelect}
+              className="hidden"
+            />
+
             <div className="flex justify-between items-center">
               <div className="flex gap-2">
                 <button 
                   className="p-2 text-[#17b0cf] hover:bg-[#17b0cf]/10 rounded-full transition-colors" 
                   title="Add Photo"
-                  onClick={() => alert('Photo attachments are not implemented yet.')}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImages}
                 >
                   <span className="material-symbols-outlined">image</span>
                 </button>
@@ -214,9 +289,9 @@ export default function CommunityFeed() {
               <button 
                 onClick={handlePost}
                 className="bg-[#17b0cf] hover:bg-cyan-500 text-white px-6 py-2 rounded-lg font-bold text-sm shadow-lg shadow-[#17b0cf]/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                disabled={!postText.trim()}
+                disabled={(!postText.trim() && selectedImages.length === 0) || uploadingImages}
               >
-                Post
+                {uploadingImages ? 'Posting...' : 'Post'}
               </button>
             </div>
           </div>

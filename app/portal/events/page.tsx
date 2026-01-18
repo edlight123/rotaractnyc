@@ -55,6 +55,8 @@ export default function EventsPage() {
     const db = getFirestore(app);
     
     try {
+      console.log('[Events] Starting to load events...');
+      
       // Load upcoming events - query for both member and public visibility
       const eventsRef = collection(db, 'portalEvents');
       
@@ -74,10 +76,14 @@ export default function EventsPage() {
         orderBy('startAt', 'asc')
       );
       
+      console.log('[Events] Executing queries...');
       const [memberSnapshot, publicSnapshot] = await Promise.all([
         getDocs(memberQuery),
         getDocs(publicQuery)
       ]);
+      
+      console.log('[Events] Member events count:', memberSnapshot.size);
+      console.log('[Events] Public events count:', publicSnapshot.size);
       
       const memberEvents = memberSnapshot.docs.map(doc => ({
         id: doc.id,
@@ -95,6 +101,9 @@ export default function EventsPage() {
         const bTime = b.startAt instanceof Timestamp ? b.startAt.toMillis() : 0;
         return aTime - bTime;
       });
+      
+      console.log('[Events] Total events loaded:', allEvents.length);
+      console.log('[Events] Events:', allEvents.map(e => ({ id: e.id, title: e.title, startAt: e.startAt })));
       
       setEvents(allEvents);
 

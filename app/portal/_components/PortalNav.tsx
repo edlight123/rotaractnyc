@@ -144,6 +144,14 @@ export default function PortalNav() {
                     <p className="text-xs text-gray-500 dark:text-gray-400">{userData?.role || 'Member'}</p>
                   </div>
 
+                  <Link
+                    href="/portal/settings"
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">settings</span>
+                    Settings
+                  </Link>
+
                   {isAdmin(userData?.role) ? (
                     <Link
                       href="/admin"
