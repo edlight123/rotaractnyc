@@ -5,13 +5,17 @@ import Link from 'next/link';
 import { collection, query, where, orderBy, limit, getDocs, Timestamp } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
 import { getFirebaseClientApp } from '@/lib/firebase/client';
-import { Event } from '@/types/portal';
+import { Event, User } from '@/types/portal';
 
 export default function PortalExtras() {
   const [nextEvent, setNextEvent] = useState<Event | null>(null);
+  const [memberOfMonth, setMemberOfMonth] = useState<User | null>(null);
+  const [upcomingBirthdays, setUpcomingBirthdays] = useState<Array<{user: User, daysUntil: number}>>([]);
 
   useEffect(() => {
     loadNextEvent();
+    loadMemberOfMonth();
+    loadUpcomingBirthdays();
   }, []);
 
   const loadNextEvent = async () => {
@@ -43,6 +47,120 @@ export default function PortalExtras() {
     }
   };
 
+  const loadMemberOfMonth = async () => {
+    const app = getFirebaseClientApp();
+    if (!app) return;
+
+    const db = getFirestore(app);
+    
+    try {
+      // First try to find a featured member
+      const featuredQuery = query(
+        collection(db, 'users'),
+        where('status', '==', 'active'),
+        where('featured', '==', true),
+        limit(1)
+      );
+      
+      const featuredSnapshot = await getDocs(featuredQuery);
+      
+      if (!featuredSnapshot.empty) {
+        const doc = featuredSnapshot.docs[0];
+        const data = doc.data();
+        setMemberOfMonth({ ...data, uid: doc.id } as User);
+      } else {
+        // If no featured member, get a random active member
+        const usersQuery = query(
+          collection(db, 'users'),
+          where('status', '==', 'active'),
+          limit(25)
+        );
+        
+        const snapshot = await getDocs(usersQuery);
+        if (!snapshot.empty) {
+          const users: User[] = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            users.push({ ...data, uid: doc.id } as User);
+          });
+          
+          const randomUser = users[Math.floor(Math.random() * users.length)];
+          setMemberOfMonth(randomUser);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading member of month:', error);
+    }
+  };
+
+  const loadUpcomingBirthdays = async () => {
+    const app = getFirebaseClientApp();
+    if (!app) return;
+
+    const db = getFirestore(app);
+    
+    try {
+      // Get all active members with birthdays
+      const usersQuery = query(
+        collection(db, 'users'),
+        where('status', '==', 'active')
+      );
+      
+      const snapshot = await getDocs(usersQuery);
+      const today = new Date();
+      
+      const upcomingBirthdays: Array<{user: User, daysUntil: number}> = [];
+      
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const user = { ...data, uid: doc.id } as User;
+        
+        if (user.birthday) {
+          // Parse birthday (expected format: MM/DD or MM-DD or full date)
+          let birthMonth: number, birthDay: number;
+          
+          if (user.birthday instanceof Date) {
+            birthMonth = user.birthday.getMonth();
+            birthDay = user.birthday.getDate();
+          } else if (typeof user.birthday === 'string') {
+            const parts = user.birthday.split(/[-/]/);
+            if (parts.length >= 2) {
+              birthMonth = parseInt(parts[0]) - 1; // Month is 0-indexed
+              birthDay = parseInt(parts[1]);
+            } else {
+              return;
+            }
+          } else {
+            return;
+          }
+          
+          // Calculate days until birthday this year
+          const birthdayThisYear = new Date(today.getFullYear(), birthMonth, birthDay);
+          let daysUntil = Math.ceil((birthdayThisYear.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          
+          // If birthday already passed this year, calculate for next year
+          if (daysUntil < 0) {
+            const birthdayNextYear = new Date(today.getFullYear() + 1, birthMonth, birthDay);
+            daysUntil = Math.ceil((birthdayNextYear.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          }
+          
+          // Include birthdays within next 30 days
+          if (daysUntil >= 0 && daysUntil <= 30) {
+            upcomingBirthdays.push({ user, daysUntil });
+          }
+        }
+      });
+      
+      // Sort by days until birthday
+      upcomingBirthdays.sort((a, b) => a.daysUntil - b.daysUntil);
+      
+      // Take top 3
+      setUpcomingBirthdays(upcomingBirthdays.slice(0, 3));
+    } catch (error) {
+      console.error('Error loading birthdays:', error);
+    }
+  };
+
   const getTimeUntilEvent = (startAt: Timestamp) => {
     const now = Date.now();
     const eventTime = startAt.toDate().getTime();
@@ -53,81 +171,89 @@ export default function PortalExtras() {
     return `In ${diffDays} Days`;
   };
 
+  const getBirthdayText = (daysUntil: number) => {
+    if (daysUntil === 0) return 'Today';
+    if (daysUntil === 1) return 'Tomorrow';
+    if (daysUntil <= 7) {
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const date = new Date();
+      date.setDate(date.getDate() + daysUntil);
+      return days[date.getDay()];
+    }
+    return `In ${daysUntil} days`;
+  };
+
   return (
     <aside className="hidden lg:block w-[320px] shrink-0 sticky top-24 space-y-6">
       {/* Member of the Month Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700 relative overflow-hidden group">
-        {/* Badge */}
-        <div className="absolute top-0 right-0 bg-[#17b0cf] text-white text-[10px] font-black uppercase px-3 py-1 rounded-bl-lg z-10">
-          Member of the Month
-        </div>
-        <div className="flex flex-col items-center text-center">
-          <div className="relative mb-4 mt-2">
-            <div className="absolute inset-0 bg-[#17b0cf]/20 rounded-full blur-xl transform group-hover:scale-110 transition-transform duration-500" />
-            <div 
-              className="size-24 rounded-full bg-cover bg-center border-4 border-white dark:border-gray-800 shadow-md relative z-10" 
-              style={{ backgroundImage: 'url(https://lh3.googleusercontent.com/aida-public/AB6AXuCG-KVViibHBCniL4SvgqfNEvetmQoWED5rN7SV89Nw5HCwnoeeX-Ny26wPvsTwHshDjqmPF2tzSP5gvJvxN3bYnALawgl1swUKBAUJ3Wwr7F0peTcB00BChAVFz9qV6Iy2rXdycfBv0Bb2K2yqjxKQLpjjC-t5d-uj8r0XkgO__dDfvHGaJoQppVYAkNez-F79qefPolGQ-aMWxVH7Wh40PDUGOXufpPueuufSBsU5O2KrJZkjZIPUyIA82zKvB1AuUu1jgA2qZR4)' }}
-            />
-            <div className="absolute bottom-0 right-0 bg-[#FCCE10] text-amber-900 p-1.5 rounded-full border-2 border-white dark:border-gray-800 z-20 flex items-center justify-center">
-              <span className="material-symbols-filled text-[14px]">star</span>
-            </div>
+      {memberOfMonth && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700 relative overflow-hidden group">
+          {/* Badge */}
+          <div className="absolute top-0 right-0 bg-[#17b0cf] text-white text-[10px] font-black uppercase px-3 py-1 rounded-bl-lg z-10">
+            Member of the Month
           </div>
-          <h3 className="text-lg font-black text-gray-900 dark:text-white">Alex Johnson</h3>
-          <p className="text-sm text-[#17b0cf] font-medium mb-3">Community Lead</p>
-          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 w-full mb-3">
-            <p className="text-xs italic text-gray-600 dark:text-gray-400">
-              "Alex organized the entire winter food drive single-handedly, collecting over 500lbs of food!"
-            </p>
-          </div>
-          <Link 
-            href="/portal/directory"
-            className="text-xs font-bold text-gray-500 hover:text-[#17b0cf] transition-colors flex items-center gap-1"
-          >
-            View Profile <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-          </Link>
-        </div>
-      </div>
-
-      {/* Celebrations Module */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700">
-        <h3 className="text-sm font-black text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-[#EE8899]">cake</span> Celebrations
-        </h3>
-        <div className="flex flex-col gap-4">
-          {/* Birthday Item */}
-          <div className="flex items-center gap-3">
-            <div className="size-10 rounded-full bg-[#EE8899]/10 flex items-center justify-center text-[#EE8899] shrink-0">
-              <span className="material-symbols-filled text-[18px]">cake</span>
+          <div className="flex flex-col items-center text-center">
+            <div className="relative mb-4 mt-2">
+              <div className="absolute inset-0 bg-[#17b0cf]/20 rounded-full blur-xl transform group-hover:scale-110 transition-transform duration-500" />
+              <div 
+                className="size-24 rounded-full bg-cover bg-center border-4 border-white dark:border-gray-800 shadow-md relative z-10" 
+                style={{ backgroundImage: `url(${memberOfMonth.photoURL || '/assets/images/default-avatar.png'})` }}
+              />
+              <div className="absolute bottom-0 right-0 bg-[#FCCE10] text-amber-900 p-1.5 rounded-full border-2 border-white dark:border-gray-800 z-20 flex items-center justify-center">
+                <span className="material-symbols-filled text-[14px]">star</span>
+              </div>
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-gray-900 dark:text-white">Sarah's Birthday</p>
-              <p className="text-xs text-gray-500">Turning 26 • Tomorrow</p>
-            </div>
-            <Link
+            <h3 className="text-lg font-black text-gray-900 dark:text-white">{memberOfMonth.name}</h3>
+            <p className="text-sm text-[#17b0cf] font-medium mb-3">{memberOfMonth.role || 'Member'}</p>
+            {memberOfMonth.bio && (
+              <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 w-full mb-3">
+                <p className="text-xs italic text-gray-600 dark:text-gray-400">
+                  {memberOfMonth.bio}
+                </p>
+              </div>
+            )}
+            <Link 
               href="/portal/directory"
-              className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded hover:bg-[#EE8899] hover:text-white transition-colors"
+              className="text-xs font-bold text-gray-500 hover:text-[#17b0cf] transition-colors flex items-center gap-1"
             >
-              Gift
+              View Profile <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
             </Link>
           </div>
-          
-          {/* Anniversary Item */}
-          <div className="flex items-center gap-3">
-            <div className="size-10 rounded-full bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center text-purple-500 shrink-0">
-              <span className="material-symbols-filled text-[18px]">verified</span>
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-gray-900 dark:text-white">Mike's Anniversary</p>
-              <p className="text-xs text-gray-500">3 Years in Club • Friday</p>
-            </div>
+        </div>
+      )}
+
+      {/* Celebrations Module */}
+      {upcomingBirthdays.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700">
+          <h3 className="text-sm font-black text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#EE8899]">cake</span> Celebrations
+          </h3>
+          <div className="flex flex-col gap-4">
+            {upcomingBirthdays.map((birthday, index) => (
+              <div key={birthday.user.uid} className="flex items-center gap-3">
+                <div className="size-10 rounded-full bg-[#EE8899]/10 flex items-center justify-center text-[#EE8899] shrink-0">
+                  <span className="material-symbols-filled text-[18px]">cake</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">{birthday.user.name}</p>
+                  <p className="text-xs text-gray-500">Birthday • {getBirthdayText(birthday.daysUntil)}</p>
+                </div>
+                <Link
+                  href="/portal/directory"
+                  className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded hover:bg-[#EE8899] hover:text-white transition-colors"
+                >
+                  Wish
+                </Link>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-center">
+            <Link href="/portal/directory" className="text-xs font-bold text-[#17b0cf] hover:text-cyan-600">
+              View Directory
+            </Link>
           </div>
         </div>
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-center">
-          <Link href="/portal/events" className="text-xs font-bold text-[#17b0cf] hover:text-cyan-600">
-            View All Events
-          </Link>
-        </div>
-      </div>
+      )}
 
       {/* Mini Calendar Widget */}
       {nextEvent ? (

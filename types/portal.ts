@@ -14,6 +14,8 @@ export interface User {
   email: string;
   photoURL?: string;
   bio?: string;
+  birthday?: string | Date;
+  featured?: boolean;
   role: UserRole;
   status: UserStatus;
   committee?: string;
