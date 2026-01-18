@@ -13,6 +13,7 @@ export interface User {
   name: string;
   email: string;
   photoURL?: string;
+  bio?: string;
   role: UserRole;
   status: UserStatus;
   committee?: string;
