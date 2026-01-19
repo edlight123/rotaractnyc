@@ -617,7 +617,7 @@ export default function PortalDashboard() {
                   </div>
                 )}
                 <Link 
-                  href="/portal/directory"
+                  href={`/portal/directory/${memberOfMonth.uid}`}
                   className="text-xs font-bold text-gray-500 hover:text-[#17b0cf] transition-colors flex items-center gap-1"
                 >
                   View Profile <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
@@ -643,7 +643,7 @@ export default function PortalDashboard() {
                       <p className="text-xs text-gray-500">Birthday • {getBirthdayText(birthday.daysUntil)}</p>
                     </div>
                     <Link
-                      href="/portal/directory"
+                      href={`/portal/directory/${birthday.user.uid}`}
                       className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded hover:bg-[#EE8899] hover:text-white transition-colors"
                     >
                       Wish
