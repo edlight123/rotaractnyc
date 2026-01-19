@@ -41,7 +41,7 @@ interface PostCardProps {
   content: {
     title?: string;
     body: string;
-    type: 'text' | 'images' | 'announcement' | 'document' | 'link' | 'event';
+    type: 'text' | 'images' | 'announcement' | 'document' | 'link' | 'event' | 'spotlight';
     images?: string[];
     document?: {
       name: string;
@@ -59,6 +59,13 @@ interface PostCardProps {
       title: string;
       date: string;
       time: string;
+    };
+    spotlight?: {
+      userId: string;
+      name: string;
+      role: string;
+      photoURL?: string;
+      quote: string;
     };
   };
   likes: string[];
@@ -204,17 +211,19 @@ export function PostCard({ postId, author, timestamp, content, likes, commentsCo
     <article 
       className={`rounded-xl overflow-hidden shadow-sm hover:shadow-md border transition-all duration-300 ${
         content.type === 'announcement' 
-          ? 'relative bg-gradient-to-br from-indigo-600 to-purple-700' 
+          ? 'relative bg-gradient-to-br from-indigo-600 to-purple-700'
+          : content.type === 'spotlight'
+          ? 'relative bg-gradient-to-br from-amber-500 to-amber-600'
           : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
       }`}
     >
-      {content.type === 'announcement' && (
+      {(content.type === 'announcement' || content.type === 'spotlight') && (
         <div className="absolute -top-10 -right-10 size-40 bg-white/10 rounded-full blur-2xl" />
       )}
       
-      <div className={content.type === 'announcement' ? 'relative p-6' : ''}>
+      <div className={(content.type === 'announcement' || content.type === 'spotlight') ? 'relative p-6' : ''}>
         {/* Post Header */}
-        {content.type !== 'announcement' ? (
+        {content.type !== 'announcement' && content.type !== 'spotlight' && (
           <div className="p-4 flex justify-between items-start">
             <div className="flex gap-3">
               <div 
@@ -231,7 +240,10 @@ export function PostCard({ postId, author, timestamp, content, likes, commentsCo
               </div>
             </div>
           </div>
-        ) : (
+        )}
+
+        {/* Announcement Header */}
+        {content.type === 'announcement' && (
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-3">
               <div className="size-10 rounded-full bg-white/20 flex items-center justify-center text-white backdrop-blur-sm">
@@ -248,8 +260,22 @@ export function PostCard({ postId, author, timestamp, content, likes, commentsCo
           </div>
         )}
 
+        {/* Spotlight Header */}
+        {content.type === 'spotlight' && (
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-full bg-white/20 flex items-center justify-center text-white backdrop-blur-sm">
+                <span className="material-symbols-outlined">star</span>
+              </div>
+              <div>
+                <p className="text-white/80 font-bold text-xs uppercase tracking-widest">Member Spotlight</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Post Content */}
-        <div className={content.type === 'announcement' ? '' : 'px-4 pb-3'}>
+        <div className={(content.type === 'announcement' || content.type === 'spotlight') ? '' : 'px-4 pb-3'}>
           {content.title && (
             <h3 className={`font-bold mb-2 ${
               content.type === 'announcement' 
@@ -343,6 +369,37 @@ export function PostCard({ postId, author, timestamp, content, likes, commentsCo
             </div>
           )}
 
+          {/* Member Spotlight Card */}
+          {content.type === 'spotlight' && content.spotlight && (
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 mb-4">
+              <div className="flex items-center gap-4 mb-3">
+                <div 
+                  className="size-16 rounded-full bg-cover bg-center border-2 border-white/30"
+                  style={{ backgroundImage: `url(${content.spotlight.photoURL || 'https://via.placeholder.com/64'})` }}
+                />
+                <div>
+                  <p className="font-bold text-xl text-white">{content.spotlight.name}</p>
+                  <p className="text-sm text-white/80">{content.spotlight.role}</p>
+                </div>
+              </div>
+              {content.spotlight.quote && (
+                <p className="text-white/90 italic text-sm leading-relaxed mb-4">
+                  "{content.spotlight.quote}"
+                </p>
+              )}
+              <button
+                onClick={() => {
+                  if (content.spotlight?.userId) {
+                    window.location.href = `/portal/directory?member=${content.spotlight.userId}`;
+                  }
+                }}
+                className="w-full bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-bold backdrop-blur-sm transition-colors"
+              >
+                Say Hello 👋
+              </button>
+            </div>
+          )}
+
           {/* Announcement CTA */}
           {content.type === 'announcement' && (
             <button
@@ -355,7 +412,7 @@ export function PostCard({ postId, author, timestamp, content, likes, commentsCo
         </div>
 
         {/* Reactions Bar */}
-        {content.type !== 'announcement' && (
+        {content.type !== 'announcement' && content.type !== 'spotlight' && (
           <>
             <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
               <div className="flex gap-4">

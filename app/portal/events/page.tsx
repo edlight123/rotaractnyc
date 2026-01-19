@@ -299,7 +299,8 @@ export default function EventsPage() {
               return (
                 <article
                   key={event.id}
-                  className="group bg-white rounded-xl overflow-hidden border border-slate-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-300 flex flex-col h-full"
+                  onClick={() => router.push(`/portal/events/${event.id}`)}
+                  className="group bg-white rounded-xl overflow-hidden border border-slate-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-300 flex flex-col h-full cursor-pointer"
                 >
                   {/* Event Image/Header */}
                   <div className="relative h-48 overflow-hidden bg-gradient-to-br from-blue-500 to-blue-700">
@@ -373,7 +374,10 @@ export default function EventsPage() {
                         </div>
                       ) : (
                         <button
-                          onClick={() => handleRsvp(event.id, 'going')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRsvp(event.id, 'going');
+                          }}
                           disabled={isUpdating}
                           className="flex items-center justify-center rounded-lg h-9 px-5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold leading-normal transition-colors shadow-sm disabled:opacity-50"
                         >
@@ -386,7 +390,10 @@ export default function EventsPage() {
                     {userRsvp && (
                       <div className="mt-3 pt-3 border-t border-slate-100 flex gap-2">
                         <button
-                          onClick={() => handleRsvp(event.id, 'going')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRsvp(event.id, 'going');
+                          }}
                           disabled={isUpdating}
                           className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                             userRsvp.status === 'going'
@@ -397,7 +404,10 @@ export default function EventsPage() {
                           Going
                         </button>
                         <button
-                          onClick={() => handleRsvp(event.id, 'maybe')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRsvp(event.id, 'maybe');
+                          }}
                           disabled={isUpdating}
                           className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                             userRsvp.status === 'maybe'
@@ -408,7 +418,10 @@ export default function EventsPage() {
                           Maybe
                         </button>
                         <button
-                          onClick={() => handleRsvp(event.id, 'not')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRsvp(event.id, 'not');
+                          }}
                           disabled={isUpdating}
                           className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                             userRsvp.status === 'not'

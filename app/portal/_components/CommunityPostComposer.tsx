@@ -12,6 +12,7 @@ import {
   arrayUnion,
   arrayRemove,
   query, 
+  where,
   orderBy, 
   limit, 
   serverTimestamp, 
@@ -44,7 +45,7 @@ interface Post {
   content: {
     title?: string;
     body: string;
-    type: 'text' | 'images' | 'announcement' | 'document' | 'link' | 'event';
+    type: 'text' | 'images' | 'announcement' | 'document' | 'link' | 'event' | 'spotlight';
     images?: string[];
     document?: {
       name: string;
@@ -82,7 +83,12 @@ function CreatePostComposer({ user, userData, onPostCreated }: CreatePostCompose
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [linkUrl, setLinkUrl] = useState('');
   const [showLinkInput, setShowLinkInput] = useState(false);
+  const [showSpotlightModal, setShowSpotlightModal] = useState(false);
+  const [spotlightUser, setSpotlightUser] = useState<any>(null);
+  const [spotlightQuote, setSpotlightQuote] = useState('');
   const [uploading, setUploading] = useState(false);
+
+  const isAdminOrBoard = userData?.role === 'ADMIN' || userData?.role === 'BOARD';
 
   const handlePost = async () => {
     if (!postText.trim() && selectedImages.length === 0 && !linkUrl) return;
@@ -120,6 +126,15 @@ function CreatePostComposer({ user, userData, onPostCreated }: CreatePostCompose
           title: new URL(linkUrl).hostname,
           description: postText,
         };
+      } else if (spotlightUser) {
+        type = 'spotlight';
+        additionalData.spotlight = {
+          userId: spotlightUser.uid,
+          name: spotlightUser.name,
+          role: spotlightUser.role,
+          photoURL: spotlightUser.photoURL,
+          quote: spotlightQuote || 'Proud to be part of Rotaract NYC!',
+        };
       }
 
       await addDoc(collection(db, 'communityPosts'), {
@@ -139,6 +154,9 @@ function CreatePostComposer({ user, userData, onPostCreated }: CreatePostCompose
       setSelectedImages([]);
       setLinkUrl('');
       setShowLinkInput(false);
+      setSpotlightUser(null);
+      setSpotlightQuote('');
+      setShowSpotlightModal(false);
       onPostCreated();
     } catch (err) {
       console.error('Error creating post:', err);
@@ -248,6 +266,16 @@ function CreatePostComposer({ user, userData, onPostCreated }: CreatePostCompose
               >
                 <span className="material-symbols-outlined">link</span>
               </button>
+              {isAdminOrBoard && (
+                <button 
+                  className="p-2 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-full transition-colors" 
+                  title="Member Spotlight"
+                  onClick={() => setShowSpotlightModal(true)}
+                  disabled={uploading}
+                >
+                  <span className="material-symbols-outlined">star</span>
+                </button>
+              )}
             </div>
             <button 
               onClick={handlePost}
@@ -257,6 +285,154 @@ function CreatePostComposer({ user, userData, onPostCreated }: CreatePostCompose
               {uploading ? 'Posting...' : 'Post'}
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Spotlight Modal */}
+      {showSpotlightModal && (
+        <SpotlightModal
+          onClose={() => setShowSpotlightModal(false)}
+          onSelect={(user, quote) => {
+            setSpotlightUser(user);
+            setSpotlightQuote(quote);
+            setShowSpotlightModal(false);
+          }}
+        />
+      )}
+
+      {/* Spotlight Preview */}
+      {spotlightUser && (
+        <div className="mt-3 p-3 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-lg border border-amber-200 dark:border-amber-700">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-amber-600 text-[18px]">star</span>
+              <span className="text-xs font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wider">Member Spotlight</span>
+            </div>
+            <button
+              onClick={() => {
+                setSpotlightUser(null);
+                setSpotlightQuote('');
+              }}
+              className="text-amber-600 hover:text-amber-800 dark:hover:text-amber-400"
+            >
+              <span className="material-symbols-outlined text-[18px]">close</span>
+            </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <div 
+              className="size-12 rounded-full bg-cover bg-center border-2 border-amber-300 dark:border-amber-600"
+              style={{ backgroundImage: `url(${spotlightUser.photoURL || 'https://via.placeholder.com/48'})` }}
+            />
+            <div className="flex-1">
+              <p className="font-bold text-sm text-amber-900 dark:text-amber-200">{spotlightUser.name}</p>
+              <p className="text-xs text-amber-700 dark:text-amber-400">{spotlightUser.role}</p>
+            </div>
+          </div>
+          {spotlightQuote && (
+            <p className="mt-2 text-xs italic text-amber-800 dark:text-amber-300">"{spotlightQuote}"</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SpotlightModal({ onClose, onSelect }: { onClose: () => void; onSelect: (user: any, quote: string) => void }) {
+  const [users, setUsers] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [quote, setQuote] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadUsers() {
+      const app = getFirebaseClientApp();
+      if (!app) return;
+      const db = getFirestore(app);
+
+      try {
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('status', '==', 'active'), orderBy('name'));
+        const snapshot = await getDocs(q);
+        const loadedUsers = snapshot.docs.map(doc => ({
+          uid: doc.id,
+          ...doc.data()
+        }));
+        setUsers(loadedUsers);
+      } catch (err) {
+        console.error('Error loading users:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadUsers();
+  }, []);
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full max-h-[80vh] overflow-y-auto">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-800">
+          <h3 className="font-bold text-lg">Select Member to Spotlight</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div className="p-4">
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#17b0cf]"></div>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-2 mb-4">
+                {users.map(user => (
+                  <button
+                    key={user.uid}
+                    onClick={() => setSelectedUser(user)}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
+                      selectedUser?.uid === user.uid
+                        ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <div 
+                      className="size-10 rounded-full bg-cover bg-center"
+                      style={{ backgroundImage: `url(${user.photoURL || 'https://via.placeholder.com/40'})` }}
+                    />
+                    <div className="text-left flex-1">
+                      <p className="font-bold text-sm">{user.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{user.role || 'Member'}</p>
+                    </div>
+                    {selectedUser?.uid === user.uid && (
+                      <span className="material-symbols-outlined text-amber-500">check_circle</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {selectedUser && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-bold mb-2">Spotlight Quote</label>
+                    <textarea
+                      className="w-full bg-gray-50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-600 rounded-lg p-3 text-sm resize-none h-20"
+                      placeholder='e.g. "Proud to be part of Rotaract NYC!"'
+                      value={quote}
+                      onChange={(e) => setQuote(e.target.value)}
+                    />
+                  </div>
+
+                  <button
+                    onClick={() => onSelect(selectedUser, quote)}
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-lg font-bold transition-colors"
+                  >
+                    Create Spotlight Post
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

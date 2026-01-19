@@ -27,7 +27,7 @@ interface Post {
   content: {
     title?: string;
     body: string;
-    type: 'text' | 'images' | 'announcement' | 'document' | 'link' | 'event';
+    type: 'text' | 'images' | 'announcement' | 'document' | 'link' | 'event' | 'spotlight';
     images?: string[];
     document?: {
       name: string;
@@ -45,6 +45,13 @@ interface Post {
       title: string;
       date: string;
       time: string;
+    };
+    spotlight?: {
+      userId: string;
+      name: string;
+      role: string;
+      photoURL?: string;
+      quote: string;
     };
   };
   likes: string[];
@@ -89,6 +96,7 @@ export default function CommunityFeed() {
             document: data.document ? (data.document as Post['content']['document']) : undefined,
             link: data.link ? (data.link as Post['content']['link']) : undefined,
             event: data.event ? (data.event as Post['content']['event']) : undefined,
+            spotlight: data.spotlight ? (data.spotlight as Post['content']['spotlight']) : undefined,
           },
           likes: Array.isArray(data.likes) ? data.likes : [],
           commentsCount: Number(data.commentsCount || 0),
