@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirebaseAdminApp } from '@/lib/firebase/admin';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
-import { requireRole } from '@/lib/portal/auth';
+import { getPortalSession } from '@/lib/portal/auth';
+import { isEmailAllowed } from '@/lib/firebase/allowlist';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -13,12 +14,30 @@ export const dynamic = 'force-dynamic';
  * This endpoint fixes permission errors by ensuring all users have their
  * Firestore role synced to their Firebase Auth custom claims.
  * 
- * Only accessible by ADMIN users.
+ * Only accessible by ADMIN users or allowlisted emails.
  */
 export async function POST(req: NextRequest) {
   try {
-    // Require ADMIN role
-    await requireRole('ADMIN');
+    // Check if user is authenticated and is an admin (via allowlist or custom claims)
+    const session = await getPortalSession();
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized - No session' }, { status: 401 });
+    }
+
+    // Allow if email is in allowlist OR if they have ADMIN role in Firestore document
+    const isAllowlisted = isEmailAllowed(session.email);
+    const hasAdminInFirestore = session.user?.role === 'ADMIN';
+    const hasAdminInClaims = session.role === 'ADMIN';
+    
+    if (!isAllowlisted && !hasAdminInFirestore && !hasAdminInClaims) {
+      return NextResponse.json({ 
+        error: 'Unauthorized - Admin access required',
+        email: session.email,
+        firestoreRole: session.user?.role,
+        claimsRole: session.role 
+      }, { status: 403 });
+    }
 
     const app = getFirebaseAdminApp();
     if (!app) {
