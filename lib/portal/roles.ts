@@ -51,3 +51,6 @@ export function canManageFinances(role: UserRole | undefined): boolean {
 export function canManageUsers(role: UserRole | undefined): boolean {
   return isAdmin(role);
 }
+export function canManagePosts(role: UserRole | undefined): boolean {
+  return isAdmin(role);
+}
