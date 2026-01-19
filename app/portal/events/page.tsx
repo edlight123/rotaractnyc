@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/lib/firebase/auth';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   collection, 
   query, 
@@ -22,6 +23,7 @@ type FilterType = 'all' | 'member' | 'public';
 
 export default function EventsPage() {
   const { user, userData, loading } = useAuth();
+  const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [rsvps, setRsvps] = useState<Map<string, RSVP>>(new Map());

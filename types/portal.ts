@@ -23,6 +23,8 @@ export interface User {
   phone?: string;
   whatsapp?: string;
   linkedin?: string;
+  joinedAt?: Timestamp;
+  interests?: string[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
