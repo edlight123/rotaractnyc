@@ -103,7 +103,28 @@ service cloud.firestore {
     match /communityPosts/{postId} {
       allow read: if isMember();
       allow create: if isMember() && request.resource.data.authorUid == request.auth.uid;
-      allow update, delete: if isAdmin();
+      allow update: if isMember() && (
+        // Allow any member to update likes array (like/unlike)
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
+        // Allow author or admin to update other fields
+        || resource.data.authorUid == request.auth.uid
+        || isAdmin()
+      );
+      allow delete: if resource.data.authorUid == request.auth.uid || isAdmin();
+      
+      // Comments subcollection
+      match /comments/{commentId} {
+        allow read: if isMember();
+        allow create: if isMember() && request.resource.data.authorUid == request.auth.uid;
+        allow update: if isMember() && (
+          // Allow any member to update likes array
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
+          // Allow author or admin to update other fields
+          || resource.data.authorUid == request.auth.uid
+          || isAdmin()
+        );
+        allow delete: if resource.data.authorUid == request.auth.uid || isAdmin();
+      }
     }
     
     // Documents collection
