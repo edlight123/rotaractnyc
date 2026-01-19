@@ -308,7 +308,8 @@ export default function AdminEventsPage() {
   }
 
   return (
-    <main className="flex-1 w-full px-4 md:px-8 py-6 max-w-[1440px] mx-auto">
+    <>
+      <main className="flex-1 w-full px-4 md:px-8 py-6 max-w-[1440px] mx-auto">
         {/* Page Heading */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
@@ -812,6 +813,6 @@ export default function AdminEventsPage() {
           </div>
         </div>
       )}
-    </main>
+    </>
   )
 }
