@@ -8,8 +8,6 @@ import { getFirebaseClientApp } from '@/lib/firebase/client';
 import { Announcement, User } from '@/types/portal';
 import FeedCard from '../_components/FeedCard';
 import { PostCard } from '../_components/PostCard';
-import PostComposer from '../_components/PostComposer';
-import { CreatePostComposer } from '../_components/CommunityPostComposer';
 import MemberSpotlight from '../_components/MemberSpotlight';
 import UpcomingDeadlines from '../_components/UpcomingDeadlines';
 import QuickLinks from '../_components/QuickLinks';
