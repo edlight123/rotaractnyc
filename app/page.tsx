@@ -8,9 +8,9 @@ export default function Home() {
   return (
     <div className="bg-background-light dark:bg-background-dark">
       {/* Hero Section */}
-      <header className="relative w-full h-[85vh] min-h-[600px] flex items-center justify-center overflow-hidden">
+      <header className="relative w-full h-[85vh] min-h-[600px] flex items-center justify-center overflow-hidden" role="banner">
         {/* Background Image with Overlay */}
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0" aria-hidden="true">
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70 z-10"></div>
           <Image
             src="/53cde13b1a312d32c08a429715695a65.jpg"
@@ -63,7 +63,7 @@ export default function Home() {
       </header>
 
       {/* Mission Statement Block */}
-      <section className="py-20 px-6 bg-slate-50 dark:bg-[#1a2026]">
+      <section className="py-20 px-6 bg-slate-50 dark:bg-[#1a2026]" id="main-content" aria-labelledby="mission-heading">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

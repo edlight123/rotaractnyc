@@ -5,7 +5,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FaBars, FaTimes } from 'react-icons/fa'
+import { DarkModeToggle } from './DarkModeToggle'
+import SearchButton from './SearchButton'
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false)
@@ -103,6 +104,8 @@ const Navbar = () => {
                 )}
               </div>
             ))}
+            <SearchButton />
+            <DarkModeToggle />
             <Link
               href="/portal/login"
               className="px-6 py-2 bg-rotaract-pink hover:bg-rotaract-darkpink text-white font-semibold rounded-lg transition-colors shadow-sm"
@@ -111,12 +114,17 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
+          {/* Mobile Menu Button & Dark Mode */}
+          <div className="lg:hidden flex items-center gap-2">
+            <DarkModeToggle />
+            <button
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden text-rotaract-darkpink text-2xl"
+            className="lg:hidden text-rotaract-darkpink text-2xl p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label={isOpen ? 'Close menu' : 'Open menu'}
           >
-            {isOpen ? <FaTimes /> : <FaBars />}
+            <span className="material-symbols-outlined text-3xl">
+              {isOpen ? 'close' : 'menu'}
+            </span>
           </button>
         </div>
 

@@ -4,6 +4,10 @@ import './globals.css'
 import RouteChrome from '@/components/RouteChrome'
 import Footer from '@/components/Footer'
 import { Analytics } from '@vercel/analytics/react'
+import { defaultMetadata } from '@/lib/metadata'
+import SkipToContent from '@/components/SkipToContent'
+import PWARegister from '@/components/PWARegister'
+import GlobalKeyboardShortcuts from '@/components/GlobalKeyboardShortcuts'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const plusJakarta = Plus_Jakarta_Sans({ 
@@ -12,16 +16,7 @@ const plusJakarta = Plus_Jakarta_Sans({
   variable: '--font-plus-jakarta' 
 })
 
-export const metadata: Metadata = {
-  title: 'Rotaract Club at the United Nations',
-  description: 'Rotaract Club of New York at the United Nations - Service, Fellowship, Diversity',
-  keywords: ['rotaract', 'united nations', 'new york', 'service club', 'volunteer', 'leadership'],
-  openGraph: {
-    title: 'Rotaract Club at the United Nations',
-    description: 'Rotaract Club of New York at the United Nations',
-    type: 'website',
-  },
-}
+export const metadata: Metadata = defaultMetadata
 
 export default function RootLayout({
   children,
@@ -37,6 +32,9 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
+        <SkipToContent />
+        <PWARegister />
+        <GlobalKeyboardShortcuts />
         <RouteChrome>{children}</RouteChrome>
         <Footer />
         <Analytics />

@@ -1,0 +1,42 @@
+{
+  "name": "Rotaract Club at the United Nations",
+  "short_name": "Rotaract NYC",
+  "description": "Rotaract Club of New York at the United Nations - Service, Fellowship, Diversity",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0085c7",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "social", "education"],
+  "shortcuts": [
+    {
+      "name": "Events",
+      "url": "/events",
+      "description": "View upcoming events"
+    },
+    {
+      "name": "News",
+      "url": "/rcun-news",
+      "description": "Read latest news"
+    },
+    {
+      "name": "Member Portal",
+      "url": "/portal/login",
+      "description": "Access member portal"
+    }
+  ]
+}
