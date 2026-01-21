@@ -10,6 +10,7 @@ import 'react-quill/dist/quill.snow.css'
 import { TableView } from './_components/TableView'
 import { CardView } from './_components/CardView'
 import { KanbanView } from './_components/KanbanView'
+import NewPostModal from '@/app/portal/_components/NewPostModal'
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false })
 
@@ -57,8 +58,9 @@ export default function AdminPostsPage() {
   const [error, setError] = useState<string | null>(null)
   const [posts, setPosts] = useState<PostRow[]>([])
   const [editingSlug, setEditingSlug] = useState<string | null>(null)
-  const [mode, setMode] = useState<'list' | 'new' | 'edit'>('list')
+  const [mode, setMode] = useState<'list' | 'edit'>('list')
   const [viewMode, setViewMode] = useState<'table' | 'cards' | 'kanban'>('table')
+  const [showNewPostModal, setShowNewPostModal] = useState(false)
 
   const [form, setForm] = useState({
     title: '',
@@ -191,16 +193,7 @@ export default function AdminPostsPage() {
   }
 
   const startNew = () => {
-    setEditingSlug(null)
-    setMode('new')
-    setForm({
-      title: '',
-      category: 'Club News',
-      contentHtml: '',
-      published: true,
-    })
-    setCategoryInput('Club News')
-    setIsCustomCategory(false)
+    setShowNewPostModal(true)
   }
 
   const backToList = () => {
@@ -287,7 +280,7 @@ export default function AdminPostsPage() {
                 <span>Import</span>
               </button>
               <button
-                onClick={startNew}
+                onClick={() => setShowNewPostModal(true)}
                 className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-primary/20 hover:bg-blue-700 transition-all active:scale-95"
               >
                 <span className="material-symbols-outlined text-[20px]">add</span>
@@ -432,7 +425,7 @@ export default function AdminPostsPage() {
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="flex items-center justify-between gap-4 mb-6">
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                  {mode === 'edit' ? 'Edit Article' : 'New Article'}
+                  Edit Article
                 </h3>
                 <button
                   onClick={backToList}
@@ -583,10 +576,8 @@ export default function AdminPostsPage() {
                         <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                         Saving...
                       </>
-                    ) : mode === 'edit' ? (
-                      'Save Changes'
                     ) : (
-                      'Create Article'
+                      'Save Changes'
                     )}
                   </button>
                   <button
@@ -601,6 +592,15 @@ export default function AdminPostsPage() {
           )}
         </div>
       </div>
+      
+      {/* New Post Modal */}
+      <NewPostModal 
+        isOpen={showNewPostModal} 
+        onClose={() => {
+          setShowNewPostModal(false)
+          refresh()
+        }} 
+      />
     </div>
   )
 }

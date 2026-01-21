@@ -166,7 +166,7 @@ export default function NewPostModal({ isOpen, onClose }: NewPostModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-8 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 md:p-8 overflow-y-auto">
       <div className="w-full max-w-[1100px] max-h-[90vh] my-auto bg-white dark:bg-[#0a0a0a] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-zinc-800">
         {/* Header */}
         <header className="flex items-center justify-between px-8 py-5 border-b border-slate-100 dark:border-zinc-800 shrink-0">
