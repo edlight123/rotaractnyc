@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAdminSession } from '@/lib/admin/useAdminSession';
-import { getRelativeTime } from '@/lib/admin/activities';
+import { getRelativeTime } from '@/lib/admin/utils';
 
 interface ActivityItem {
   id: string;
