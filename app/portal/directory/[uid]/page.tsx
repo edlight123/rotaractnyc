@@ -161,16 +161,24 @@ export default function MemberProfilePage() {
                     {member.committee}
                   </span>
                 )}
-                <span className="inline-flex items-center px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-sm font-semibold">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                  Active
-                </span>
+                {member.status === 'active' && (
+                  <span className="inline-flex items-center px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-sm font-semibold">
+                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                    Active
+                  </span>
+                )}
+                {member.status === 'alumni' && (
+                  <span className="inline-flex items-center px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-lg text-sm font-semibold">
+                    <span className="material-symbols-outlined text-sm mr-1">school</span>
+                    Alumni
+                  </span>
+                )}
               </div>
             </div>
 
             {/* Action Buttons */}
             <div className="flex gap-3">
-              {user && userData?.status === 'active' && (
+              {user && userData?.status === 'active' && member.status === 'active' && (
                 <>
                   <button
                     onClick={() => setIsMessageModalOpen(true)}
@@ -191,7 +199,23 @@ export default function MemberProfilePage() {
                   )}
                 </>
               )}
-              {user && userData?.status !== 'active' && (
+              {member.status === 'alumni' && member.linkedin && (
+                <a
+                  href={member.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-5 py-2.5 border-2 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:text-[#0077b5] hover:border-[#0077b5] rounded-xl font-semibold transition-colors"
+                >
+                  <span className="material-symbols-outlined text-lg">link</span>
+                  LinkedIn Profile
+                </a>
+              )}
+              {user && userData?.status === 'active' && member.status === 'alumni' && (
+                <div className="text-sm text-slate-500 dark:text-slate-500 italic">
+                  Alumni members can only be contacted via LinkedIn
+                </div>
+              )}
+              {user && userData?.status !== 'active' && member.status === 'active' && (
                 <div className="text-sm text-slate-500 dark:text-slate-500 italic">
                   Only active members can send messages
                 </div>
@@ -355,7 +379,7 @@ export default function MemberProfilePage() {
           {member.joinedAt && (
             <div className="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
               <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider">
-                Member Since
+                {member.status === 'alumni' ? 'Was Member Since' : 'Member Since'}
               </h3>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">
                 {new Date(member.joinedAt.toDate()).toLocaleDateString('en-US', { 
@@ -363,6 +387,26 @@ export default function MemberProfilePage() {
                   month: 'long' 
                 })}
               </p>
+            </div>
+          )}
+
+          {/* Rotary Years (Alumni) */}
+          {member.status === 'alumni' && member.rotaryYears && member.rotaryYears.length > 0 && (
+            <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-700/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+              <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-2 uppercase tracking-wider flex items-center gap-2">
+                <span className="material-symbols-outlined text-lg">history_edu</span>
+                Rotary Years
+              </h3>
+              <div className="flex flex-wrap gap-2 mt-3">
+                {member.rotaryYears.map((year, idx) => (
+                  <span 
+                    key={idx}
+                    className="px-3 py-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-semibold"
+                  >
+                    {year}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 

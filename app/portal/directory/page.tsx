@@ -8,12 +8,15 @@ import { getFirestore } from 'firebase/firestore';
 import { getFirebaseClientApp } from '@/lib/firebase/client';
 import { User } from '@/types/portal';
 
+type StatusFilter = 'active' | 'alumni';
+
 export default function DirectoryPage() {
   const { loading, user } = useAuth();
   const [members, setMembers] = useState<User[]>([]);
   const [filteredMembers, setFilteredMembers] = useState<User[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
   const [filterRole, setFilterRole] = useState<string>('all');
   const [filterCommittee, setFilterCommittee] = useState<string>('all');
   const [committees, setCommittees] = useState<string[]>([]);
@@ -26,7 +29,7 @@ export default function DirectoryPage() {
 
   useEffect(() => {
     filterMembers();
-  }, [members, searchTerm, filterRole, filterCommittee]);
+  }, [members, searchTerm, statusFilter, filterRole, filterCommittee]);
 
   const loadMembers = async () => {
     const app = getFirebaseClientApp();
@@ -36,16 +39,28 @@ export default function DirectoryPage() {
     
     try {
       const usersRef = collection(db, 'users');
-      const usersQuery = query(
+      
+      // Fetch active members
+      const activeQuery = query(
         usersRef,
         where('status', '==', 'active'),
         orderBy('name', 'asc')
       );
-      const snapshot = await getDocs(usersQuery);
-      const membersData = snapshot.docs.map(doc => ({
-        uid: doc.id,
-        ...doc.data()
-      })) as User[];
+      const activeSnapshot = await getDocs(activeQuery);
+      
+      // Fetch alumni members
+      const alumniQuery = query(
+        usersRef,
+        where('status', '==', 'alumni'),
+        orderBy('name', 'asc')
+      );
+      const alumniSnapshot = await getDocs(alumniQuery);
+      
+      // Combine results
+      const membersData = [
+        ...activeSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() })),
+        ...alumniSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }))
+      ] as User[];
       
       setMembers(membersData);
       
@@ -66,6 +81,9 @@ export default function DirectoryPage() {
 
   const filterMembers = () => {
     let filtered = [...members];
+
+    // Status filter - respect active vs alumni tab
+    filtered = filtered.filter(m => m.status === statusFilter);
 
     // Search filter - search across name, email, role, committee, and bio
     if (searchTerm) {
@@ -135,9 +153,39 @@ export default function DirectoryPage() {
               Member Directory
             </h1>
             <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
-              Connect with {members.length} passionate leaders, creators, and changemakers shaping the future of NYC.
+              Connect with passionate leaders, creators, and changemakers shaping the future of NYC.
             </p>
           </div>
+        </div>
+
+        {/* Status Tabs */}
+        <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg w-fit">
+          <button
+            onClick={() => setStatusFilter('active')}
+            className={`px-6 py-2.5 rounded-md font-semibold text-sm transition-all ${
+              statusFilter === 'active'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            Active Members
+            <span className="ml-2 text-xs font-bold px-2 py-0.5 rounded-full bg-primary/20 text-primary">
+              {members.filter(m => m.status === 'active').length}
+            </span>
+          </button>
+          <button
+            onClick={() => setStatusFilter('alumni')}
+            className={`px-6 py-2.5 rounded-md font-semibold text-sm transition-all ${
+              statusFilter === 'alumni'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            Past Members (Alumni)
+            <span className="ml-2 text-xs font-bold px-2 py-0.5 rounded-full bg-slate-500/20 text-slate-600 dark:text-slate-400">
+              {members.filter(m => m.status === 'alumni').length}
+            </span>
+          </button>
         </div>
 
         {/* Search Bar */}
@@ -163,7 +211,7 @@ export default function DirectoryPage() {
         {/* Filters & Member Count */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="text-sm font-medium text-slate-600 dark:text-slate-400">
-            Showing <span className="font-bold text-slate-900 dark:text-white">{filteredMembers.length}</span> of {members.length} members
+            Showing <span className="font-bold text-slate-900 dark:text-white">{filteredMembers.length}</span> of {members.filter(m => m.status === statusFilter).length} {statusFilter === 'active' ? 'active members' : 'alumni'}
           </div>
           
           <div className="flex flex-wrap items-center gap-3">
@@ -195,16 +243,22 @@ export default function DirectoryPage() {
       {/* Member Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredMembers.map((member) => (
-          <MemberCard key={member.uid} member={member} isAuthenticated={!!user} />
+          <MemberCard key={member.uid} member={member} isAuthenticated={!!user} statusFilter={statusFilter} />
         ))}
       </div>
 
       {/* Empty State */}
       {!loadingData && filteredMembers.length === 0 && (
         <div className="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center">
-          <span className="material-symbols-outlined text-6xl text-slate-300 dark:text-slate-600 mb-4">search_off</span>
-          <p className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">No members found</p>
-          <p className="text-slate-500 dark:text-slate-400 mb-4">Try adjusting your search or filters</p>
+          <span className="material-symbols-outlined text-6xl text-slate-300 dark:text-slate-600 mb-4">
+            {searchTerm ? 'search_off' : statusFilter === 'alumni' ? 'school' : 'people_off'}
+          </span>
+          <p className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
+            {searchTerm ? 'No members found' : statusFilter === 'alumni' ? 'No alumni yet' : 'No active members'}
+          </p>
+          <p className="text-slate-500 dark:text-slate-400 mb-4">
+            {searchTerm ? 'Try adjusting your search or filters' : statusFilter === 'alumni' ? 'Alumni members will appear here' : 'Active members will appear here'}
+          </p>
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
@@ -221,8 +275,17 @@ export default function DirectoryPage() {
 }
 
 // Member Card Component
-function MemberCard({ member, isAuthenticated }: { member: User; isAuthenticated: boolean }) {
+function MemberCard({ 
+  member, 
+  isAuthenticated, 
+  statusFilter 
+}: { 
+  member: User; 
+  isAuthenticated: boolean;
+  statusFilter: StatusFilter;
+}) {
   const router = useRouter();
+  const isAlumni = member.status === 'alumni';
   
   // Clamp bio to 2-3 lines (approximately 120 characters)
   const clampedBio = member.bio && member.bio.length > 120 
@@ -241,7 +304,11 @@ function MemberCard({ member, isAuthenticated }: { member: User; isAuthenticated
   return (
     <article 
       onClick={() => router.push(`/portal/directory/${member.uid}`)}
-      className="group relative bg-white dark:bg-surface-dark rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col h-full transition-all duration-200 hover:shadow-xl hover:border-primary/50 hover:-translate-y-1 cursor-pointer"
+      className={`group relative bg-white dark:bg-surface-dark rounded-xl overflow-hidden border flex flex-col h-full transition-all duration-200 hover:shadow-xl hover:-translate-y-1 cursor-pointer ${
+        isAlumni 
+          ? 'border-slate-300 dark:border-slate-700 opacity-90 hover:border-slate-400 dark:hover:border-slate-600' 
+          : 'border-slate-200 dark:border-slate-800 hover:border-primary/50'
+      }`}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -252,17 +319,37 @@ function MemberCard({ member, isAuthenticated }: { member: User; isAuthenticated
       }}
     >
       {/* Avatar/Photo */}
-      <div className="relative w-full aspect-square bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700">
+      <div className={`relative w-full aspect-square bg-gradient-to-br ${
+        isAlumni 
+          ? 'from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600' 
+          : 'from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700'
+      }`}>
         {member.photoURL ? (
           <img
             src={member.photoURL}
             alt={member.name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
+              isAlumni ? 'grayscale-[30%]' : ''
+            }`}
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
+          <div className={`w-full h-full flex items-center justify-center ${
+            isAlumni 
+              ? 'bg-gradient-to-br from-slate-400 to-slate-500' 
+              : 'bg-gradient-to-br from-primary to-primary-dark'
+          }`}>
             <span className="text-5xl font-bold text-white">
               {member.name.charAt(0).toUpperCase()}
+            </span>
+          </div>
+        )}
+        
+        {/* Alumni Badge */}
+        {isAlumni && (
+          <div className="absolute top-3 left-3 bg-slate-700/90 dark:bg-slate-600/90 backdrop-blur-sm px-3 py-1.5 rounded-full">
+            <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1">
+              <span className="material-symbols-outlined text-sm">school</span>
+              Alumni
             </span>
           </div>
         )}
@@ -274,12 +361,20 @@ function MemberCard({ member, isAuthenticated }: { member: User; isAuthenticated
       {/* Content */}
       <div className="p-5 flex flex-col flex-grow">
         {/* Name - Primary */}
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight mb-1.5 line-clamp-2">
+        <h3 className={`text-lg font-bold leading-tight mb-1.5 line-clamp-2 ${
+          isAlumni 
+            ? 'text-slate-700 dark:text-slate-300' 
+            : 'text-slate-900 dark:text-white'
+        }`}>
           {member.name}
         </h3>
         
         {/* Role / Profession */}
-        <p className="text-sm font-semibold text-primary dark:text-primary-light mb-1">
+        <p className={`text-sm font-semibold mb-1 ${
+          isAlumni 
+            ? 'text-slate-600 dark:text-slate-400' 
+            : 'text-primary dark:text-primary-light'
+        }`}>
           {getRoleDisplay(member.role)}
         </p>
         
@@ -287,6 +382,13 @@ function MemberCard({ member, isAuthenticated }: { member: User; isAuthenticated
         {member.committee && (
           <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-3">
             {member.committee}
+          </p>
+        )}
+        
+        {/* Rotary Years for Alumni */}
+        {isAlumni && member.rotaryYears && member.rotaryYears.length > 0 && (
+          <p className="text-xs text-slate-500 dark:text-slate-500 italic mb-2">
+            {member.rotaryYears.join(', ')}
           </p>
         )}
         
@@ -307,7 +409,9 @@ function MemberCard({ member, isAuthenticated }: { member: User; isAuthenticated
       {/* Hover indicator */}
       <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
         <div className="bg-white dark:bg-slate-800 rounded-full p-1.5 shadow-lg">
-          <span className="material-symbols-outlined text-primary text-lg">arrow_forward</span>
+          <span className={`material-symbols-outlined text-lg ${
+            isAlumni ? 'text-slate-600' : 'text-primary'
+          }`}>arrow_forward</span>
         </div>
       </div>
     </article>

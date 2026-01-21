@@ -2,7 +2,7 @@ import { Timestamp } from 'firebase/firestore';
 
 // User roles
 export type UserRole = 'MEMBER' | 'BOARD' | 'TREASURER' | 'ADMIN';
-export type UserStatus = 'pending' | 'active' | 'inactive';
+export type UserStatus = 'pending' | 'active' | 'inactive' | 'alumni';
 
 // Visibility levels
 export type Visibility = 'public' | 'member' | 'board';
@@ -25,6 +25,7 @@ export interface User {
   linkedin?: string;
   joinedAt?: Timestamp;
   interests?: string[];
+  rotaryYears?: string[]; // Array of Rotary years (e.g., ["2023-2024", "2024-2025"])
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
