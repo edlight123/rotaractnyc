@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/lib/firebase/auth';
+import { getAuth } from 'firebase/auth';
+import { getFirebaseClientApp } from '@/lib/firebase/client';
 import Image from 'next/image';
 
 interface NewPostModalProps {
@@ -113,8 +115,6 @@ export default function NewPostModal({ isOpen, onClose }: NewPostModalProps) {
       }
 
       // Get Firebase ID token
-      const { getAuth } = await import('firebase/auth');
-      const { getFirebaseClientApp } = await import('@/lib/firebase/client');
       const app = getFirebaseClientApp();
       if (!app) throw new Error('Firebase not initialized');
       

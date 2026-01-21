@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/firebase/auth';
 import { 
   doc, 
+  getDoc,
   updateDoc, 
   arrayUnion, 
   arrayRemove,
@@ -100,7 +101,7 @@ export function PostCard({ postId, author, timestamp, content, likes, commentsCo
         const db = getFirestore(app);
         
         try {
-          const userDoc = await import('firebase/firestore').then(m => m.getDoc(m.doc(db, 'users', content.spotlight!.userId)));
+          const userDoc = await getDoc(doc(db, 'users', content.spotlight!.userId));
           if (userDoc.exists()) {
             const userData = userDoc.data();
             setSpotlightMemberEmail(userData.email || '');
