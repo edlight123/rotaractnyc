@@ -48,6 +48,15 @@ export type SendMembershipApplicationEmailArgs = {
   applicationId?: string
 }
 
+export type SendMemberToMemberMessageArgs = {
+  to: string
+  from: string
+  replyTo: string
+  subject: string
+  senderName: string
+  message: string
+}
+
 export async function sendContactEmail(args: SendContactEmailArgs) {
   const resend = getResendClient()
 
@@ -156,6 +165,76 @@ export async function sendMembershipApplicationEmail(args: SendMembershipApplica
     html,
     text,
     ...(args.replyTo ? { replyTo: args.replyTo } : {}),
+  })
+}
+
+export async function sendMemberToMemberMessage(args: SendMemberToMemberMessageArgs) {
+  const resend = getResendClient()
+
+  const safeSubject = args.subject.trim() || 'Message from a member'
+  const safeSenderName = args.senderName.trim() || 'A member'
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%); padding: 20px; text-align: center;">
+        <h1 style="color: white; margin: 0;">Rotaract NYC Portal</h1>
+      </div>
+      
+      <div style="background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb;">
+        <h2 style="color: #1f2937; margin-top: 0;">You have a new message from ${escapeHtml(safeSenderName)}</h2>
+        
+        <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin: 20px 0;">
+          <p style="color: #6b7280; margin: 0 0 10px 0; font-size: 14px;"><strong>Subject:</strong></p>
+          <p style="color: #1f2937; margin: 0 0 20px 0; font-size: 16px;">${escapeHtml(safeSubject)}</p>
+          
+          <p style="color: #6b7280; margin: 0 0 10px 0; font-size: 14px;"><strong>Message:</strong></p>
+          <div style="color: #1f2937; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word;">
+${escapeHtml(args.message)}
+          </div>
+        </div>
+        
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 15px; margin: 20px 0;">
+          <p style="color: #1e40af; margin: 0; font-size: 14px;">
+            <strong>💡 How to reply:</strong> Simply reply to this email to respond directly to ${escapeHtml(safeSenderName)}.
+          </p>
+        </div>
+        
+        <p style="color: #6b7280; font-size: 13px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+          This message was sent through the Rotaract NYC member portal. Your email address is kept private and will only be shared with the sender if you reply.
+        </p>
+      </div>
+      
+      <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
+        <p style="margin: 0;">Rotaract Club of New York at the United Nations</p>
+        <p style="margin: 5px 0 0 0;">© ${new Date().getFullYear()} All rights reserved</p>
+      </div>
+    </div>
+  `.trim()
+
+  const text = [
+    'ROTARACT NYC PORTAL - NEW MESSAGE',
+    '',
+    `From: ${safeSenderName}`,
+    `Subject: ${safeSubject}`,
+    '',
+    'MESSAGE:',
+    '─────────────────────────────────',
+    args.message,
+    '─────────────────────────────────',
+    '',
+    `Reply to this email to respond directly to ${safeSenderName}.`,
+    '',
+    'This message was sent through the Rotaract NYC member portal.',
+    'Your email address is kept private and will only be shared with the sender if you reply.',
+  ].join('\n')
+
+  return await resend.emails.send({
+    from: args.from,
+    to: args.to,
+    subject: `Rotaract NYC: ${safeSubject}`,
+    html,
+    text,
+    replyTo: args.replyTo,
   })
 }
 

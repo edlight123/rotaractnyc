@@ -6,13 +6,16 @@ import { useParams, useRouter } from 'next/navigation';
 import { doc, getDoc, getFirestore } from 'firebase/firestore';
 import { getFirebaseClientApp } from '@/lib/firebase/client';
 import { User } from '@/types/portal';
+import MessageModal from '@/components/portal/MessageModal';
+import { sendMemberMessage } from '@/lib/portal/sendMemberMessage';
 
 export default function MemberProfilePage() {
   const { uid } = useParams<{ uid: string }>();
   const router = useRouter();
-  const { loading, user } = useAuth();
+  const { loading, user, userData } = useAuth();
   const [member, setMember] = useState<User | null>(null);
   const [loadingData, setLoadingData] = useState(true);
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -38,6 +41,20 @@ export default function MemberProfilePage() {
       console.error('Error loading member:', error);
     } finally {
       setLoadingData(false);
+    }
+  };
+
+  const handleSendMessage = async (data: { subject: string; message: string }) => {
+    if (!member) return;
+
+    const result = await sendMemberMessage({
+      recipientId: member.uid,
+      subject: data.subject,
+      message: data.message,
+    });
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to send message');
     }
   };
 
@@ -153,15 +170,15 @@ export default function MemberProfilePage() {
 
             {/* Action Buttons */}
             <div className="flex gap-3">
-              {user && (
+              {user && userData?.status === 'active' && (
                 <>
-                  <a
-                    href={`mailto:${member.email}`}
+                  <button
+                    onClick={() => setIsMessageModalOpen(true)}
                     className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-xl font-semibold transition-colors shadow-sm"
                   >
                     <span className="material-symbols-outlined text-lg">mail</span>
                     Send Message
-                  </a>
+                  </button>
                   {member.linkedin && (
                     <a
                       href={member.linkedin}
@@ -173,6 +190,11 @@ export default function MemberProfilePage() {
                     </a>
                   )}
                 </>
+              )}
+              {user && userData?.status !== 'active' && (
+                <div className="text-sm text-slate-500 dark:text-slate-500 italic">
+                  Only active members can send messages
+                </div>
               )}
               {!user && (
                 <div className="text-sm text-slate-500 dark:text-slate-500 italic">
@@ -200,9 +222,12 @@ export default function MemberProfilePage() {
                   <span className="material-symbols-outlined text-slate-400 mt-0.5">mail</span>
                   <div>
                     <p className="text-sm text-slate-500 dark:text-slate-400">Email</p>
-                    <a href={`mailto:${member.email}`} className="text-slate-900 dark:text-white hover:text-primary font-medium">
+                    <p className="text-slate-900 dark:text-white font-medium">
                       {member.email}
-                    </a>
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      Use "Send Message" to contact privately
+                    </p>
                   </div>
                 </div>
               )}
@@ -384,6 +409,17 @@ export default function MemberProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Message Modal */}
+      {member && (
+        <MessageModal
+          isOpen={isMessageModalOpen}
+          onClose={() => setIsMessageModalOpen(false)}
+          recipientName={member.name}
+          recipientId={member.uid}
+          onSend={handleSendMessage}
+        />
+      )}
     </main>
   );
 }

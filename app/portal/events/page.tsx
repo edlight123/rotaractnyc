@@ -227,50 +227,46 @@ export default function EventsPage() {
   return (
     <main className="max-w-[1200px] mx-auto px-6 lg:px-20 py-10 w-full">
       {/* Welcome & Stats Section */}
-      <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-display font-extrabold text-[#161217] dark:text-white mb-2 tracking-tight">
+          <h1 className="text-3xl font-display font-bold text-[#161217] dark:text-white mb-1 tracking-tight">
             Welcome back, {userData?.name?.split(' ')[0] || 'Member'}
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 font-medium">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Ready for another month of impact?
           </p>
         </div>
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-3">
           {/* Quick Stats Cards */}
-          <div className="flex min-w-[180px] flex-col gap-1 rounded-xl p-5 bg-white dark:bg-gray-800 shadow-sm border border-[#e3dde4] dark:border-gray-700">
-            <div className="flex items-center gap-2 text-primary">
-              <span className="material-symbols-outlined text-xl">event_available</span>
-              <p className="text-sm font-bold uppercase tracking-wider">RSVPs</p>
+          <div className="flex min-w-[150px] flex-col gap-0.5 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50">
+            <div className="flex items-center gap-1.5 text-primary">
+              <span className="material-symbols-outlined text-base">event_available</span>
+              <p className="text-xs font-semibold uppercase tracking-wide">RSVPs</p>
             </div>
-            <div className="flex items-end gap-2 mt-1">
-              <p className="text-3xl font-display font-black text-[#161217] dark:text-white">{stats.rsvpCount}</p>
-              <p className="text-[#07884c] text-sm font-bold pb-1">confirmed</p>
+            <div className="flex items-baseline gap-1.5 mt-1">
+              <p className="text-2xl font-display font-bold text-[#161217] dark:text-white">{stats.rsvpCount}</p>
+              <p className="text-[#07884c] text-xs font-medium">confirmed</p>
             </div>
-            <p className="text-xs text-gray-400 mt-1">For this month</p>
           </div>
-          <div className="flex min-w-[180px] flex-col gap-1 rounded-xl p-5 bg-white dark:bg-gray-800 shadow-sm border border-[#e3dde4] dark:border-gray-700">
-            <div className="flex items-center gap-2 text-secondary-accent">
-              <span className="material-symbols-outlined text-xl">volunteer_activism</span>
-              <p className="text-sm font-bold uppercase tracking-wider">Impact</p>
+          <div className="flex min-w-[150px] flex-col gap-0.5 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50">
+            <div className="flex items-center gap-1.5 text-secondary-accent">
+              <span className="material-symbols-outlined text-base">volunteer_activism</span>
+              <p className="text-xs font-semibold uppercase tracking-wide">Impact</p>
             </div>
-            <div className="flex items-end gap-2 mt-1">
-              <p className="text-3xl font-display font-black text-[#161217] dark:text-white">{stats.totalHours}</p>
-              <p className="text-[#07884c] text-sm font-bold pb-1">hrs</p>
-            </div>
-            <div className="w-full bg-gray-100 dark:bg-gray-700 h-1.5 rounded-full mt-2 overflow-hidden">
-              <div className="bg-secondary-accent h-full w-[65%]"></div>
+            <div className="flex items-baseline gap-1.5 mt-1">
+              <p className="text-2xl font-display font-bold text-[#161217] dark:text-white">{stats.totalHours}</p>
+              <p className="text-[#07884c] text-xs font-medium">hrs</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8 p-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-[#e3dde4] dark:border-gray-700">
-        <div className="flex bg-[#f3f1f4] dark:bg-gray-700 p-1 rounded-lg w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700/50">
+        <div className="flex bg-white dark:bg-gray-700/50 p-0.5 rounded-md w-full sm:w-auto">
           <button 
             onClick={() => setActiveFilter('all')}
-            className={`flex-1 sm:flex-none px-6 py-2 rounded-md text-sm font-bold transition-all ${
+            className={`flex-1 sm:flex-none px-5 py-1.5 rounded-md text-sm font-semibold transition-all ${
               activeFilter === 'all' 
                 ? 'bg-white dark:bg-gray-600 shadow-sm text-primary' 
                 : 'text-gray-500 hover:text-primary'
@@ -280,30 +276,30 @@ export default function EventsPage() {
           </button>
           <button 
             onClick={() => setActiveFilter('member')}
-            className={`flex-1 sm:flex-none px-6 py-2 rounded-md text-sm font-bold transition-all ${
+            className={`flex-1 sm:flex-none px-5 py-1.5 rounded-md text-sm font-semibold transition-all ${
               activeFilter === 'member' 
-                ? 'bg-white dark:bg-gray-600 shadow-sm text-primary' 
-                : 'text-gray-500 hover:text-primary'
+                ? 'bg-primary text-white shadow-sm' 
+                : 'text-gray-600 dark:text-gray-400 hover:text-primary'
             }`}
           >
             Member-Only
           </button>
           <button 
             onClick={() => setActiveFilter('public')}
-            className={`flex-1 sm:flex-none px-6 py-2 rounded-md text-sm font-bold transition-all ${
+            className={`flex-1 sm:flex-none px-5 py-1.5 rounded-md text-sm font-semibold transition-all ${
               activeFilter === 'public' 
-                ? 'bg-white dark:bg-gray-600 shadow-sm text-primary' 
-                : 'text-gray-500 hover:text-primary'
+                ? 'bg-primary text-white shadow-sm' 
+                : 'text-gray-600 dark:text-gray-400 hover:text-primary'
             }`}
           >
             Public
           </button>
         </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:flex-initial">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">search</span>
             <input 
-              className="pl-10 pr-4 py-2 bg-[#f3f1f4] dark:bg-gray-700 border-none rounded-full text-sm w-full sm:w-48 focus:ring-1 focus:ring-primary focus:w-64 transition-all duration-300" 
+              className="pl-9 pr-4 py-1.5 bg-white dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg text-sm w-full sm:w-48 focus:ring-2 focus:ring-primary/30 focus:border-primary focus:w-64 transition-all duration-300"
               placeholder="Search events..." 
               type="text"
               value={searchTerm}
@@ -315,7 +311,7 @@ export default function EventsPage() {
 
       {/* 3-Column Visual Grid */}
       {filteredEvents.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEvents.map((event) => {
             const userRsvp = rsvps.get(event.id);
             const isUpdating = updatingRsvp === event.id;
@@ -326,40 +322,40 @@ export default function EventsPage() {
             return (
               <div 
                 key={event.id}
-                className="group event-card relative overflow-hidden rounded-2xl h-[450px] shadow-lg transition-all duration-500 hover:-translate-y-2 cursor-pointer"
+                className="group event-card relative overflow-hidden rounded-xl h-[360px] shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer"
               >
                 {/* Event Image/Background */}
                 <div 
-                  className="event-image absolute inset-0 bg-cover bg-center transition-transform duration-700 bg-gradient-to-br from-primary to-blue-600"
+                  className="event-image absolute inset-0 bg-cover bg-center transition-transform duration-500 bg-gradient-to-br from-primary to-blue-500"
                   style={{
-                    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.8) 100%), linear-gradient(135deg, #8f29a3 0%, #4f46e5 100%)`
+                    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.7) 100%), linear-gradient(135deg, #a855f7 0%, #6366f1 100%)`
                   }}
                 />
                 
                 {/* Visibility Badge */}
-                <div className="absolute top-4 left-4 z-10 flex gap-2">
-                  <span className={`px-3 py-1 backdrop-blur-md text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-sm ${
+                <div className="absolute top-3 left-3 z-10 flex gap-2">
+                  <span className={`px-2.5 py-0.5 backdrop-blur-sm text-[10px] font-semibold uppercase tracking-wider rounded-md ${
                     event.visibility === 'member'
-                      ? 'bg-secondary-accent/90 text-white'
-                      : 'bg-white/90 text-[#161217]'
+                      ? 'bg-secondary-accent/80 text-white'
+                      : 'bg-white/80 text-gray-800'
                   }`}>
-                    {event.visibility === 'member' ? 'Member-Only' : 'Public'}
+                    {event.visibility === 'member' ? 'Members' : 'Public'}
                   </span>
                 </div>
 
                 {/* Content Card */}
-                <div className="absolute bottom-4 inset-x-4">
-                  <div className="glass-panel backdrop-blur-md bg-white/70 dark:bg-gray-900/70 p-6 rounded-xl border border-white/30 dark:border-white/10">
-                    <div className="flex justify-between items-start mb-2">
-                      <p className="text-primary dark:text-primary font-black text-xs uppercase tracking-widest">
+                <div className="absolute bottom-3 inset-x-3">
+                  <div className="glass-panel backdrop-blur-lg bg-white/75 dark:bg-gray-900/75 p-5 rounded-lg border border-white/40 dark:border-white/10">
+                    <div className="flex justify-between items-start mb-1.5">
+                      <p className="text-primary dark:text-primary font-bold text-[11px] uppercase tracking-wide">
                         {dateInfo.dateTime}
                       </p>
                     </div>
-                    <h3 className="text-xl font-display font-extrabold text-[#161217] dark:text-white leading-tight mb-4 line-clamp-2">
+                    <h3 className="text-lg font-display font-bold text-[#161217] dark:text-white leading-tight mb-3 line-clamp-2">
                       {event.title}
                     </h3>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-[#4d424e] dark:text-gray-300 text-xs font-semibold">
+                      <div className="flex items-center gap-1.5 text-[#4d424e] dark:text-gray-300 text-xs font-medium">
                         <span className="material-symbols-outlined text-sm">location_on</span>
                         <span className="truncate max-w-[140px]">{event.location || 'TBD'}</span>
                       </div>
@@ -373,7 +369,7 @@ export default function EventsPage() {
                           }
                         }}
                         disabled={isUpdating}
-                        className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors ${
+                        className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                           isRegistered 
                             ? 'bg-green-600 hover:bg-green-700 text-white' 
                             : 'bg-primary hover:bg-primary/90 text-white'
@@ -389,9 +385,9 @@ export default function EventsPage() {
           })}
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center">
-          <span className="material-symbols-outlined text-6xl text-gray-300 mb-4">event_busy</span>
-          <p className="text-gray-500 dark:text-gray-400">
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700/50 p-12 text-center">
+          <span className="material-symbols-outlined text-5xl text-gray-300 dark:text-gray-600 mb-3">event_busy</span>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {searchTerm ? 'No events found matching your search.' : 'No upcoming events at this time.'}
           </p>
         </div>
