@@ -166,8 +166,8 @@ export default function NewPostModal({ isOpen, onClose }: NewPostModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-8">
-      <div className="w-full max-w-[1100px] h-[90vh] bg-white dark:bg-[#0a0a0a] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-zinc-800">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-8 overflow-y-auto">
+      <div className="w-full max-w-[1100px] max-h-[90vh] my-auto bg-white dark:bg-[#0a0a0a] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-zinc-800">
         {/* Header */}
         <header className="flex items-center justify-between px-8 py-5 border-b border-slate-100 dark:border-zinc-800 shrink-0">
           <div className="flex items-center gap-4">
@@ -269,7 +269,7 @@ export default function NewPostModal({ isOpen, onClose }: NewPostModalProps) {
 
               {/* Content Textarea */}
               <textarea
-                className="w-full min-h-[500px] border-0 focus:ring-0 text-lg leading-relaxed text-slate-700 dark:text-zinc-300 placeholder:text-slate-300 dark:placeholder:text-zinc-700 p-0 resize-none font-display bg-transparent"
+                className="w-full min-h-[400px] border-0 focus:ring-0 text-lg leading-relaxed text-slate-700 dark:text-zinc-300 placeholder:text-slate-300 dark:placeholder:text-zinc-700 p-0 resize-none font-display bg-transparent"
                 placeholder="Start writing your post content here..."
                 value={content}
                 onChange={(e) => {
