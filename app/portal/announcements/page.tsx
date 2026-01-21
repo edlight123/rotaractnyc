@@ -268,16 +268,6 @@ export default function AnnouncementsPage() {
               </p>
             </div>
 
-          {/* Post Composers */}
-          <div className="flex flex-col gap-4">
-            <PostComposer />
-            <CreatePostComposer 
-              user={user} 
-              userData={userData} 
-              onPostCreated={() => {}} 
-            />
-          </div>
-
           {/* Unified Feed */}
           {feedItems.length > 0 ? (
             <>

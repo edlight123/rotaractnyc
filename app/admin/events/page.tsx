@@ -6,6 +6,7 @@ import { FaCalendar, FaSignOutAlt, FaTable, FaTh, FaCalendarAlt, FaSearch, FaPlu
 import { useAdminSession, adminSignOut } from '@/lib/admin/useAdminSession'
 import { getFriendlyAdminApiError } from '@/lib/admin/apiError'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import EventModal from '@/components/admin/EventModal'
 
 type EventRow = {
   id: string
@@ -43,26 +44,7 @@ export default function AdminEventsPage() {
   const [filterCategory, setFilterCategory] = useState('all')
   const [showEventModal, setShowEventModal] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
-  
-  const [form, setForm] = useState<Omit<EventRow, 'id'>>({
-    title: '',
-    date: '',
-    time: '',
-    startDate: '',
-    startTime: '',
-    endTime: '',
-    timezone: 'America/New_York',
-    location: '',
-    description: '',
-    category: 'upcoming',
-    order: 1,
-    status: 'published',
-    attendees: 0,
-    imageUrl: '',
-    visibility: 'member',
-  })
-
-  const hasCalendarDate = Boolean(form.startDate)
+  const [editingEvent, setEditingEvent] = useState<(EventRow & { id: string }) | null>(null)
 
   const formatDisplayDateFromStartDate = (isoDate: string) => {
     const parts = isoDate.split('-').map((p) => Number(p))
@@ -201,48 +183,30 @@ export default function AdminEventsPage() {
 
   const startEdit = (row: EventRow) => {
     setEditingId(row.id)
-    setForm({
-      title: row.title,
-      date: row.date,
+    setEditingEvent({
+      ...row,
+      id: row.id,
       time: row.time || '',
       startDate: row.startDate || '',
       startTime: row.startTime || '',
       endTime: row.endTime || '',
       timezone: row.timezone || 'America/New_York',
       location: row.location || '',
-      description: row.description,
-      category: row.category,
-      order: row.order,
       status: row.status || 'published',
       attendees: row.attendees || 0,
       imageUrl: row.imageUrl || '',
       visibility: row.visibility || 'member',
     })
+    setShowEventModal(true)
   }
 
   const resetForm = () => {
     setEditingId(null)
+    setEditingEvent(null)
     setShowEventModal(false)
-    setForm({
-      title: '',
-      date: '',
-      time: '',
-      startDate: '',
-      startTime: '',
-      endTime: '',
-      timezone: 'America/New_York',
-      location: '',
-      description: '',
-      category: 'upcoming',
-      order: 1,
-      status: 'published',
-      attendees: 0,
-      imageUrl: '',
-      visibility: 'member',
-    })
   }
 
-  const save = async () => {
+  const save = async (form: Omit<EventRow, 'id'>) => {
     setSaving(true)
     setError(null)
     try {
@@ -642,195 +606,13 @@ export default function AdminEventsPage() {
       </main>
 
       {/* Event Modal */}
-      {showEventModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-rotaract-darkpink dark:text-white">
-                {editingId ? 'Edit Event' : 'Create New Event'}
-              </h2>
-              <button
-                onClick={resetForm}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Title *
-                </label>
-                <input
-                  value={form.title}
-                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-rotaract-pink"
-                  placeholder="Event name"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Category
-                  </label>
-                  <select
-                    value={form.category}
-                    onChange={(e) => setForm((f) => ({ ...f, category: e.target.value as 'upcoming' | 'past' }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                  >
-                    <option value="upcoming">Upcoming</option>
-                    <option value="past">Past</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Status
-                  </label>
-                  <select
-                    value={form.status}
-                    onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as 'published' | 'draft' | 'cancelled' }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                  >
-                    <option value="published">Published</option>
-                    <option value="draft">Draft</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Visibility *
-                </label>
-                <select
-                  value={form.visibility}
-                  onChange={(e) => setForm((f) => ({ ...f, visibility: e.target.value as 'public' | 'member' | 'board' }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                >
-                  <option value="public">Public - Visible to everyone</option>
-                  <option value="member">Member - Visible to logged-in members</option>
-                  <option value="board">Board - Visible to board members only</option>
-                </select>
-              </div>
-
-              {!hasCalendarDate ? (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Date (text) *
-                    </label>
-                    <input
-                      value={form.date}
-                      onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                      placeholder="Every 2nd Thursday"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Time (text)
-                      </label>
-                      <input
-                        value={form.time}
-                        onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                        placeholder="7:00 PM - 9:00 PM"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Location
-                      </label>
-                      <input
-                        value={form.location}
-                        onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                        placeholder="Manhattan, NY"
-                      />
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Location
-                  </label>
-                  <input
-                    value={form.location}
-                    onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                    placeholder="Manhattan, NY"
-                  />
-                </div>
-              )}
-
-              <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-slate-50 dark:bg-slate-800/50">
-                <div className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
-                  📅 Calendar Integration (optional)
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Start date
-                    </label>
-                    <input
-                      type="date"
-                      value={form.startDate}
-                      onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Start time
-                    </label>
-                    <input
-                      type="time"
-                      value={form.startTime}
-                      onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Description *
-                </label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                  placeholder="Event description..."
-                />
-              </div>
-
-              <div className="flex items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-                <button
-                  onClick={save}
-                  disabled={saving || !form.title || (!form.date && !form.startDate) || !form.description}
-                  className="flex-1 px-4 py-2.5 bg-rotaract-pink text-white rounded-lg hover:bg-rotaract-darkpink disabled:opacity-50 disabled:cursor-not-allowed font-bold transition-colors"
-                >
-                  {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Create Event'}
-                </button>
-                <button
-                  onClick={resetForm}
-                  className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <EventModal
+        isOpen={showEventModal}
+        onClose={resetForm}
+        onSave={save}
+        editingEvent={editingEvent}
+        saving={saving}
+      />
     </>
   )
 }

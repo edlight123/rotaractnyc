@@ -55,8 +55,15 @@ export default function DocumentsPage() {
   const [uploadCategory, setUploadCategory] = useState('Minutes');
   const [uploadUrl, setUploadUrl] = useState('');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploadType, setUploadType] = useState<'link' | 'file'>('file');
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState('');
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('date-desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -290,21 +297,118 @@ export default function DocumentsPage() {
     }
   };
 
+  // Drag and drop handlers
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget === e.target) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    handleFileSelection(files);
+  };
+
+  const handleFileSelection = (files: File[]) => {
+    setUploadError('');
+    const validFiles: File[] = [];
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ];
+
+    for (const file of files) {
+      if (!allowedTypes.includes(file.type)) {
+        setUploadError(`${file.name}: Invalid file type. Please upload PDF, Word, or Excel files only.`);
+        continue;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setUploadError(`${file.name}: File too large. Maximum size is 10MB.`);
+        continue;
+      }
+      validFiles.push(file);
+    }
+
+    if (validFiles.length > 0) {
+      setUploadFiles(validFiles);
+      // Auto-populate title if only one file
+      if (validFiles.length === 1 && !uploadTitle) {
+        const fileName = validFiles[0].name.replace(/\.[^/.]+$/, ''); // Remove extension
+        setUploadTitle(fileName);
+      }
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setUploadFiles(uploadFiles.filter((_, i) => i !== index));
+  };
+
+  const resetUploadModal = () => {
+    setUploadOpen(false);
+    setUploadTitle('');
+    setUploadDescription('');
+    setUploadCategory('Minutes');
+    setUploadUrl('');
+    setUploadFile(null);
+    setUploadFiles([]);
+    setUploadType('file');
+    setUploadProgress(0);
+    setUploadError('');
+    setUploadSuccess(false);
+    setIsDragging(false);
+  };
+
+  const filteredCategories = categories.filter(cat =>
+    cat.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
   const submitUpload = async () => {
     if (!canUpload) {
-      alert('Only board members can add documents.');
+      setUploadError('Only board members can add documents.');
       return;
     }
     if (!user?.uid) return;
-    if (!uploadTitle.trim() || !uploadCategory.trim()) return;
+    
+    // Clear previous errors
+    setUploadError('');
+    
+    // Validate inputs
+    if (!uploadTitle.trim()) {
+      setUploadError('Please enter a title');
+      return;
+    }
+    if (!uploadCategory.trim()) {
+      setUploadError('Please select or enter a category');
+      return;
+    }
     
     // Validate based on upload type
     if (uploadType === 'link' && !uploadUrl.trim()) {
-      alert('Please provide a URL');
+      setUploadError('Please provide a URL');
       return;
     }
-    if (uploadType === 'file' && !uploadFile) {
-      alert('Please select a file to upload');
+    if (uploadType === 'file' && uploadFiles.length === 0) {
+      setUploadError('Please select at least one file to upload');
       return;
     }
 
@@ -313,69 +417,91 @@ export default function DocumentsPage() {
     const db = getFirestore(app);
 
     setUploading(true);
+    setUploadProgress(0);
+    
     try {
-      let finalUrl = uploadUrl.trim();
+      const filesToUpload = uploadType === 'file' ? uploadFiles : [null];
+      const totalFiles = filesToUpload.length;
       
-      // If uploading a file, upload to Firebase Storage first
-      if (uploadType === 'file' && uploadFile) {
-        // Validate file type
-        const allowedTypes = [
-          'application/pdf',
-          'application/msword',
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'application/vnd.ms-excel',
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ];
+      for (let i = 0; i < totalFiles; i++) {
+        const file = filesToUpload[i];
+        let finalUrl = uploadUrl.trim();
+        let docTitle = uploadTitle.trim();
         
-        if (!allowedTypes.includes(uploadFile.type)) {
-          alert('Please upload a PDF, Word document, or Excel file');
-          setUploading(false);
-          return;
+        // If multiple files, append number to title
+        if (totalFiles > 1) {
+          docTitle = `${uploadTitle.trim()} (${i + 1}/${totalFiles})`;
         }
         
-        // Check file size (max 10MB)
-        if (uploadFile.size > 10 * 1024 * 1024) {
-          alert('File must be less than 10MB');
-          setUploading(false);
-          return;
+        // If uploading a file, upload to Firebase Storage first
+        if (uploadType === 'file' && file) {
+          const storage = getStorage(app);
+          const timestamp = Date.now();
+          const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+          const storageRef = ref(storage, `documents/${user.uid}/${timestamp}-${sanitizedFileName}`);
+          
+          await uploadBytes(storageRef, file);
+          finalUrl = await getDownloadURL(storageRef);
+          
+          // If no custom title provided, use filename
+          if (totalFiles === 1 && uploadTitle.trim() === file.name.replace(/\.[^/.]+$/, '')) {
+            docTitle = file.name.replace(/\.[^/.]+$/, '');
+          }
         }
         
-        const storage = getStorage(app);
-        const timestamp = Date.now();
-        const sanitizedFileName = uploadFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const storageRef = ref(storage, `documents/${user.uid}/${timestamp}-${sanitizedFileName}`);
+        await addDoc(collection(db, 'documents'), {
+          title: docTitle,
+          category: uploadCategory.trim(),
+          description: uploadDescription.trim() || '',
+          url: finalUrl,
+          visibility: 'member',
+          createdBy: user.uid,
+          createdAt: serverTimestamp(),
+          isPinned: false,
+          downloadCount: 0,
+          seeded: false,
+        });
         
-        await uploadBytes(storageRef, uploadFile);
-        finalUrl = await getDownloadURL(storageRef);
+        // Update progress
+        setUploadProgress(Math.round(((i + 1) / totalFiles) * 100));
       }
       
-      await addDoc(collection(db, 'documents'), {
-        title: uploadTitle.trim(),
-        category: uploadCategory.trim(),
-        description: uploadDescription.trim() || '',
-        url: finalUrl,
-        visibility: 'member',
-        createdBy: user.uid,
-        createdAt: serverTimestamp(),
-        isPinned: false,
-        downloadCount: 0,
-        seeded: false,
-      });
+      setUploadSuccess(true);
+      setUploading(false);
       
-      setUploadOpen(false);
-      setUploadTitle('');
-      setUploadDescription('');
-      setUploadCategory('Minutes');
-      setUploadUrl('');
-      setUploadFile(null);
-      setUploadType('file');
-      window.location.reload();
+      // Wait a moment to show success, then reload
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (e) {
       console.error('Error uploading document:', e);
-      alert('Failed to add document.');
+      setUploadError('Failed to add document. Please try again.');
       setUploading(false);
+      setUploadProgress(0);
     }
   };
+
+  // Keyboard navigation for modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (uploadOpen && !uploading) {
+        if (e.key === 'Escape') {
+          resetUploadModal();
+        } else if (e.key === 'Enter' && e.ctrlKey) {
+          // Ctrl+Enter to submit
+          const canSubmit = uploadTitle.trim() && uploadCategory.trim() &&
+            ((uploadType === 'link' && uploadUrl.trim()) || (uploadType === 'file' && uploadFiles.length > 0));
+          if (canSubmit) {
+            submitUpload();
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [uploadOpen, uploading, uploadTitle, uploadCategory, uploadUrl, uploadFiles, uploadType]);
+
 
   if (loading || loadingData) {
     return (
@@ -435,162 +561,364 @@ export default function DocumentsPage() {
               aria-label="Search documents"
             />
           </div>
-          <button
-            onClick={() => {
-              if (!canUpload) {
-                alert('Only board members can add documents.');
-                return;
-              }
-              setUploadOpen(true);
-            }}
-            className="bg-primary hover:bg-primary-dark text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-sm shadow-primary/30 transition-all active:scale-95"
-            aria-label="Upload new document"
-          >
-            <FiUpload className="text-[20px]" />
-            <span>Upload</span>
-          </button>
+          {canUpload ? (
+            <button
+              onClick={() => setUploadOpen(true)}
+              className="bg-primary hover:bg-primary-dark text-white px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-sm shadow-primary/30 transition-all active:scale-95"
+              aria-label="Upload new document"
+            >
+              <FiUpload className="text-[20px]" />
+              <span>Upload</span>
+            </button>
+          ) : (
+            <div className="relative group">
+              <button
+                className="bg-slate-300 text-slate-500 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 cursor-not-allowed"
+                disabled
+                aria-label="Upload (board members only)"
+              >
+                <FiUpload className="text-[20px]" />
+                <span>Upload</span>
+              </button>
+              <div className="absolute right-0 top-full mt-2 w-48 bg-slate-800 text-white text-xs rounded-lg p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none z-10">
+                Only board members can upload documents
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {uploadOpen ? (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => (uploading ? null : setUploadOpen(false))} />
-          <div className="relative w-full max-w-xl rounded-2xl bg-white border border-slate-200 shadow-xl p-5">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-text-main">Add Document</h2>
-              <button
-                onClick={() => (uploading ? null : setUploadOpen(false))}
-                className="text-slate-400 hover:text-text-main"
-                aria-label="Close"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-
-            <div className="mt-4 grid gap-4">
-              {/* Upload Type Selector */}
-              <div>
-                <label className="block text-sm font-semibold text-text-main mb-2">Upload Type</label>
-                <div className="flex gap-2">
+      {uploadOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div 
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
+            onClick={() => (uploading || uploadSuccess ? null : resetUploadModal())} 
+          />
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white border border-slate-200 shadow-2xl">
+            {/* Success State */}
+            {uploadSuccess ? (
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-text-main mb-2">Upload Successful!</h3>
+                <p className="text-text-muted">Your document{uploadFiles.length > 1 ? 's have' : ' has'} been uploaded and will be available shortly.</p>
+              </div>
+            ) : (
+              <>
+                {/* Header */}
+                <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-text-main">Add Document</h2>
+                    <p className="text-sm text-text-muted mt-0.5">Upload files or add external links</p>
+                  </div>
                   <button
-                    type="button"
-                    onClick={() => setUploadType('file')}
-                    className={`flex-1 px-4 py-2.5 rounded-lg border-2 transition-all ${
-                      uploadType === 'file'
-                        ? 'border-primary bg-primary/5 text-primary font-semibold'
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
+                    onClick={() => (uploading ? null : resetUploadModal())}
+                    className="text-slate-400 hover:text-text-main transition-colors disabled:opacity-50"
+                    disabled={uploading}
+                    aria-label="Close"
                   >
-                    <FiUpload className="inline mr-2" />
-                    Upload File
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setUploadType('link')}
-                    className={`flex-1 px-4 py-2.5 rounded-lg border-2 transition-all ${
-                      uploadType === 'link'
-                        ? 'border-primary bg-primary/5 text-primary font-semibold'
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <FiExternalLink className="inline mr-2" />
-                    Add Link
+                    <FiX className="text-xl" />
                   </button>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-text-main mb-1">Title</label>
-                <input
-                  value={uploadTitle}
-                  onChange={(e) => setUploadTitle(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                  placeholder="e.g., January Meeting Minutes"
-                />
-              </div>
+                <div className="p-6 space-y-5">
+                  {/* Error Display */}
+                  {uploadError && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
+                      <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-red-800">{uploadError}</p>
+                      </div>
+                      <button onClick={() => setUploadError('')} className="text-red-400 hover:text-red-600">
+                        <FiX className="text-sm" />
+                      </button>
+                    </div>
+                  )}
 
-              <div>
-                <label className="block text-sm font-semibold text-text-main mb-1">Description (optional)</label>
-                <textarea
-                  value={uploadDescription}
-                  onChange={(e) => setUploadDescription(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
-                  placeholder="Brief description of the document..."
-                  rows={2}
-                />
-              </div>
+                  {/* Upload Type Selector */}
+                  <div>
+                    <label className="block text-sm font-semibold text-text-main mb-2">Upload Type</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUploadType('file');
+                          setUploadError('');
+                        }}
+                        disabled={uploading}
+                        className={`px-4 py-3 rounded-lg border-2 transition-all disabled:opacity-50 ${
+                          uploadType === 'file'
+                            ? 'border-primary bg-primary/10 text-primary font-semibold shadow-sm'
+                            : 'border-slate-200 hover:border-slate-300 text-text-main'
+                        }`}
+                      >
+                        <FiUpload className="inline mr-2 text-lg" />
+                        Upload Files
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUploadType('link');
+                          setUploadError('');
+                        }}
+                        disabled={uploading}
+                        className={`px-4 py-3 rounded-lg border-2 transition-all disabled:opacity-50 ${
+                          uploadType === 'link'
+                            ? 'border-primary bg-primary/10 text-primary font-semibold shadow-sm'
+                            : 'border-slate-200 hover:border-slate-300 text-text-main'
+                        }`}
+                      >
+                        <FiExternalLink className="inline mr-2 text-lg" />
+                        Add Link
+                      </button>
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-text-main mb-1">Category</label>
-                <input
-                  value={uploadCategory}
-                  onChange={(e) => setUploadCategory(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                  placeholder="e.g., Minutes"
-                />
-              </div>
+                  {/* Drag and Drop Zone - Only for file uploads */}
+                  {uploadType === 'file' && (
+                    <div
+                      onDragEnter={handleDragEnter}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+                        isDragging
+                          ? 'border-primary bg-primary/5 scale-[1.02]'
+                          : 'border-slate-300 hover:border-primary/50 hover:bg-slate-50'
+                      } ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
+                    >
+                      <input
+                        type="file"
+                        multiple
+                        accept=".pdf,.doc,.docx,.xls,.xlsx"
+                        onChange={(e) => {
+                          if (e.target.files) {
+                            handleFileSelection(Array.from(e.target.files));
+                          }
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        disabled={uploading}
+                      />
+                      <FiUpload className={`mx-auto text-4xl mb-3 ${isDragging ? 'text-primary' : 'text-slate-400'}`} />
+                      <p className="text-sm font-semibold text-text-main mb-1">
+                        {isDragging ? 'Drop files here' : 'Drag and drop files here'}
+                      </p>
+                      <p className="text-xs text-text-muted mb-3">or click to browse</p>
+                      <div className="flex items-center justify-center gap-2 text-xs text-text-muted">
+                        <span className="px-2 py-1 bg-slate-100 rounded">PDF</span>
+                        <span className="px-2 py-1 bg-slate-100 rounded">Word</span>
+                        <span className="px-2 py-1 bg-slate-100 rounded">Excel</span>
+                        <span>• Max 10MB each</span>
+                      </div>
+                    </div>
+                  )}
 
-              {uploadType === 'file' ? (
-                <div>
-                  <label className="block text-sm font-semibold text-text-main mb-1">File</label>
-                  <div className="relative">
+                  {/* Selected Files Display */}
+                  {uploadType === 'file' && uploadFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-text-main">
+                        Selected Files ({uploadFiles.length})
+                      </label>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {uploadFiles.map((file, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200"
+                          >
+                            <FiFile className="text-primary text-xl flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-text-main truncate">{file.name}</p>
+                              <p className="text-xs text-text-muted">
+                                {(file.size / 1024).toFixed(1)} KB
+                              </p>
+                            </div>
+                            {!uploading && (
+                              <button
+                                onClick={() => removeFile(index)}
+                                className="text-slate-400 hover:text-red-600 transition-colors p-1"
+                                aria-label="Remove file"
+                              >
+                                <FiX />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Title Field */}
+                  <div>
+                    <label className="block text-sm font-semibold text-text-main mb-1.5">
+                      Title <span className="text-red-500">*</span>
+                    </label>
                     <input
-                      type="file"
-                      accept=".pdf,.doc,.docx,.xls,.xlsx"
-                      onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                      value={uploadTitle}
+                      onChange={(e) => setUploadTitle(e.target.value)}
+                      disabled={uploading}
+                      className="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-slate-50 disabled:text-slate-500"
+                      placeholder="e.g., January 2026 Meeting Minutes"
                     />
                   </div>
-                  <p className="mt-1 text-xs text-text-muted">
-                    Accepted formats: PDF, Word (.doc, .docx), Excel (.xls, .xlsx). Max size: 10MB
-                  </p>
-                  {uploadFile && (
-                    <div className="mt-2 flex items-center gap-2 text-sm text-text-main">
-                      <FiFileText className="text-primary" />
-                      <span className="font-medium">{uploadFile.name}</span>
-                      <span className="text-text-muted">({(uploadFile.size / 1024).toFixed(1)} KB)</span>
+
+                  {/* Description Field */}
+                  <div>
+                    <label className="block text-sm font-semibold text-text-main mb-1.5">
+                      Description <span className="text-text-muted font-normal">(optional)</span>
+                    </label>
+                    <textarea
+                      value={uploadDescription}
+                      onChange={(e) => setUploadDescription(e.target.value)}
+                      disabled={uploading}
+                      className="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none disabled:bg-slate-50 disabled:text-slate-500"
+                      placeholder="Brief description of the document..."
+                      rows={3}
+                    />
+                  </div>
+
+                  {/* Category Field with Autocomplete */}
+                  <div className="relative">
+                    <label className="block text-sm font-semibold text-text-main mb-1.5">
+                      Category <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        value={uploadCategory}
+                        onChange={(e) => {
+                          setUploadCategory(e.target.value);
+                          setCategorySearch(e.target.value);
+                          setShowCategoryDropdown(true);
+                        }}
+                        onFocus={() => setShowCategoryDropdown(true)}
+                        disabled={uploading}
+                        className="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-slate-50 disabled:text-slate-500"
+                        placeholder="e.g., Minutes, Events, Finance"
+                      />
+                      {showCategoryDropdown && !uploading && filteredCategories.length > 0 && uploadCategory !== '' && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          {filteredCategories.map((cat) => (
+                            <button
+                              key={cat}
+                              type="button"
+                              onClick={() => {
+                                setUploadCategory(cat);
+                                setShowCategoryDropdown(false);
+                              }}
+                              className="w-full px-3 py-2 text-left hover:bg-slate-50 text-sm text-text-main transition-colors"
+                            >
+                              {cat}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {categories.length > 0 && (
+                      <p className="mt-1.5 text-xs text-text-muted">
+                        Existing: {categories.slice(0, 5).join(', ')}{categories.length > 5 ? '...' : ''}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* URL Field - Only for links */}
+                  {uploadType === 'link' && (
+                    <div>
+                      <label className="block text-sm font-semibold text-text-main mb-1.5">
+                        URL <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="url"
+                        value={uploadUrl}
+                        onChange={(e) => setUploadUrl(e.target.value)}
+                        disabled={uploading}
+                        className="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-slate-50 disabled:text-slate-500"
+                        placeholder="https://example.com/document.pdf"
+                      />
+                      <p className="mt-1.5 text-xs text-text-muted">
+                        Link to an external document or resource
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Progress Bar */}
+                  {uploading && uploadProgress > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium text-text-main">Uploading...</span>
+                        <span className="text-text-muted">{uploadProgress}%</span>
+                      </div>
+                      <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="bg-primary h-full transition-all duration-300 ease-out"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
-              ) : (
-                <div>
-                  <label className="block text-sm font-semibold text-text-main mb-1">URL</label>
-                  <input
-                    value={uploadUrl}
-                    onChange={(e) => setUploadUrl(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                    placeholder="https://…"
-                  />
-                  <p className="mt-1 text-xs text-text-muted">Link to an external document or resource</p>
-                </div>
-              )}
-            </div>
 
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                onClick={() => (uploading ? null : setUploadOpen(false))}
-                className="px-4 py-2 rounded-lg border border-slate-200 text-sm font-semibold hover:bg-slate-50 transition-colors"
-                disabled={uploading}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={submitUpload}
-                disabled={
-                  uploading ||
-                  !uploadTitle.trim() ||
-                  !uploadCategory.trim() ||
-                  (uploadType === 'link' && !uploadUrl.trim()) ||
-                  (uploadType === 'file' && !uploadFile)
-                }
-                className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary-dark transition-colors"
-              >
-                {uploading ? 'Uploading…' : uploadType === 'file' ? 'Upload' : 'Save'}
-              </button>
-            </div>
+                {/* Footer */}
+                <div className="sticky bottom-0 bg-slate-50 border-t border-slate-200 px-6 py-4 flex items-center justify-between">
+                  <p className="text-xs text-text-muted">
+                    Press <kbd className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-[10px]">Esc</kbd> to cancel
+                    {uploadTitle && uploadCategory && ((uploadType === 'link' && uploadUrl) || (uploadType === 'file' && uploadFiles.length > 0)) && (
+                      <> or <kbd className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-[10px]">Ctrl+Enter</kbd> to upload</>
+                    )}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={resetUploadModal}
+                      className="px-4 py-2 rounded-lg border border-slate-300 text-sm font-semibold hover:bg-white transition-colors disabled:opacity-50"
+                      disabled={uploading}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={submitUpload}
+                      disabled={
+                        uploading ||
+                        !uploadTitle.trim() ||
+                        !uploadCategory.trim() ||
+                        (uploadType === 'link' && !uploadUrl.trim()) ||
+                        (uploadType === 'file' && uploadFiles.length === 0)
+                      }
+                      className="px-5 py-2 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary-dark transition-all shadow-sm hover:shadow-md active:scale-95"
+                    >
+                      {uploading ? (
+                        <span className="flex items-center gap-2">
+                          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          Uploading...
+                        </span>
+                      ) : (
+                        <>
+                          {uploadType === 'file' ? (
+                            <>
+                              <FiUpload className="inline mr-1.5" />
+                              Upload {uploadFiles.length > 1 ? `${uploadFiles.length} Files` : 'File'}
+                            </>
+                          ) : (
+                            <>
+                              <FiExternalLink className="inline mr-1.5" />
+                              Add Link
+                            </>
+                          )}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
-      ) : null}
+      )}
 
       {/* Pinned Resources Section */}
       {pinnedDocs.length > 0 && (

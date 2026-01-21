@@ -19,8 +19,28 @@ import { getFirestore } from 'firebase/firestore';
 import { getFirebaseClientApp } from '@/lib/firebase/client';
 import { Event, RSVP, RSVPStatus, Visibility } from '@/types/portal';
 import Link from 'next/link';
+import EventModal from '@/components/admin/EventModal';
+import { getFriendlyAdminApiError } from '@/lib/admin/apiError';
 
 type FilterType = 'all' | 'member' | 'public';
+
+type EventFormData = {
+  title: string
+  date: string
+  time: string
+  startDate: string
+  startTime: string
+  endTime: string
+  timezone: string
+  location: string
+  description: string
+  category: 'upcoming' | 'past'
+  order: number
+  status: 'published' | 'draft' | 'cancelled'
+  attendees: number
+  imageUrl: string
+  visibility: 'public' | 'member' | 'board'
+}
 
 export default function EventsPage() {
   const { user, userData, loading } = useAuth();
@@ -33,6 +53,8 @@ export default function EventsPage() {
   const [updatingRsvp, setUpdatingRsvp] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [savingEvent, setSavingEvent] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -157,6 +179,78 @@ export default function EventsPage() {
     }
   };
 
+  const formatDisplayDateFromStartDate = (isoDate: string) => {
+    const parts = isoDate.split('-').map((p) => Number(p))
+    if (parts.length !== 3) return ''
+    const [year, month, day] = parts
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return ''
+    const dt = new Date(Date.UTC(year, month - 1, day))
+    if (Number.isNaN(dt.getTime())) return ''
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }).format(dt)
+  }
+
+  const formatDisplayTimeFromCalendar = (startTime?: string, endTime?: string) => {
+    const to12h = (t: string) => {
+      const [hhRaw, mmRaw] = t.split(':')
+      const hh = Number(hhRaw)
+      const mm = Number(mmRaw)
+      if (!Number.isFinite(hh) || !Number.isFinite(mm)) return ''
+      const hour12 = ((hh + 11) % 12) + 1
+      const ampm = hh >= 12 ? 'PM' : 'AM'
+      const mmPadded = String(mm).padStart(2, '0')
+      return `${hour12}:${mmPadded} ${ampm}`
+    }
+
+    if (!startTime) return ''
+    const start = to12h(startTime)
+    if (!start) return ''
+    if (!endTime) return start
+    const end = to12h(endTime)
+    return end ? `${start} - ${end}` : start
+  }
+
+  const handleSaveEvent = async (form: EventFormData) => {
+    setSavingEvent(true)
+    try {
+      const generatedDate =
+        !form.date && form.startDate ? formatDisplayDateFromStartDate(form.startDate) : ''
+      const generatedTime =
+        !form.time && form.startTime
+          ? formatDisplayTimeFromCalendar(form.startTime, form.endTime)
+          : ''
+
+      const res = await fetch('/api/admin/events', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          date: form.date || generatedDate,
+          time: form.time || generatedTime,
+          order: Number(form.order) || 1,
+        }),
+      })
+
+      if (!res.ok) {
+        const errorMsg = await getFriendlyAdminApiError(res, 'Unable to save event.')
+        alert(errorMsg)
+        return
+      }
+
+      setShowEventModal(false)
+      // Reload events
+      await loadEvents()
+    } catch (err) {
+      alert('Unable to save event.')
+    } finally {
+      setSavingEvent(false)
+    }
+  };
+
   const handleRsvp = async (eventId: string, status: RSVPStatus) => {
     const app = getFirebaseClientApp();
     if (!app || !user) return;
@@ -223,6 +317,7 @@ export default function EventsPage() {
   }
 
   const stats = getEventStats();
+  const isAdmin = userData?.role === 'ADMIN';
 
   return (
     <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
@@ -296,6 +391,15 @@ export default function EventsPage() {
           </button>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
+          {isAdmin && (
+            <button
+              onClick={() => setShowEventModal(true)}
+              className="px-4 py-1.5 bg-rotaract-pink hover:bg-rotaract-darkpink text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-base">add</span>
+              Create Event
+            </button>
+          )}
           <div className="relative flex-1 sm:flex-initial">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">search</span>
             <input 
@@ -392,6 +496,14 @@ export default function EventsPage() {
           </p>
         </div>
       )}
+      
+      {/* Event Modal */}
+      <EventModal
+        isOpen={showEventModal}
+        onClose={() => setShowEventModal(false)}
+        onSave={handleSaveEvent}
+        saving={savingEvent}
+      />
     </main>
   );
 }
