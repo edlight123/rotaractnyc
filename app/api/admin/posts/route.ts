@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { FieldValue } from 'firebase-admin/firestore'
 import { requireAdmin } from '@/app/api/admin/_utils'
 import { getFirebaseAdminDb } from '@/lib/firebase/admin'
+import { logActivity } from '@/lib/admin/activities'
 
 const DEFAULT_AUTHOR = 'Rotaract Club of New York at the United Nations'
 
@@ -66,6 +67,18 @@ export async function POST(req: NextRequest) {
   }
 
   await ref.set(doc, { merge: true })
+  
+  // Log activity
+  await logActivity({
+    type: 'post',
+    action: 'created',
+    title: 'Post created',
+    description: `${body.title} was ${body.published ? 'published' : 'saved as draft'}`,
+    userId: admin.uid,
+    userName: admin.email || 'Admin',
+    metadata: { postSlug: body.slug, postTitle: body.title, published: body.published },
+  })
+  
   return NextResponse.json({ ok: true, id: ref.id })
 }
 

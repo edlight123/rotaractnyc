@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { FieldValue } from 'firebase-admin/firestore'
 import { requireAdmin } from '@/app/api/admin/_utils'
 import { getFirebaseAdminDb } from '@/lib/firebase/admin'
+import { logActivity } from '@/lib/admin/activities'
 import type { UserRole, UserStatus } from '@/types/portal'
 
 function coerceRole(v: unknown): UserRole {
@@ -142,6 +143,17 @@ export async function POST(req: NextRequest) {
       updatedAt: FieldValue.serverTimestamp(),
     })
 
+    // Log activity
+    await logActivity({
+      type: 'member',
+      action: 'created',
+      title: 'New member added',
+      description: `${userData.name} was added to the club`,
+      userId: admin.uid,
+      userName: admin.email || 'Admin',
+      metadata: { memberId: ref.id, memberEmail: userData.email },
+    })
+
     return NextResponse.json({ ok: true, uid: ref.id })
   } catch (err) {
     const e = err as { message?: string; code?: string }
@@ -175,6 +187,17 @@ export async function PUT(req: NextRequest) {
     },
     { merge: true }
   )
+
+  // Log activity
+  await logActivity({
+    type: 'member',
+    action: 'updated',
+    title: 'Member updated',
+    description: `${userData.name}'s information was updated`,
+    userId: admin.uid,
+    userName: admin.email || 'Admin',
+    metadata: { memberId: uid, memberEmail: userData.email },
+  })
 
   return NextResponse.json({ ok: true })
 }

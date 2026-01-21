@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { requireAdmin } from '@/app/api/admin/_utils'
 import { getFirebaseAdminDb } from '@/lib/firebase/admin'
+import { logActivity } from '@/lib/admin/activities'
 
 export type EventDoc = {
   title: string
@@ -176,6 +177,18 @@ export async function POST(req: NextRequest) {
 
   const ref = id ? db.collection('portalEvents').doc(id) : db.collection('portalEvents').doc()
   await ref.set(doc, { merge: true })
+  
+  // Log activity
+  await logActivity({
+    type: 'event',
+    action: id ? 'updated' : 'created',
+    title: id ? 'Event updated' : 'Event created',
+    description: `${body.title} is now ${doc.status}`,
+    userId: admin.uid,
+    userName: admin.email || 'Admin',
+    metadata: { eventId: ref.id, eventTitle: body.title },
+  })
+  
   return NextResponse.json({ ok: true, id: ref.id })
 }
 

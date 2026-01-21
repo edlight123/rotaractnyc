@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { FieldValue } from 'firebase-admin/firestore'
 import { requireAdmin } from '@/app/api/admin/_utils'
 import { getFirebaseAdminDb } from '@/lib/firebase/admin'
+import { logActivity } from '@/lib/admin/activities'
 
 export type GalleryDoc = {
   title: string
@@ -46,6 +47,18 @@ export async function POST(req: NextRequest) {
   }
 
   await ref.set(doc, { merge: true })
+  
+  // Log activity
+  await logActivity({
+    type: 'gallery',
+    action: body.id ? 'updated' : 'created',
+    title: body.id ? 'Gallery item updated' : 'Photos uploaded',
+    description: `${body.title} was ${body.id ? 'updated' : 'added to the gallery'}`,
+    userId: admin.uid,
+    userName: admin.email || 'Admin',
+    metadata: { galleryId: ref.id, imageTitle: body.title },
+  })
+  
   return NextResponse.json({ ok: true, id: ref.id })
 }
 
