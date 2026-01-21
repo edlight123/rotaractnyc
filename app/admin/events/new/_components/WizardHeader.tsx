@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 export default function WizardHeader() {
   return (
-    <header className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-8 py-4 sticky top-0 z-50">
+    <header className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-8 py-4 sticky top-0 z-[60]">
       <div className="flex items-center gap-4">
         <div className="text-primary">
           <svg className="size-8" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
