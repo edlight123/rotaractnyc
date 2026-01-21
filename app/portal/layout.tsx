@@ -2,6 +2,7 @@
 
 import { AuthProvider } from '@/lib/firebase/auth';
 import PortalNav from './_components/PortalNav';
+import DuesBanner from '@/components/portal/DuesBanner';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/auth';
 import { useEffect } from 'react';
@@ -100,6 +101,9 @@ function PortalShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark font-display flex flex-col antialiased text-[#141414] dark:text-white">
       <PortalNav />
+      <div className="px-6 pt-6">
+        <DuesBanner memberId={user.uid} />
+      </div>
       {children}
     </div>
   );

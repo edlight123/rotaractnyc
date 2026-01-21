@@ -168,6 +168,54 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
     
+    // Members collection (onboarding)
+    match /members/{memberId} {
+      // Members can read their own record, admins can read all
+      allow read: if isAuthenticated() && (request.auth.uid == memberId || isAdmin());
+      // System creates during onboarding
+      allow write: if false; // Server-side only
+    }
+    
+    // Invitations collection (onboarding)
+    match /invitations/{inviteId} {
+      allow read, write: if false; // Server-side only
+    }
+    
+    // Payments collection (onboarding)
+    match /payments/{paymentId} {
+      // Members can read their own payment records
+      allow read: if isAuthenticated() && resource.data.memberId == request.auth.uid;
+      allow write: if false; // Server-side only
+    }
+    
+    // Dues cycles collection
+    match /dues_cycles/{cycleId} {
+      // All authenticated users can read cycles
+      allow read: if isAuthenticated();
+      // Only admins can write
+      allow write: if isAdmin();
+    }
+    
+    // Member dues collection
+    match /member_dues/{memberId} {
+      // Members can read their own dues, admins can read all
+      allow read: if isAuthenticated() && (request.auth.uid == memberId || isAdmin());
+      allow write: if false; // Server-side only
+      
+      match /cycles/{cycleId} {
+        // Members can read their own cycle dues, admins can read all
+        allow read: if isAuthenticated() && (request.auth.uid == memberId || isAdmin());
+        allow write: if false; // Server-side only
+      }
+    }
+    
+    // Dues payments collection
+    match /dues_payments/{paymentId} {
+      // Members can read their own payment records
+      allow read: if isAuthenticated() && resource.data.memberId == request.auth.uid;
+      allow write: if false; // Server-side only
+    }
+    
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;

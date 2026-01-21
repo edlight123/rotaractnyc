@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   getActiveDuesCycle,
-  getMemberDuesForCycle,
+  getAllMemberDuesForCycle,
 } from '@/lib/firebase/duesCycles';
 import { getAllMembers, updateMemberStatus } from '@/lib/firebase/members';
-import { sendEmail } from '@/lib/email/sendOnboarding';
+import { Resend } from 'resend';
 import { getCurrentRotaryCycleId } from '@/lib/utils/rotaryYear';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 const AUTOMATION_API_KEY = process.env.AUTOMATION_API_KEY;
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// Email helper
+async function sendEmail(options: { to: string; subject: string; html: string }) {
+  return await resend.emails.send({
+    from: 'Rotaract NYC <noreply@rotaractnewyork.org>',
+    ...options,
+  });
+}
 
 /**
  * Verify API key for automation endpoints
@@ -93,7 +102,7 @@ async function sendReminders() {
   }
 
   const today = new Date();
-  const endDate = cycle.endDate;
+  const endDate = cycle.endDate instanceof Date ? cycle.endDate : cycle.endDate.toDate();
   const daysUntilDue = Math.ceil(
     (endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
   );
@@ -108,10 +117,10 @@ async function sendReminders() {
   }
 
   const members = await getAllMembers();
-  const memberDues = await getMemberDuesForCycle(cycle.id);
+  const memberDuesMap = await getAllMemberDuesForCycle(cycle.id);
   const unpaidMembers = members.filter((member) => {
     if (member.status !== 'ACTIVE') return false;
-    const dues = memberDues.find((d) => d.memberId === member.id);
+    const dues = memberDuesMap.get(member.id);
     return !dues || dues.status === 'UNPAID';
   });
 
@@ -124,7 +133,7 @@ async function sendReminders() {
         html: `
           <h2>Annual Dues Reminder</h2>
           <p>Hi ${member.firstName},</p>
-          <p>This is a friendly reminder that your annual Rotaract NYC dues of <strong>$${cycle.amount.toFixed(2)}</strong> are due by <strong>${endDate.toLocaleDateString()}</strong>.</p>
+          <p>This is a friendly reminder that your annual Rotaract NYC dues of <strong>$${(cycle.amount / 100).toFixed(2)}</strong> are due by <strong>${endDate.toLocaleDateString()}</strong>.</p>
           <p>You have <strong>${daysUntilDue} days</strong> remaining to submit your payment.</p>
           <p><a href="${BASE_URL}/portal" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 16px;">Pay Now</a></p>
           <p>Questions? Contact us at <a href="mailto:board@rotaractnewyork.org">board@rotaractnewyork.org</a></p>
@@ -156,7 +165,7 @@ async function sendOverdueNotices() {
   }
 
   const today = new Date();
-  const endDate = cycle.endDate;
+  const endDate = cycle.endDate instanceof Date ? cycle.endDate : cycle.endDate.toDate();
   const isOverdue = today > endDate;
 
   if (!isOverdue) {
@@ -172,10 +181,10 @@ async function sendOverdueNotices() {
   );
 
   const members = await getAllMembers();
-  const memberDues = await getMemberDuesForCycle(cycle.id);
+  const memberDuesMap = await getAllMemberDuesForCycle(cycle.id);
   const unpaidMembers = members.filter((member) => {
     if (member.status !== 'ACTIVE') return false;
-    const dues = memberDues.find((d) => d.memberId === member.id);
+    const dues = memberDuesMap.get(member.id);
     return !dues || dues.status === 'UNPAID';
   });
 
@@ -188,7 +197,7 @@ async function sendOverdueNotices() {
         html: `
           <h2>Overdue Dues Notice</h2>
           <p>Hi ${member.firstName},</p>
-          <p>Your annual Rotaract NYC dues of <strong>$${cycle.amount.toFixed(2)}</strong> are now <strong>${daysOverdue} days overdue</strong>.</p>
+          <p>Your annual Rotaract NYC dues of <strong>$${(cycle.amount / 100).toFixed(2)}</strong> are now <strong>${daysOverdue} days overdue</strong>.</p>
           <p>The payment deadline was <strong>${endDate.toLocaleDateString()}</strong>.</p>
           <p style="color: #dc2626; font-weight: 600;">⚠️ Your membership will be automatically inactivated after 30 days past the due date if payment is not received.</p>
           <p><a href="${BASE_URL}/portal" style="background: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 16px;">Pay Now</a></p>
@@ -221,7 +230,7 @@ async function enforceGracePeriod() {
   }
 
   const today = new Date();
-  const endDate = cycle.endDate;
+  const endDate = cycle.endDate instanceof Date ? cycle.endDate : cycle.endDate.toDate();
   const gracePeriodEnd = new Date(endDate);
   gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 30);
 
@@ -238,10 +247,10 @@ async function enforceGracePeriod() {
   }
 
   const members = await getAllMembers();
-  const memberDues = await getMemberDuesForCycle(cycle.id);
+  const memberDuesMap = await getAllMemberDuesForCycle(cycle.id);
   const unpaidMembers = members.filter((member) => {
     if (member.status !== 'ACTIVE') return false;
-    const dues = memberDues.find((d) => d.memberId === member.id);
+    const dues = memberDuesMap.get(member.id);
     return !dues || dues.status === 'UNPAID';
   });
 
@@ -268,7 +277,7 @@ async function enforceGracePeriod() {
           </ul>
           <h3>How to reactivate your membership:</h3>
           <ol>
-            <li>Pay the outstanding dues of <strong>$${cycle.amount.toFixed(2)}</strong></li>
+            <li>Pay the outstanding dues of <strong>$${(cycle.amount / 100).toFixed(2)}</strong></li>
             <li>Your membership will be automatically reactivated</li>
           </ol>
           <p><a href="${BASE_URL}/portal" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 16px;">Pay Dues Now</a></p>

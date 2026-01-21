@@ -1,0 +1,84 @@
+name: Annual Dues Automation
+
+on:
+  schedule:
+    # Send reminders at 9am UTC daily
+    - cron: '0 9 * * *'
+    # Send overdue notices at 10am UTC daily
+    - cron: '0 10 * * *'
+    # Enforce grace period at 11am UTC daily
+    - cron: '0 11 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 9 * * *' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Send Reminder Emails
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST ${{ secrets.NEXT_PUBLIC_BASE_URL }}/api/admin/dues/automation \
+            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"action":"send-reminders"}')
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
+          
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Failed to send reminders"
+            exit 1
+          fi
+          
+          echo "✓ Reminders sent successfully"
+  
+  send-overdue:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 10 * * *' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Send Overdue Notices
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST ${{ secrets.NEXT_PUBLIC_BASE_URL }}/api/admin/dues/automation \
+            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"action":"send-overdue"}')
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
+          
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Failed to send overdue notices"
+            exit 1
+          fi
+          
+          echo "✓ Overdue notices sent successfully"
+  
+  enforce-grace:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 11 * * *' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Enforce Grace Period
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST ${{ secrets.NEXT_PUBLIC_BASE_URL }}/api/admin/dues/automation \
+            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"action":"enforce-grace"}')
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
+          
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Failed to enforce grace period"
+            exit 1
+          fi
+          
+          echo "✓ Grace period enforced successfully"

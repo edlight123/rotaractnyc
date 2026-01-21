@@ -96,13 +96,7 @@ async function handleCheckoutSessionCompleted(session: any) {
         return;
       }
 
-      await processDuesPayment(
-        memberId,
-        cycleId,
-        session.id,
-        session.payment_intent,
-        session.amount_total / 100 // Convert cents to dollars
-      );
+      await processDuesPayment(session.id, session.payment_intent);
 
       console.log('Processed annual dues payment for member:', memberId, 'cycle:', cycleId);
       return;

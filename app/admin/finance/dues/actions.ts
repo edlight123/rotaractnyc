@@ -4,24 +4,22 @@ import {
   createDuesCycle,
   activateDuesCycle,
   getAllDuesCycles,
-  getMemberDuesForCycle,
+  getAllMemberDuesForCycle,
   markDuesPaidOffline,
   waiveMemberDues,
 } from '@/lib/firebase/duesCycles';
 import { getAllMembers } from '@/lib/firebase/members';
-import { getRotaryYearDates } from '@/lib/utils/rotaryYear';
 
 /**
  * Create a new dues cycle
  */
-export async function createCycleAction(endingYear: number, amount: number) {
+export async function createCycleAction(endingYear: number, amount: number, createdBy: string) {
   try {
-    const dates = getRotaryYearDates(endingYear);
-    const cycle = await createDuesCycle(
-      dates.startDate,
-      dates.endDate,
-      amount
-    );
+    const cycle = await createDuesCycle({
+      endingYear,
+      amount: amount * 100, // Convert to cents
+      createdBy,
+    });
     return { success: true, cycle };
   } catch (error: any) {
     console.error('Error creating cycle:', error);
@@ -61,11 +59,11 @@ export async function getCyclesAction() {
 export async function getMemberDuesAction(cycleId: string) {
   try {
     const members = await getAllMembers();
-    const memberDues = await getMemberDuesForCycle(cycleId);
+    const memberDuesMap = await getAllMemberDuesForCycle(cycleId);
 
     // Combine member info with dues status
     const enrichedDues = members.map((member) => {
-      const dues = memberDues.find((d) => d.memberId === member.id);
+      const dues = memberDuesMap.get(member.id);
       return {
         memberId: member.id,
         firstName: member.firstName,
@@ -76,7 +74,7 @@ export async function getMemberDuesAction(cycleId: string) {
         paidAt: dues?.paidAt,
         paidOfflineAt: dues?.paidOfflineAt,
         waivedAt: dues?.waivedAt,
-        waivedReason: dues?.waivedReason,
+        note: dues?.note,
       };
     });
 
@@ -93,10 +91,16 @@ export async function getMemberDuesAction(cycleId: string) {
 export async function markPaidOfflineAction(
   memberId: string,
   cycleId: string,
+  adminUid: string,
   notes?: string
 ) {
   try {
-    await markDuesPaidOffline(memberId, cycleId, notes);
+    await markDuesPaidOffline({
+      memberId,
+      cycleId,
+      note: notes || 'Marked as paid offline',
+      adminUid,
+    });
     return { success: true };
   } catch (error: any) {
     console.error('Error marking dues as paid offline:', error);
@@ -110,10 +114,16 @@ export async function markPaidOfflineAction(
 export async function waiveDuesAction(
   memberId: string,
   cycleId: string,
+  adminUid: string,
   reason: string
 ) {
   try {
-    await waiveMemberDues(memberId, cycleId, reason);
+    await waiveMemberDues({
+      memberId,
+      cycleId,
+      note: reason,
+      adminUid,
+    });
     return { success: true };
   } catch (error: any) {
     console.error('Error waiving dues:', error);

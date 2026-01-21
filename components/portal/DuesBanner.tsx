@@ -100,7 +100,9 @@ export default function DuesBanner({ memberId }: DuesBannerProps) {
 
   // Calculate days until due
   const today = new Date();
-  const endDate = activeCycle.endDate;
+  const endDate = activeCycle.endDate instanceof Date 
+    ? activeCycle.endDate 
+    : activeCycle.endDate.toDate();
   const daysUntilDue = Math.ceil(
     (endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
   );

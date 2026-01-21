@@ -19,10 +19,10 @@ interface MemberDuesRow {
   email: string;
   memberStatus: string;
   duesStatus: string;
-  paidAt?: Date;
-  paidOfflineAt?: Date;
-  waivedAt?: Date;
-  waivedReason?: string;
+  paidAt?: any;
+  paidOfflineAt?: any;
+  waivedAt?: any;
+  note?: string;
 }
 
 export default function AdminDuesPage() {
@@ -86,7 +86,10 @@ export default function AdminDuesPage() {
   }
 
   async function handleCreateCycle() {
-    const result = await createCycleAction(newCycleYear, newCycleAmount);
+    // TODO: Get actual admin UID from session
+    const adminUid = 'admin-placeholder'; // Replace with actual auth
+    
+    const result = await createCycleAction(newCycleYear, newCycleAmount, adminUid);
     if (result.success) {
       await loadCycles();
       setNewCycleYear(newCycleYear + 1);
@@ -114,9 +117,13 @@ export default function AdminDuesPage() {
   async function handleMarkPaidOffline() {
     if (!selectedMember || !selectedCycle) return;
 
+    // TODO: Get actual admin UID from session
+    const adminUid = 'admin-placeholder'; // Replace with actual auth
+
     const result = await markPaidOfflineAction(
       selectedMember.memberId,
       selectedCycle,
+      adminUid,
       modalNotes
     );
     if (result.success) {
@@ -135,9 +142,13 @@ export default function AdminDuesPage() {
       return;
     }
 
+    // TODO: Get actual admin UID from session
+    const adminUid = 'admin-placeholder'; // Replace with actual auth
+
     const result = await waiveDuesAction(
       selectedMember.memberId,
       selectedCycle,
+      adminUid,
       modalReason
     );
     if (result.success) {
@@ -195,7 +206,7 @@ export default function AdminDuesPage() {
         </p>
         {activeCycle && (
           <p>
-            <strong>Dues Amount:</strong> ${activeCycle.amount.toFixed(2)}
+            <strong>Dues Amount:</strong> ${(activeCycle.amount / 100).toFixed(2)}
           </p>
         )}
       </div>
@@ -279,13 +290,17 @@ export default function AdminDuesPage() {
                 >
                   <td className="px-4 py-2 text-sm">{cycle.id}</td>
                   <td className="px-4 py-2 text-sm">
-                    {cycle.startDate.toLocaleDateString()}
+                    {typeof cycle.startDate === 'object' && 'toDate' in cycle.startDate 
+                      ? cycle.startDate.toDate().toLocaleDateString()
+                      : new Date(cycle.startDate).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-2 text-sm">
-                    {cycle.endDate.toLocaleDateString()}
+                    {typeof cycle.endDate === 'object' && 'toDate' in cycle.endDate
+                      ? cycle.endDate.toDate().toLocaleDateString()
+                      : new Date(cycle.endDate).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-2 text-sm">
-                    ${cycle.amount.toFixed(2)}
+                    ${(cycle.amount / 100).toFixed(2)}
                   </td>
                   <td className="px-4 py-2 text-sm">
                     {cycle.isActive ? (
@@ -396,9 +411,9 @@ export default function AdminDuesPage() {
                       {member.waivedAt && (
                         <div>
                           Waived: {new Date(member.waivedAt).toLocaleDateString()}
-                          {member.waivedReason && (
+                          {member.note && (
                             <div className="text-xs italic">
-                              {member.waivedReason}
+                              {member.note}
                             </div>
                           )}
                         </div>
