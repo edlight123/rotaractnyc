@@ -396,26 +396,6 @@ export default function EventsPage() {
           </p>
         </div>
       )}
-
-      {/* Footer Section */}
-      <footer className="mt-24 pt-10 border-t border-[#e3dde4] dark:border-gray-800 flex flex-col md:flex-row items-center justify-between gap-6 pb-12">
-        <div className="flex items-center gap-3 grayscale opacity-60">
-          <div className="size-6 bg-gray-500 rounded flex items-center justify-center text-white">
-            <span className="material-symbols-outlined text-xs">diversity_3</span>
-          </div>
-          <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
-            Rotaract NYC © {new Date().getFullYear()}
-          </p>
-        </div>
-        <div className="flex gap-8">
-          <Link href="/contact" className="text-xs font-bold text-gray-500 hover:text-primary transition-colors uppercase tracking-widest">
-            Contact Support
-          </Link>
-          <Link href="/about" className="text-xs font-bold text-gray-500 hover:text-primary transition-colors uppercase tracking-widest">
-            About Us
-          </Link>
-        </div>
-      </footer>
     </main>
   );
 }
