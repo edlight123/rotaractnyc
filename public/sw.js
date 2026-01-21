@@ -1,5 +1,6 @@
 // Service Worker for PWA offline capabilities
-const CACHE_NAME = 'rotaractnyc-v1'
+// Update version on each deployment to force cache refresh
+const CACHE_NAME = 'rotaractnyc-v' + Date.now()
 const urlsToCache = [
   '/',
   '/events',
@@ -35,33 +36,57 @@ self.addEventListener('activate', (event) => {
   self.clients.claim()
 })
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - network-first strategy for HTML, cache-first for assets
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Return cached version or fetch from network
-      return (
-        response ||
-        fetch(event.request).then((fetchResponse) => {
-          // Don't cache API calls or admin routes
-          if (
-            event.request.url.includes('/api/') ||
-            event.request.url.includes('/admin/')
-          ) {
-            return fetchResponse
-          }
+  const { request } = event
+  const url = new URL(request.url)
 
-          // Cache successful GET requests
-          if (
-            event.request.method === 'GET' &&
-            fetchResponse.status === 200
-          ) {
+  // Skip non-GET requests
+  if (request.method !== 'GET') {
+    return
+  }
+
+  // Skip API and admin routes - always fetch fresh
+  if (url.pathname.includes('/api/') || url.pathname.includes('/admin/') || url.pathname.includes('/portal/')) {
+    event.respondWith(fetch(request))
+    return
+  }
+
+  // Network-first strategy for HTML pages
+  if (request.headers.get('accept')?.includes('text/html') || url.pathname.endsWith('/') || !url.pathname.includes('.')) {
+    event.respondWith(
+      fetch(request)
+        .then((fetchResponse) => {
+          // Update cache with fresh content
+          if (fetchResponse.status === 200) {
             const responseToCache = fetchResponse.clone()
             caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache)
+              cache.put(request, responseToCache)
             })
           }
+          return fetchResponse
+        })
+        .catch(() => {
+          // Fallback to cache if network fails
+          return caches.match(request)
+        })
+    )
+    return
+  }
 
+  // Cache-first strategy for static assets (CSS, JS, images)
+  event.respondWith(
+    caches.match(request).then((response) => {
+      return (
+        response ||
+        fetch(request).then((fetchResponse) => {
+          // Cache successful responses
+          if (fetchResponse.status === 200) {
+            const responseToCache = fetchResponse.clone()
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseToCache)
+            })
+          }
           return fetchResponse
         })
       )
