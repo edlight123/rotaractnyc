@@ -610,7 +610,7 @@ export default function AdminEventsPage() {
         isOpen={showEventModal}
         onClose={resetForm}
         onSave={save}
-        editingEvent={editingEvent as (EventFormData & { id: string }) | null}
+        editingEvent={editingEvent as any}
         saving={saving}
       />
     </>

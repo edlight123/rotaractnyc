@@ -6,7 +6,6 @@ import { useAdminSession } from '@/lib/admin/useAdminSession'
 import LogisticsStep from './_components/LogisticsStep'
 import ContentStep from './_components/ContentStep'
 import RegistrationStep from './_components/RegistrationStep'
-import WizardHeader from './_components/WizardHeader'
 import WizardProgress from './_components/WizardProgress'
 import WizardFooter from './_components/WizardFooter'
 
@@ -46,6 +45,7 @@ export default function NewEventWizard() {
   const [currentStep, setCurrentStep] = useState(1)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
@@ -84,6 +84,7 @@ export default function NewEventWizard() {
   const handleSaveDraft = async () => {
     setIsSaving(true)
     setError(null)
+    setSuccess(null)
     
     try {
       const response = await fetch('/api/admin/events', {
@@ -100,7 +101,8 @@ export default function NewEventWizard() {
       }
       
       const result = await response.json()
-      router.push('/admin/events')
+      setSuccess('Draft saved successfully!')
+      setTimeout(() => router.push('/admin/events'), 1500)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save draft')
     } finally {
@@ -108,10 +110,23 @@ export default function NewEventWizard() {
     }
   }
 
+  const validateForm = () => {
+    const errors: string[] = []
+    if (!formData.title) errors.push('Event Title')
+    if (!formData.description) errors.push('Description')
+    if (!formData.startDate) errors.push('Start Date')
+    if (!formData.startTime) errors.push('Start Time')
+    if (formData.venueType !== 'virtual' && !formData.location) errors.push('Physical Location')
+    
+    if (errors.length > 0) {
+      setError(`Missing required fields: ${errors.join(', ')}`)
+      return false
+    }
+    return true
+  }
+
   const handlePublish = async () => {
-    // Validate required fields
-    if (!formData.title || !formData.description || !formData.startDate || !formData.startTime) {
-      setError('Please fill in all required fields')
+    if (!validateForm()) {
       return
     }
     
@@ -147,17 +162,45 @@ export default function NewEventWizard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      <WizardHeader />
-      
-      <main className="flex-1 flex flex-col items-center py-12 px-4">
+    <div className="min-h-screen">
+      {/* Page Header */}
+      <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Create New Event</h1>
+              <p className="mt-2 text-slate-600 dark:text-slate-400 text-sm max-w-2xl">
+                Set up a new event with our streamlined wizard. Complete all required fields to publish your event to members.
+              </p>
+            </div>
+            <button
+              onClick={() => router.push('/admin/events')}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <span className="material-symbols-outlined text-lg">close</span>
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <main className="flex-1 flex flex-col items-center py-8 px-4">
         {/* Wizard Container */}
         <div className="max-w-4xl w-full bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col">
           <WizardProgress currentStep={currentStep} />
 
+          {/* Success Display */}
+          {success && (
+            <div className="mx-10 mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2">
+              <span className="material-symbols-outlined text-green-600 dark:text-green-400">check_circle</span>
+              <p className="text-green-800 dark:text-green-200 text-sm font-medium">{success}</p>
+            </div>
+          )}
+
           {/* Error Display */}
           {error && (
-            <div className="mx-10 mt-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <div className="mx-10 mt-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2">
+              <span className="material-symbols-outlined text-red-600 dark:text-red-400">error</span>
               <p className="text-red-800 dark:text-red-200 text-sm">{error}</p>
             </div>
           )}
@@ -186,36 +229,29 @@ export default function NewEventWizard() {
         </div>
 
         {/* Helpful Tips */}
-        <div className="max-w-4xl w-full mt-10 flex gap-6 px-6">
-          <div className="flex-1 flex gap-4 p-5 rounded-xl border border-primary/20 bg-primary/5">
-            <span className="material-symbols-outlined text-primary">info</span>
+        <div className="max-w-4xl w-full mt-8 mb-12 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex gap-3 p-4 rounded-xl border border-primary/20 bg-primary/5">
+            <span className="material-symbols-outlined text-primary text-xl">lightbulb</span>
             <div>
               <p className="text-slate-900 dark:text-white font-bold text-sm">Expert Tip</p>
-              <p className="text-slate-500 text-xs leading-relaxed mt-1">
+              <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed mt-1">
                 {currentStep === 1 && 'Events with accurate locations get 40% higher RSVP rates. Make sure to provide detailed venue information.'}
                 {currentStep === 2 && 'Events with engaging descriptions and quality images receive 60% more registrations.'}
-                {currentStep === 3 && 'Setting early bird pricing can increase initial registrations by 35%.'}
+                {currentStep === 3 && 'Consider setting early bird pricing to boost initial registrations.'}
               </p>
             </div>
           </div>
-          <div className="flex-1 hidden md:flex gap-4 p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-            <span className="material-symbols-outlined text-slate-400">help_outline</span>
+          <div className="flex gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <span className="material-symbols-outlined text-slate-400 text-xl">help</span>
             <div>
-              <p className="text-slate-900 dark:text-white font-bold text-sm">Need help?</p>
-              <p className="text-slate-500 text-xs leading-relaxed mt-1">
-                Contact the NYC District Tech Team for support with complex event setups or integrations.
+              <p className="text-slate-900 dark:text-white font-bold text-sm">Need Help?</p>
+              <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed mt-1">
+                Contact the tech team for support with event setups or integrations.
               </p>
             </div>
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="py-8 text-center border-t border-slate-100 dark:border-slate-800">
-        <p className="text-xs text-slate-400 font-medium">
-          © 2024 Rotaract Club of New York City. Service Above Self.
-        </p>
-      </footer>
     </div>
   )
 }
