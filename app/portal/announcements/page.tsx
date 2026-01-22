@@ -12,7 +12,6 @@ import MemberSpotlight from '../_components/MemberSpotlight';
 import UpcomingDeadlines from '../_components/UpcomingDeadlines';
 import QuickLinks from '../_components/QuickLinks';
 import DashboardSummary from '../_components/DashboardSummary';
-import DashboardQuickActions from '../_components/DashboardQuickActions';
 
 interface CommunityPost {
   id: string;
@@ -446,9 +445,6 @@ export default function AnnouncementsPage() {
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           {/* LEFT/MAIN COLUMN: The Feed */}
           <div className="flex-1 w-full flex flex-col gap-6">
-            {/* Quick Actions */}
-            <DashboardQuickActions />
-            
             {/* Section Heading with Mobile Sidebar Toggle */}
             <div className="flex flex-col gap-1 pb-2">
               <div className="flex items-center justify-between">

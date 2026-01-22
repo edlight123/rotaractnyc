@@ -13,7 +13,6 @@ import MemberSpotlight from './_components/MemberSpotlight';
 import UpcomingDeadlines from './_components/UpcomingDeadlines';
 import QuickLinks from './_components/QuickLinks';
 import DashboardSummary from './_components/DashboardSummary';
-import DashboardQuickActions from './_components/DashboardQuickActions';
 
 interface CommunityPost {
   id: string;
@@ -248,11 +247,6 @@ export default function PortalDashboard() {
       {/* Dashboard Summary - Full Width */}
       <div className="mb-8">
         <DashboardSummary />
-      </div>
-
-      {/* Quick Actions - Full Width */}
-      <div className="mb-8">
-        <DashboardQuickActions />
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8 items-start">
