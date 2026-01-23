@@ -21,6 +21,7 @@ export default function PortalNav() {
     { href: '/portal/announcements', label: 'Feed' },
     { href: '/portal/events', label: 'Calendar' },
     { href: '/portal/directory', label: 'Directory' },
+    { href: '/portal/posts', label: 'Articles' },
     { href: '/portal/docs', label: 'Resources' },
   ];
 
@@ -78,7 +79,9 @@ export default function PortalNav() {
           <div className="flex items-center gap-6">
             <nav className="hidden md:flex items-center gap-6">
               {navItems.map((item) => {
-                const isActive = pathname === item.href || (item.href === '/portal/announcements' && pathname === '/portal');
+                const isActive = pathname === item.href || 
+                  (item.href === '/portal/announcements' && pathname === '/portal') ||
+                  (item.href === '/portal/posts' && pathname?.startsWith('/portal/posts'));
                 return (
                   <Link
                     key={item.href}
