@@ -57,14 +57,28 @@ interface CommunityPost {
   commentsCount: number;
 }
 
+interface BlogPost {
+  slug: string;
+  title: string;
+  date: string;
+  author: string;
+  category: string;
+  excerpt: string;
+  content: string[];
+  published: boolean;
+  createdAt: Date;
+}
+
 type FeedItem = 
   | { type: 'announcement'; data: Announcement; author?: User; sortDate: Date; pinned: boolean; likesCount: number }
-  | { type: 'post'; data: CommunityPost; sortDate: Date; pinned: boolean; likesCount: number };
+  | { type: 'post'; data: CommunityPost; sortDate: Date; pinned: boolean; likesCount: number }
+  | { type: 'blogPost'; data: BlogPost; sortDate: Date; pinned: boolean; likesCount: number };
 
 export default function PortalDashboard() {
   const { loading, user, userData } = useAuth();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [communityPosts, setCommunityPosts] = useState<CommunityPost[]>([]);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [authors, setAuthors] = useState<Record<string, User>>({});
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -191,10 +205,48 @@ export default function PortalDashboard() {
         setLoadingData(false);
       });
 
+      // Load blog posts with real-time listener
+      const blogPostsRef = collection(db, 'posts');
+      const blogPostsQuery = query(
+        blogPostsRef,
+        where('published', '==', true),
+        orderBy('date', 'desc')
+      );
+      
+      const unsubscribeBlogPosts = onSnapshot(blogPostsQuery, (snapshot) => {
+        const loadedBlogPosts = snapshot.docs.map((doc) => {
+          const data = doc.data() as any;
+          // Parse date string to Date object
+          let createdAt: Date;
+          if (data.date) {
+            createdAt = new Date(data.date);
+          } else {
+            createdAt = new Date();
+          }
+
+          return {
+            slug: doc.id,
+            title: String(data.title || ''),
+            date: String(data.date || ''),
+            author: String(data.author || 'Rotaract Club of New York'),
+            category: String(data.category || 'News'),
+            excerpt: String(data.excerpt || ''),
+            content: Array.isArray(data.content) ? data.content.map((x: any) => String(x)) : [],
+            published: data.published !== false,
+            createdAt,
+          } as BlogPost;
+        });
+
+        setBlogPosts(loadedBlogPosts);
+      }, (error) => {
+        console.error('Error loading blog posts:', error);
+      });
+
       // Cleanup listeners on unmount
       return () => {
         unsubscribeAnnouncements();
         unsubscribePosts();
+        unsubscribeBlogPosts();
       };
     } catch (error: any) {
       console.error('Error setting up feed listeners:', error);
@@ -393,6 +445,13 @@ export default function PortalDashboard() {
       sortDate: post.createdAt,
       pinned: false,
       likesCount: post.likes.length,
+    })),
+    ...blogPosts.map(post => ({
+      type: 'blogPost' as const,
+      data: post,
+      sortDate: post.createdAt,
+      pinned: false,
+      likesCount: 0, // Blog posts don't have likes yet
     }))
   ];
 
@@ -410,10 +469,15 @@ export default function PortalDashboard() {
       if (item.type === 'announcement') {
         return item.data.title?.toLowerCase().includes(query) || 
                item.data.body?.toLowerCase().includes(query);
-      } else {
+      } else if (item.type === 'post') {
         return item.data.content.title?.toLowerCase().includes(query) || 
                item.data.content.body?.toLowerCase().includes(query);
+      } else if (item.type === 'blogPost') {
+        return item.data.title?.toLowerCase().includes(query) || 
+               item.data.excerpt?.toLowerCase().includes(query) ||
+               item.data.content?.join(' ').toLowerCase().includes(query);
       }
+      return false;
     });
   }
 
@@ -584,7 +648,7 @@ export default function PortalDashboard() {
                       } : undefined}
                     />
                   );
-                } else {
+                } else if (item.type === 'post') {
                   return (
                     <PostCard
                       key={`post-${item.data.id}`}
@@ -596,7 +660,55 @@ export default function PortalDashboard() {
                       commentsCount={item.data.commentsCount}
                     />
                   );
+                } else if (item.type === 'blogPost') {
+                  return (
+                    <div key={`blogPost-${item.data.slug}`} className="bg-white dark:bg-[#1e1e1e] rounded-xl shadow-sm border border-gray-100 dark:border-[#2a2a2a] overflow-hidden hover:shadow-lg transition-all">
+                      <div className="p-6">
+                        {/* Category Badge */}
+                        <div className="mb-3">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-[#003a70]/10 text-[#003a70] dark:bg-blue-500/10 dark:text-blue-400">
+                            {item.data.category}
+                          </span>
+                        </div>
+                        
+                        {/* Title */}
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 leading-tight hover:text-[#003a70] dark:hover:text-blue-400 transition-colors">
+                          <a href={`/portal/posts/${item.data.slug}`}>{item.data.title}</a>
+                        </h3>
+                        
+                        {/* Excerpt */}
+                        <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
+                          {item.data.excerpt}
+                        </p>
+                        
+                        {/* Meta Info */}
+                        <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[16px]">person</span>
+                            {item.data.author}
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[16px]">calendar_today</span>
+                            {item.data.date}
+                          </span>
+                        </div>
+                        
+                        {/* Read More Link */}
+                        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-[#2a2a2a]">
+                          <a 
+                            href={`/portal/posts/${item.data.slug}`}
+                            className="inline-flex items-center gap-2 text-sm font-semibold text-[#003a70] dark:text-blue-400 hover:gap-3 transition-all"
+                          >
+                            Read full article
+                            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  );
                 }
+                return null;
               })}
               
               {/* Loading More Indicator */}
