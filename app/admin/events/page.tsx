@@ -6,7 +6,6 @@ import { FaCalendar, FaSignOutAlt, FaTable, FaTh, FaCalendarAlt, FaSearch, FaPlu
 import { useAdminSession, adminSignOut } from '@/lib/admin/useAdminSession'
 import { getFriendlyAdminApiError } from '@/lib/admin/apiError'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import EventModal from '@/components/admin/EventModal'
 import { 
   collection, 
   query, 
@@ -54,8 +53,6 @@ export default function AdminEventsPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
-  const [showEventModal, setShowEventModal] = useState(false)
-  const [editingEvent, setEditingEvent] = useState<(EventRow & { id: string }) | null>(null)
   const [attendeeCounts, setAttendeeCounts] = useState<Map<string, number>>(new Map())
 
   const formatDisplayDateFromStartDate = (isoDate: string) => {
@@ -239,28 +236,11 @@ export default function AdminEventsPage() {
   if (session.status !== 'authenticated') return null
 
   const startEdit = (row: EventRow) => {
-    setEditingId(row.id)
-    setEditingEvent({
-      ...row,
-      id: row.id,
-      time: row.time || '',
-      startDate: row.startDate || '',
-      startTime: row.startTime || '',
-      endTime: row.endTime || '',
-      timezone: row.timezone || 'America/New_York',
-      location: row.location || '',
-      status: row.status || 'published',
-      attendees: row.attendees || 0,
-      imageUrl: row.imageUrl || '',
-      visibility: row.visibility || 'member',
-    })
-    setShowEventModal(true)
+    router.push(`/admin/events/${row.id}`)
   }
 
   const resetForm = () => {
     setEditingId(null)
-    setEditingEvent(null)
-    setShowEventModal(false)
   }
 
   const save = async (form: Omit<EventRow, 'id'>) => {
@@ -412,13 +392,13 @@ export default function AdminEventsPage() {
           </button>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <button
-            onClick={() => setShowEventModal(true)}
+          <Link
+            href="/admin/events/new"
             className="px-4 py-1.5 bg-rotaract-pink hover:bg-rotaract-darkpink text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-2"
           >
             <FaPlus className="text-base" />
             Create Event
-          </button>
+          </Link>
           <div className="relative flex-1 sm:flex-initial">
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
             <input 
@@ -550,15 +530,6 @@ export default function AdminEventsPage() {
           </p>
         </div>
       )}
-      
-      {/* Event Modal */}
-      <EventModal
-        isOpen={showEventModal}
-        onClose={resetForm}
-        onSave={save}
-        editingEvent={editingEvent as any}
-        saving={saving}
-      />
     </main>
   )
 }

@@ -19,8 +19,6 @@ import { getFirestore } from 'firebase/firestore';
 import { getFirebaseClientApp } from '@/lib/firebase/client';
 import { Event, RSVP, RSVPStatus, Visibility } from '@/types/portal';
 import Link from 'next/link';
-import EventModal from '@/components/admin/EventModal';
-import { getFriendlyAdminApiError } from '@/lib/admin/apiError';
 
 type FilterType = 'all' | 'member' | 'public';
 
@@ -53,8 +51,6 @@ export default function EventsPage() {
   const [updatingRsvp, setUpdatingRsvp] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showEventModal, setShowEventModal] = useState(false);
-  const [savingEvent, setSavingEvent] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -214,43 +210,6 @@ export default function EventsPage() {
     return end ? `${start} - ${end}` : start
   }
 
-  const handleSaveEvent = async (form: EventFormData) => {
-    setSavingEvent(true)
-    try {
-      const generatedDate =
-        !form.date && form.startDate ? formatDisplayDateFromStartDate(form.startDate) : ''
-      const generatedTime =
-        !form.time && form.startTime
-          ? formatDisplayTimeFromCalendar(form.startTime, form.endTime)
-          : ''
-
-      const res = await fetch('/api/admin/events', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          date: form.date || generatedDate,
-          time: form.time || generatedTime,
-          order: Number(form.order) || 1,
-        }),
-      })
-
-      if (!res.ok) {
-        const errorMsg = await getFriendlyAdminApiError(res, 'Unable to save event.')
-        alert(errorMsg)
-        return
-      }
-
-      setShowEventModal(false)
-      // Reload events
-      await loadEvents()
-    } catch (err) {
-      alert('Unable to save event.')
-    } finally {
-      setSavingEvent(false)
-    }
-  };
-
   const handleRsvp = async (eventId: string, status: RSVPStatus) => {
     const app = getFirebaseClientApp();
     if (!app || !user) return;
@@ -391,15 +350,6 @@ export default function EventsPage() {
           </button>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          {isAdmin && (
-            <button
-              onClick={() => setShowEventModal(true)}
-              className="px-4 py-1.5 bg-rotaract-pink hover:bg-rotaract-darkpink text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-base">add</span>
-              Create Event
-            </button>
-          )}
           <div className="relative flex-1 sm:flex-initial">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">search</span>
             <input 
@@ -510,14 +460,6 @@ export default function EventsPage() {
           </p>
         </div>
       )}
-      
-      {/* Event Modal */}
-      <EventModal
-        isOpen={showEventModal}
-        onClose={() => setShowEventModal(false)}
-        onSave={handleSaveEvent}
-        saving={savingEvent}
-      />
     </main>
   );
 }

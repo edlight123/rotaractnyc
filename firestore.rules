@@ -68,10 +68,10 @@ service cloud.firestore {
 
     // Portal Events (separate from public site events)
     match /portalEvents/{eventId} {
-      // Members can read member-visible events, board can read all
-      allow read: if (isMember() && resource.data.visibility == 'member')
-                  || (isBoard() && resource.data.visibility in ['member', 'board'])
-                  || resource.data.visibility == 'public';
+      // Anyone can read public events; members can read member+public; board can read all
+      allow read: if resource.data.visibility == 'public'
+                  || (isMember() && resource.data.visibility in ['public', 'member'])
+                  || (isBoard() && resource.data.visibility in ['public', 'member', 'board']);
       // Board can create/edit events
       allow create, update, delete: if isBoard();
 
@@ -82,6 +82,26 @@ service cloud.firestore {
         // Members can only write their own RSVP
         allow write: if isAuthenticated() && request.auth.uid == userId;
       }
+    }
+    
+    // Event Registrations
+    match /eventRegistrations/{registrationId} {
+      // Users can read their own registrations
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can create registrations
+      allow create: if isAuthenticated();
+      // Admins can read all
+      allow read: if isAdmin() || isBoard();
+    }
+    
+    // Event Checkouts
+    match /eventCheckouts/{checkoutId} {
+      // Users can read their own checkouts
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can create checkouts
+      allow create: if isAuthenticated();
+      // Admins can read all
+      allow read: if isAdmin() || isBoard();
     }
     
     // Announcements collection
