@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import { useAdminSession } from '@/lib/admin/useAdminSession'
+import { AuthProvider } from '@/lib/firebase/auth'
 import { useEffect } from 'react'
 import AdminNav from './_components/AdminNav'
 
@@ -20,7 +21,11 @@ export default function AdminLayout({
     return children
   }
 
-  return <AdminShell>{children}</AdminShell>
+  return (
+    <AuthProvider>
+      <AdminShell>{children}</AdminShell>
+    </AuthProvider>
+  )
 }
 
 function AdminShell({ children }: { children: React.ReactNode }) {
