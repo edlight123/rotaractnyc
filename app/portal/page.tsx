@@ -12,6 +12,8 @@ import MemberSpotlight from './_components/MemberSpotlight';
 import UpcomingDeadlines from './_components/UpcomingDeadlines';
 import QuickLinks from './_components/QuickLinks';
 import DashboardSummary from './_components/DashboardSummary';
+import NewPostModal from './_components/NewPostModal';
+import { canManagePosts } from '@/lib/portal/roles';
 
 interface CommunityPost {
   id: string;
@@ -91,6 +93,8 @@ export default function PortalDashboard() {
   const observerTarget = useRef(null);
   const POSTS_PER_PAGE = 10;
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [showNewPostModal, setShowNewPostModal] = useState(false);
+  const canCreatePosts = canManagePosts(userData?.role);
 
   useEffect(() => {
     if (!loading) {
@@ -534,102 +538,139 @@ export default function PortalDashboard() {
               </div>
             </div>
 
-            {/* Search and Filters */}
-            <div className="bg-white dark:bg-[#1e1e1e] rounded-xl shadow-sm border border-gray-100 dark:border-[#2a2a2a] p-4 space-y-4">
-              {/* Search Bar */}
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                  search
-                </span>
-                <input
-                  type="text"
-                  placeholder="Search announcements and posts..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-rotaract-blue focus:border-transparent transition-all"
-                />
-                {searchQuery && (
+            {/* Create Post Composer */}
+            <div className="bg-white dark:bg-[#1e1e1e] rounded-xl shadow-sm border border-gray-100 dark:border-[#2a2a2a] p-4">
+              <div className="flex items-center gap-3">
+                {/* User Avatar */}
+                <div 
+                  className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0 flex items-center justify-center overflow-hidden"
+                  style={user?.photoURL ? { backgroundImage: `url(${user.photoURL})`, backgroundSize: 'cover' } : {}}
+                >
+                  {!user?.photoURL && (
+                    <span className="material-symbols-outlined text-gray-400 dark:text-gray-500">person</span>
+                  )}
+                </div>
+                
+                {/* Post Input Button */}
+                <button
+                  onClick={() => setShowNewPostModal(true)}
+                  className="flex-1 text-left px-4 py-2.5 bg-gray-50 dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#333] transition-colors"
+                >
+                  What's on your mind, {userData?.name?.split(' ')[0] || 'Member'}?
+                </button>
+              </div>
+              
+              {/* Quick Action Buttons */}
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                <div className="flex items-center gap-1">
                   <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    onClick={() => setShowNewPostModal(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] rounded-lg transition-colors"
                   >
-                    <span className="material-symbols-outlined text-sm">close</span>
+                    <span className="material-symbols-outlined text-green-500 text-lg">image</span>
+                    <span className="hidden sm:inline">Photo</span>
+                  </button>
+                  <button
+                    onClick={() => setShowNewPostModal(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] rounded-lg transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-blue-500 text-lg">event</span>
+                    <span className="hidden sm:inline">Event</span>
+                  </button>
+                  <button
+                    onClick={() => setShowNewPostModal(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] rounded-lg transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-amber-500 text-lg">article</span>
+                    <span className="hidden sm:inline">Article</span>
+                  </button>
+                </div>
+                {canCreatePosts && (
+                  <button
+                    onClick={() => setShowNewPostModal(true)}
+                    className="flex items-center gap-1.5 px-4 py-1.5 bg-primary hover:bg-primary-600 text-white text-sm font-medium rounded-lg transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-lg">add</span>
+                    Post
                   </button>
                 )}
               </div>
+            </div>
 
-              {/* Filters Row */}
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Type Filter */}
-                <div className="flex items-center gap-2 bg-gray-50 dark:bg-[#2a2a2a] rounded-lg p-1">
-                  <button
-                    onClick={() => setFilterType('all')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                      filterType === 'all'
-                        ? 'bg-white dark:bg-[#3a3a3a] text-rotaract-blue shadow-sm'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                    }`}
-                  >
-                    All
-                  </button>
-                  <button
-                    onClick={() => setFilterType('announcements')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                      filterType === 'announcements'
-                        ? 'bg-white dark:bg-[#3a3a3a] text-rotaract-blue shadow-sm'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                    }`}
-                  >
-                    Announcements
-                  </button>
-                  <button
-                    onClick={() => setFilterType('posts')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                      filterType === 'posts'
-                        ? 'bg-white dark:bg-[#3a3a3a] text-rotaract-blue shadow-sm'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                    }`}
-                  >
-                    Posts
-                  </button>
+            {/* Filters Row */}
+            <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-[#1e1e1e] rounded-xl shadow-sm border border-gray-100 dark:border-[#2a2a2a] p-3">
+              {/* Type Filter */}
+              <div className="flex items-center gap-1 bg-gray-100 dark:bg-[#2a2a2a] rounded-lg p-1">
+                <button
+                  onClick={() => setFilterType('all')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    filterType === 'all'
+                      ? 'bg-white dark:bg-[#3a3a3a] text-primary dark:text-white shadow-sm'
+                      : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setFilterType('announcements')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    filterType === 'announcements'
+                      ? 'bg-white dark:bg-[#3a3a3a] text-primary dark:text-white shadow-sm'
+                      : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  Announcements
+                </button>
+                <button
+                  onClick={() => setFilterType('posts')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    filterType === 'posts'
+                      ? 'bg-white dark:bg-[#3a3a3a] text-primary dark:text-white shadow-sm'
+                      : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  Posts
+                </button>
+              </div>
+
+              {/* Sort Options */}
+              <div className="flex items-center gap-2 ml-auto">
+                <button
+                  onClick={() => setSortBy('newest')}
+                  className={`p-1.5 rounded-md transition-all ${
+                    sortBy === 'newest'
+                      ? 'text-primary dark:text-white bg-primary/10 dark:bg-white/10'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  }`}
+                  title="Sort by newest"
+                >
+                  <span className="material-symbols-outlined text-lg">schedule</span>
+                </button>
+                <button
+                  onClick={() => setSortBy('popular')}
+                  className={`p-1.5 rounded-md transition-all ${
+                    sortBy === 'popular'
+                      ? 'text-primary dark:text-white bg-primary/10 dark:bg-white/10'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  }`}
+                  title="Sort by popular"
+                >
+                  <span className="material-symbols-outlined text-lg">trending_up</span>
+                </button>
+                
+                {/* Search */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-32 sm:w-40 pl-8 pr-3 py-1.5 bg-gray-100 dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all"
+                  />
+                  <span className="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 text-lg">search</span>
                 </div>
-
-                {/* Divider */}
-                <div className="h-6 w-px bg-gray-200 dark:bg-gray-700"></div>
-
-                {/* Sort Options */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Sort by:</span>
-                  <div className="flex items-center gap-2 bg-gray-50 dark:bg-[#2a2a2a] rounded-lg p-1">
-                    <button
-                      onClick={() => setSortBy('newest')}
-                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1 ${
-                        sortBy === 'newest'
-                          ? 'bg-white dark:bg-[#3a3a3a] text-rotaract-blue shadow-sm'
-                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-sm">schedule</span>
-                      Newest
-                    </button>
-                    <button
-                      onClick={() => setSortBy('popular')}
-                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1 ${
-                        sortBy === 'popular'
-                          ? 'bg-white dark:bg-[#3a3a3a] text-rotaract-blue shadow-sm'
-                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-sm">trending_up</span>
-                      Popular
-                    </button>
-                  </div>
-                </div>
-
-                {/* Results count */}
-                <div className="ml-auto text-sm text-gray-500 dark:text-gray-400">
-                  {feedItems.length} {feedItems.length === 1 ? 'item' : 'items'}
-                </div>
+                
+                <span className="text-sm text-gray-600 dark:text-gray-300 hidden sm:inline">{feedItems.length} items</span>
               </div>
             </div>
 
@@ -781,12 +822,11 @@ export default function PortalDashboard() {
         
         {/* Sidebar */}
         <aside className={`
-          lg:block w-full lg:w-[320px] shrink-0 lg:sticky lg:top-24 space-y-6
-          lg:relative
-          fixed inset-y-0 right-0 z-50 bg-gray-50 dark:bg-[#141414] lg:bg-transparent p-6 lg:p-0
+          lg:block w-full lg:w-[320px] shrink-0 lg:sticky lg:top-20 space-y-6
+          fixed top-16 bottom-0 right-0 z-40 bg-gray-50 dark:bg-[#141414] lg:bg-transparent lg:z-auto p-6 lg:p-0
           transform transition-transform duration-300 ease-in-out
           ${showMobileSidebar ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
-          overflow-y-auto
+          overflow-y-auto lg:max-h-[calc(100vh-5rem)]
         `}>
           {/* Mobile Close Button */}
           <button
@@ -813,6 +853,9 @@ export default function PortalDashboard() {
         </aside>
       </div>
     </div>
+    
+    {/* New Post Modal */}
+    <NewPostModal isOpen={showNewPostModal} onClose={() => setShowNewPostModal(false)} />
     </main>
   );
 }
