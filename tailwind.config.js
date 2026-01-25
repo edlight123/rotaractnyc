@@ -63,6 +63,7 @@ module.exports = {
           pink: '#ac005a',
           darkpink: '#5a0732',
           white: '#ffffff',
+          blue: '#005dAA',
         },
         
         // Semantic Surface Colors
