@@ -241,7 +241,7 @@ export function PostCard({ postId, author, timestamp, content, likes, commentsCo
           ? 'relative bg-gradient-to-br from-indigo-600 to-purple-700'
           : content.type === 'spotlight'
           ? 'relative bg-gradient-to-br from-amber-500 to-amber-600'
-          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+          : 'bg-white dark:bg-[#1e1e1e] border-gray-100 dark:border-[#2a2a2a]'
       }`}
     >
       {(content.type === 'announcement' || content.type === 'spotlight') && (
@@ -254,7 +254,7 @@ export function PostCard({ postId, author, timestamp, content, likes, commentsCo
           <div className="p-4 flex justify-between items-start">
             <div className="flex gap-3">
               <div 
-                className="size-10 rounded-full bg-cover bg-center border border-gray-200 dark:border-gray-700" 
+                className="size-10 rounded-full bg-cover bg-center border border-gray-200 dark:border-[#2a2a2a]" 
                 style={{ 
                   backgroundImage: author.photoUrl 
                     ? `url(${author.photoUrl})` 
@@ -263,7 +263,7 @@ export function PostCard({ postId, author, timestamp, content, likes, commentsCo
               />
               <div>
                 <p className="text-sm font-bold text-gray-900 dark:text-white">{author.name}</p>
-                <p className="text-xs text-gray-500">{author.role} • {timestamp}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{author.role} • {timestamp}</p>
               </div>
             </div>
           </div>
@@ -342,7 +342,7 @@ export function PostCard({ postId, author, timestamp, content, likes, commentsCo
               href={content.link.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors mb-4"
+              className="flex gap-3 p-3 rounded-lg border border-gray-200 dark:border-[#2a2a2a] hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition-colors mb-4"
             >
               <div className="flex-1">
                 <p className="font-semibold text-sm text-[#17b0cf] mb-1">
@@ -358,7 +358,7 @@ export function PostCard({ postId, author, timestamp, content, likes, commentsCo
           {content.document && (
             <a 
               href={content.document.url} 
-              className="flex items-center gap-4 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group mb-4"
+              className="flex items-center gap-4 p-3 rounded-lg border border-gray-200 dark:border-[#2a2a2a] bg-gray-50 dark:bg-[#2a2a2a] hover:bg-gray-100 dark:hover:bg-[#333] transition-colors group mb-4"
             >
               <div className="size-12 bg-red-100 dark:bg-red-900/20 rounded flex items-center justify-center text-red-500 shrink-0">
                 <span className="material-symbols-outlined">picture_as_pdf</span>
@@ -437,7 +437,7 @@ export function PostCard({ postId, author, timestamp, content, likes, commentsCo
         {/* Reactions Bar */}
         {content.type !== 'announcement' && content.type !== 'spotlight' && (
           <>
-            <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <div className="px-4 py-3 border-t border-gray-100 dark:border-[#2a2a2a] flex items-center justify-between">
               <div className="flex gap-4">
                 <button
                   onClick={handleLike}
@@ -474,11 +474,11 @@ export function PostCard({ postId, author, timestamp, content, likes, commentsCo
 
             {/* Comments Section */}
             {showComments && (
-              <div className="px-4 pb-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+              <div className="px-4 pb-4 border-t border-gray-100 dark:border-[#2a2a2a] pt-4">
                 {/* Add Comment */}
                 <div className="flex gap-3 mb-4">
                   <div 
-                    className="size-8 rounded-full bg-cover bg-center border border-gray-200 dark:border-gray-700 shrink-0" 
+                    className="size-8 rounded-full bg-cover bg-center border border-gray-200 dark:border-[#2a2a2a] shrink-0" 
                     style={{ 
                       backgroundImage: userData?.photoURL 
                         ? `url(${userData.photoURL})` 
@@ -497,7 +497,7 @@ export function PostCard({ postId, author, timestamp, content, likes, commentsCo
                         }
                       }}
                       placeholder="Write a comment..."
-                      className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 focus:ring-1 focus:ring-[#17b0cf]"
+                      className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-[#2a2a2a] bg-gray-50 dark:bg-[#2a2a2a] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-1 focus:ring-[#17b0cf]"
                       disabled={submittingComment}
                     />
                     <button
@@ -515,7 +515,7 @@ export function PostCard({ postId, author, timestamp, content, likes, commentsCo
                   {comments.map((comment) => (
                     <div key={comment.id} className="flex gap-3">
                       <div 
-                        className="size-8 rounded-full bg-cover bg-center border border-gray-200 dark:border-gray-700 shrink-0" 
+                        className="size-8 rounded-full bg-cover bg-center border border-gray-200 dark:border-[#2a2a2a] shrink-0" 
                         style={{ 
                           backgroundImage: comment.authorPhotoURL 
                             ? `url(${comment.authorPhotoURL})` 
@@ -523,7 +523,7 @@ export function PostCard({ postId, author, timestamp, content, likes, commentsCo
                         }}
                       />
                       <div className="flex-1">
-                        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg px-3 py-2">
+                        <div className="bg-gray-50 dark:bg-[#2a2a2a] rounded-lg px-3 py-2">
                           <p className="text-sm font-semibold text-gray-900 dark:text-white">
                             {comment.authorName}
                           </p>
