@@ -62,11 +62,11 @@ export default function LogServiceHoursModal({ isOpen, onClose, onSuccess }: Log
     const db = getFirestore(app);
     
     try {
-      // Get events from the past 60 days
+      // Get events from the past 60 days (from portalEvents collection)
       const sixtyDaysAgo = new Date();
       sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
       
-      const eventsRef = collection(db, 'events');
+      const eventsRef = collection(db, 'portalEvents');
       const eventsQuery = query(
         eventsRef,
         where('startAt', '>=', Timestamp.fromDate(sixtyDaysAgo)),

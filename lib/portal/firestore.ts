@@ -95,14 +95,14 @@ export async function updateUser(uid: string, data: UpdateUser): Promise<void> {
 
 export async function getEvent(eventId: string): Promise<Event | null> {
   const db = getDb();
-  const doc = await db.collection('events').doc(eventId).get();
+  const doc = await db.collection('portalEvents').doc(eventId).get();
   if (!doc.exists) return null;
   return { id: doc.id, ...convertTimestamps(doc.data()) } as Event;
 }
 
 export async function getUpcomingEvents(visibility?: 'public' | 'member' | 'board'): Promise<Event[]> {
   const db = getDb();
-  let query = db.collection('events')
+  let query = db.collection('portalEvents')
     .where('startAt', '>=', Timestamp.now())
     .orderBy('startAt', 'asc');
   
@@ -125,13 +125,13 @@ export async function createEvent(data: CreateEvent): Promise<Event> {
     createdAt: now,
     updatedAt: now,
   };
-  const docRef = await db.collection('events').add(eventData);
+  const docRef = await db.collection('portalEvents').add(eventData);
   return { id: docRef.id, ...eventData } as Event;
 }
 
 export async function updateEvent(eventId: string, data: UpdateEvent): Promise<void> {
   const db = getDb();
-  await db.collection('events').doc(eventId).update({
+  await db.collection('portalEvents').doc(eventId).update({
     ...data,
     updatedAt: Timestamp.now(),
   });
@@ -141,9 +141,9 @@ export async function deleteEvent(eventId: string): Promise<void> {
   const db = getDb();
   // Delete event and all RSVPs
   const batch = db.batch();
-  batch.delete(db.collection('events').doc(eventId));
+  batch.delete(db.collection('portalEvents').doc(eventId));
   
-  const rsvpsSnapshot = await db.collection('events').doc(eventId).collection('rsvps').get();
+  const rsvpsSnapshot = await db.collection('portalEvents').doc(eventId).collection('rsvps').get();
   rsvpsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
   
   await batch.commit();
