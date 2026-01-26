@@ -50,9 +50,9 @@ export function TableView({ posts, onEdit, onDelete }: TableViewProps) {
   const getCategoryBadge = (category: string) => {
     const categoryColors: Record<string, { bg: string; text: string }> = {
       'Events': { bg: 'bg-purple-100 dark:bg-purple-900/30', text: 'text-purple-800 dark:text-purple-300' },
-      'News': { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-800 dark:text-blue-300' },
+      'News': { bg: 'bg-cyan-100 dark:bg-cyan-900/30', text: 'text-cyan-800 dark:text-cyan-300' },
       'Updates': { bg: 'bg-slate-100 dark:bg-slate-700', text: 'text-slate-800 dark:text-slate-300' },
-      'Club News': { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-800 dark:text-blue-300' },
+      'Club News': { bg: 'bg-primary/10', text: 'text-primary dark:text-primary' },
       'Community Service': { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-800 dark:text-green-300' },
     }
     const colors = categoryColors[category] || { bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-800 dark:text-gray-300' }
@@ -136,7 +136,7 @@ export function TableView({ posts, onEdit, onDelete }: TableViewProps) {
                         e.stopPropagation()
                         onEdit(post.slug)
                       }}
-                      className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                      className="p-1 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors"
                       title="Edit"
                     >
                       <span className="material-symbols-outlined text-[20px]">edit</span>

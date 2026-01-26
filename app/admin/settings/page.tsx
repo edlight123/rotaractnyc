@@ -493,8 +493,8 @@ export default function AdminSettingsPage() {
                         </p>
                       </div>
                       <div className="md:w-2/3 space-y-6">
-                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                          <p className="text-sm text-blue-700 dark:text-blue-400">
+                        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                          <p className="text-sm text-primary">
                             Creates sample users, events, announcements, documents, posts, and transactions in Firestore.
                             Safe to run multiple times.
                           </p>

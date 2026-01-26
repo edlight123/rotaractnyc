@@ -332,8 +332,8 @@ function MemberRow({
     <div className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="size-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-            <span className="material-symbols-outlined text-blue-600 text-[20px]">person</span>
+          <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <span className="material-symbols-outlined text-primary text-[20px]">person</span>
           </div>
           <div>
             <p className="text-sm font-semibold text-gray-900 dark:text-white">{name}</p>

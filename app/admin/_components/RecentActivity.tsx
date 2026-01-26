@@ -59,7 +59,7 @@ export default function RecentActivity() {
   const getIconColor = (type: string) => {
     switch (type) {
       case 'member':
-        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
+        return 'bg-primary/10 text-primary';
       case 'event':
         return 'bg-purple-500/10 text-purple-600 dark:text-purple-400';
       case 'post':
@@ -144,7 +144,7 @@ export default function RecentActivity() {
       <div className="p-4 border-t border-gray-100 dark:border-gray-800">
         <Link 
           href="/admin/activity" 
-          className="block w-full text-center text-sm font-medium text-primary hover:text-blue-700 transition-colors"
+          className="block w-full text-center text-sm font-medium text-primary hover:text-primary/80 transition-colors"
         >
           View all activity
         </Link>

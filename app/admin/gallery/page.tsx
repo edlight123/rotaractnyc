@@ -679,7 +679,7 @@ export default function AdminGalleryPage() {
 
           {/* Upload Hero Section */}
           {!showModal && (
-            <div className="group relative w-full cursor-pointer rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 transition-all duration-300 ease-out hover:border-primary hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:bg-slate-800 md:p-12">
+            <div className="group relative w-full cursor-pointer rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 transition-all duration-300 ease-out hover:border-primary hover:bg-primary/5 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:bg-slate-800 md:p-12">
               <div
                 onClick={startNew}
                 className="flex flex-col items-center justify-center gap-4 text-center"

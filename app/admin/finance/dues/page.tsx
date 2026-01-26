@@ -401,7 +401,7 @@ export default function AdminDuesPage() {
                           member.duesStatus === 'PAID'
                             ? 'bg-green-100 text-green-800'
                             : member.duesStatus === 'PAID_OFFLINE'
-                            ? 'bg-blue-100 text-blue-800'
+                            ? 'bg-cyan-100 text-cyan-800'
                             : member.duesStatus === 'WAIVED'
                             ? 'bg-yellow-100 text-yellow-800'
                             : 'bg-red-100 text-red-800'

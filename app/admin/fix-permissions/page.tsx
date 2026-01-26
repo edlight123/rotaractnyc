@@ -151,7 +151,7 @@ export default function FixPermissionsPage() {
                 </div>
                 <div className="bg-white dark:bg-[#1e1e1e] rounded-lg p-3">
                   <p className="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Already Synced</p>
-                  <p className="text-2xl font-bold text-blue-600">
+                  <p className="text-2xl font-bold text-cyan-600">
                     {result.summary.alreadySynced}
                   </p>
                 </div>
@@ -197,7 +197,7 @@ export default function FixPermissionsPage() {
                       r.status === 'synced'
                         ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
                         : r.status === 'already-synced'
-                        ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
+                        ? 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-400'
                         : r.status === 'error'
                         ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
                         : 'bg-gray-50 dark:bg-gray-900/20 text-gray-700 dark:text-gray-400'
