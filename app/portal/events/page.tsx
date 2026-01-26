@@ -21,6 +21,7 @@ import { Event, RSVP, RSVPStatus, Visibility } from '@/types/portal';
 import Link from 'next/link';
 
 type FilterType = 'all' | 'member' | 'public' | 'board';
+type TimeFilter = 'upcoming' | 'past' | 'all';
 
 type EventFormData = {
   title: string
@@ -50,6 +51,7 @@ export default function EventsPage() {
   const [loadingData, setLoadingData] = useState(true);
   const [updatingRsvp, setUpdatingRsvp] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('upcoming');
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -60,10 +62,24 @@ export default function EventsPage() {
 
   useEffect(() => {
     applyFilter();
-  }, [events, activeFilter, searchTerm]);
+  }, [events, activeFilter, timeFilter, searchTerm]);
 
   const applyFilter = () => {
     let filtered = events;
+    
+    // Apply time filter (upcoming vs past)
+    const now = Date.now();
+    if (timeFilter === 'upcoming') {
+      filtered = filtered.filter(e => {
+        const eventTime = e.startAt instanceof Timestamp ? e.startAt.toMillis() : 0;
+        return eventTime >= now;
+      });
+    } else if (timeFilter === 'past') {
+      filtered = filtered.filter(e => {
+        const eventTime = e.startAt instanceof Timestamp ? e.startAt.toMillis() : 0;
+        return eventTime < now;
+      });
+    }
     
     // Apply visibility filter
     if (activeFilter !== 'all') {
@@ -94,31 +110,28 @@ export default function EventsPage() {
       // Check if user is a board member (BOARD, TREASURER, or ADMIN)
       const isBoardMember = userData?.role === 'BOARD' || userData?.role === 'TREASURER' || userData?.role === 'ADMIN';
       
-      // Load upcoming events - query for member and public visibility
+      // Load ALL events (filtering by time is done client-side)
       const eventsRef = collection(db, 'portalEvents');
       
-      // Query for member-visible events
+      // Query for member-visible events (all, not just upcoming)
       const memberQuery = query(
         eventsRef,
         where('visibility', '==', 'member'),
-        where('startAt', '>=', Timestamp.now()),
-        orderBy('startAt', 'asc')
+        orderBy('startAt', 'desc')
       );
       
-      // Query for public events
+      // Query for public events (all, not just upcoming)
       const publicQuery = query(
         eventsRef,
         where('visibility', '==', 'public'),
-        where('startAt', '>=', Timestamp.now()),
-        orderBy('startAt', 'asc')
+        orderBy('startAt', 'desc')
       );
       
       // Query for board events (only if user is a board member)
       const boardQuery = isBoardMember ? query(
         eventsRef,
         where('visibility', '==', 'board'),
-        where('startAt', '>=', Timestamp.now()),
-        orderBy('startAt', 'asc')
+        orderBy('startAt', 'desc')
       ) : null;
       
       console.log('[Events] Executing queries... (isBoardMember:', isBoardMember, ')');
@@ -147,11 +160,11 @@ export default function EventsPage() {
         ...doc.data()
       })) as Event[] : [];
       
-      // Combine and sort by startAt
+      // Combine and sort by startAt (upcoming first)
       const allEvents = [...memberEvents, ...publicEvents, ...boardEvents].sort((a, b) => {
         const aTime = a.startAt instanceof Timestamp ? a.startAt.toMillis() : 0;
         const bTime = b.startAt instanceof Timestamp ? b.startAt.toMillis() : 0;
-        return aTime - bTime;
+        return bTime - aTime; // descending (newest first);
       });
       
       console.log('[Events] Total events loaded:', allEvents.length);
@@ -334,7 +347,56 @@ export default function EventsPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700/50">
+      <div className="flex flex-col gap-3 mb-6 p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700/50">
+        {/* Time Filter Row */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex bg-white dark:bg-gray-700/50 p-0.5 rounded-md">
+            <button 
+              onClick={() => setTimeFilter('upcoming')}
+              className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all ${
+                timeFilter === 'upcoming' 
+                  ? 'bg-green-600 text-white shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-green-600'
+              }`}
+            >
+              Upcoming
+            </button>
+            <button 
+              onClick={() => setTimeFilter('past')}
+              className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all ${
+                timeFilter === 'past' 
+                  ? 'bg-gray-600 text-white shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              Past
+            </button>
+            <button 
+              onClick={() => setTimeFilter('all')}
+              className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all ${
+                timeFilter === 'all' 
+                  ? 'bg-blue-600 text-white shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-blue-600'
+              }`}
+            >
+              All Time
+            </button>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-initial">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">search</span>
+              <input 
+                className="pl-9 pr-4 py-1.5 bg-white dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg text-sm w-full sm:w-48 focus:ring-2 focus:ring-primary/30 focus:border-primary focus:w-64 transition-all duration-300"
+                placeholder="Search events..." 
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* Visibility Filter Row */}
         <div className="flex bg-white dark:bg-gray-700/50 p-0.5 rounded-md w-full sm:w-auto">
           <button 
             onClick={() => setActiveFilter('all')}
@@ -344,7 +406,7 @@ export default function EventsPage() {
                 : 'text-gray-500 hover:text-primary'
             }`}
           >
-            All Events
+            All Types
           </button>
           <button 
             onClick={() => setActiveFilter('member')}
@@ -379,18 +441,6 @@ export default function EventsPage() {
               Board
             </button>
           )}
-        </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:flex-initial">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">search</span>
-            <input 
-              className="pl-9 pr-4 py-1.5 bg-white dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg text-sm w-full sm:w-48 focus:ring-2 focus:ring-primary/30 focus:border-primary focus:w-64 transition-all duration-300"
-              placeholder="Search events..." 
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
         </div>
       </div>
 
