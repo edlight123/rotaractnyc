@@ -63,7 +63,7 @@ export default function Home() {
       </header>
 
       {/* Mission Statement Block */}
-      <section className="py-20 px-6 bg-slate-50 dark:bg-[#1a2026]" id="main-content" aria-labelledby="mission-heading">
+      <section className="py-20 px-6 bg-primary" id="main-content" aria-labelledby="mission-heading">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -71,11 +71,16 @@ export default function Home() {
           transition={{ duration: 0.8 }}
           className="max-w-4xl mx-auto text-center flex flex-col gap-6"
         >
-          <span className="material-symbols-outlined text-accent text-4xl">format_quote</span>
-          <h2 className="text-2xl md:text-3xl font-medium leading-relaxed text-text-main dark:text-gray-100 italic font-display">
-            &ldquo;Our mission is to provide an opportunity for young men and women to enhance the knowledge and skills that will assist them in personal development, to address the physical and social needs of their communities, and to promote better relations between all people worldwide through a framework of friendship and service.&rdquo;
+          <p className="text-white/60 text-sm font-bold uppercase tracking-widest">Our Mission</p>
+          <h2 className="text-2xl md:text-4xl font-bold leading-relaxed text-white">
+            Empowering young leaders to create positive change through{' '}
+            <span className="text-accent">service</span>,{' '}
+            <span className="text-accent">fellowship</span>, and{' '}
+            <span className="text-accent">professional growth</span>.
           </h2>
-          <div className="w-24 h-1 bg-primary mx-auto rounded-full mt-4"></div>
+          <p className="text-white/70 text-lg max-w-2xl mx-auto">
+            We develop skills, address community needs, and promote global understanding through a framework of friendship and service.
+          </p>
         </motion.div>
       </section>
 
