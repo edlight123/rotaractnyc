@@ -1,57 +1,65 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 import { FaFacebook, FaLinkedin, FaInstagram } from 'react-icons/fa'
 
 export default function FollowPage() {
   const socialLinks = [
     {
-      name: 'Facebook',
-      icon: FaFacebook,
-      url: 'https://www.facebook.com/rotaractnewyorkcity/',
-      description: 'Follow us on Facebook for event updates, photos, and community news',
-      color: 'hover:text-blue-600'
+      name: 'Instagram',
+      icon: FaInstagram,
+      url: 'http://instagram.com/rotaractnyc',
+      handle: '@rotaractnyc',
+      description: 'See our latest photos and stories',
+      gradient: 'from-pink-500 via-red-500 to-yellow-500'
     },
     {
       name: 'LinkedIn',
       icon: FaLinkedin,
       url: 'https://www.linkedin.com/company/rotaract-at-the-un-nyc/',
-      description: 'Connect with us professionally on LinkedIn',
-      color: 'hover:text-blue-700'
+      handle: 'Rotaract at the UN (NYC)',
+      description: 'Connect with us professionally',
+      gradient: 'from-blue-600 to-blue-700'
     },
     {
-      name: 'Instagram',
-      icon: FaInstagram,
-      url: 'http://instagram.com/rotaractnyc',
-      description: 'See our latest photos and stories on Instagram',
-      color: 'hover:text-pink-600'
+      name: 'Facebook',
+      icon: FaFacebook,
+      url: 'https://www.facebook.com/rotaractnewyorkcity/',
+      handle: 'Rotaract NYC',
+      description: 'Event updates and community news',
+      gradient: 'from-blue-500 to-blue-600'
     },
   ]
 
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-14 overflow-hidden bg-white">
-        <div className="absolute -top-40 -right-40 h-[520px] w-[520px] rounded-full bg-rotaract-pink/10 blur-3xl" />
-        <div className="absolute -bottom-56 -left-56 h-[640px] w-[640px] rounded-full bg-rotaract-darkpink/10 blur-3xl" />
-        <div className="container mx-auto px-4 relative">
+    <div className="min-h-screen bg-white dark:bg-background-dark">
+      {/* Premium Hero */}
+      <section className="relative pt-32 pb-20 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary-800"></div>
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23ffffff\" fill-opacity=\"0.4\"%3E%3Cpath d=\"M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')" }}></div>
+        <div className="container mx-auto px-4 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center"
+            className="text-center max-w-3xl mx-auto"
           >
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-rotaract-darkpink tracking-tight">Follow Us</h1>
-            <p className="text-lg md:text-xl max-w-3xl mx-auto text-gray-700">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-6">
+              <span className="material-symbols-outlined text-accent text-sm">share</span>
+              <span className="text-white/90 text-sm font-semibold">Stay Connected</span>
+            </span>
+            <h1 className="text-4xl md:text-6xl font-black mb-6 text-white tracking-tight">Follow Us</h1>
+            <p className="text-xl text-white/80 leading-relaxed">
               Stay connected with Rotaract NYC on social media
             </p>
           </motion.div>
         </div>
       </section>
 
-      {/* Social Media Links */}
-      <section className="py-16">
+      {/* Social Media Cards */}
+      <section className="py-20">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto space-y-8">
+          <div className="max-w-4xl mx-auto grid gap-6">
             {socialLinks.map((social, index) => {
               const IconComponent = social.icon
               return (
@@ -60,23 +68,25 @@ export default function FollowPage() {
                   href={social.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
-                  className="flex items-center bg-white p-8 rounded-lg shadow-md hover:shadow-xl transition-all group"
+                  className="group flex items-center bg-white dark:bg-surface-dark p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all border border-gray-100 dark:border-zinc-700 overflow-hidden relative"
                 >
-                  <div className={`text-6xl text-rotaract-pink ${social.color} transition-colors mr-8`}>
-                    <IconComponent />
+                  <div className={`absolute inset-0 bg-gradient-to-r ${social.gradient} opacity-0 group-hover:opacity-5 transition-opacity`}></div>
+                  <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${social.gradient} flex items-center justify-center text-white mr-6 group-hover:scale-110 transition-transform`}>
+                    <IconComponent className="text-4xl" />
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-2xl font-bold mb-2 text-rotaract-darkpink group-hover:text-rotaract-pink transition-colors">
+                    <h2 className="text-2xl font-bold mb-1 text-gray-900 dark:text-white group-hover:text-primary transition-colors">
                       {social.name}
                     </h2>
-                    <p className="text-gray-700">{social.description}</p>
+                    <p className="text-primary font-semibold text-sm mb-2">{social.handle}</p>
+                    <p className="text-gray-600 dark:text-gray-300">{social.description}</p>
                   </div>
-                  <div className="text-rotaract-pink text-2xl group-hover:translate-x-2 transition-transform">
-                    →
+                  <div className="text-gray-400 group-hover:text-primary group-hover:translate-x-2 transition-all">
+                    <span className="material-symbols-outlined text-3xl">arrow_forward</span>
                   </div>
                 </motion.a>
               )
@@ -85,113 +95,60 @@ export default function FollowPage() {
         </div>
       </section>
 
-      {/* Instagram Feed */}
-      <section className="py-16 bg-white">
+      {/* Why Follow Section */}
+      <section className="py-20 bg-gray-50 dark:bg-zinc-900">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-8"
+              className="text-center mb-12"
             >
-              <h2 className="text-3xl font-bold mb-4 text-rotaract-darkpink">Latest from Instagram</h2>
-              <p className="text-gray-700">
-                See our most recent posts and stories
-              </p>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Why Follow Us?</h2>
             </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="bg-gray-50 p-8 rounded-lg shadow-md"
-            >
-              {/* Instagram embed container */}
-              <div className="flex justify-center">
-                <iframe
-                  src="https://www.instagram.com/rotaractnyc/embed"
-                  width="100%"
-                  height="700"
-                  frameBorder="0"
-                  scrolling="no"
-                  allowTransparency={true}
-                  className="rounded-lg max-w-xl"
-                  title="Instagram Feed"
-                ></iframe>
-              </div>
-              
-              <div className="text-center mt-6">
-                <a
-                  href="http://instagram.com/rotaractnyc"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-rotaract-pink hover:text-rotaract-darkpink font-semibold transition-colors"
+            <div className="grid md:grid-cols-2 gap-6">
+              {[
+                { icon: 'notifications_active', title: 'Stay Informed', desc: 'Get real-time updates about upcoming events, meetings, and service projects' },
+                { icon: 'photo_library', title: 'See Our Impact', desc: 'View photos and videos from our community service initiatives and social events' },
+                { icon: 'forum', title: 'Join the Conversation', desc: 'Engage with our community and share your thoughts and ideas' },
+                { icon: 'lightbulb', title: 'Get Inspired', desc: 'Discover stories of leadership, service, and fellowship from our members' },
+              ].map((item, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="bg-white dark:bg-surface-dark p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 group hover:border-primary/30 transition-all"
                 >
-                  <FaInstagram className="text-xl" />
-                  View Full Profile on Instagram
-                </a>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Why Follow */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center"
-            >
-              <h2 className="text-3xl font-bold mb-8 text-rotaract-darkpink">Why Follow Us?</h2>
-              <div className="grid md:grid-cols-2 gap-6 text-left">
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-xl font-bold mb-3 text-rotaract-pink">Stay Informed</h3>
-                  <p className="text-gray-700">
-                    Get real-time updates about upcoming events, meetings, and service projects
-                  </p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-xl font-bold mb-3 text-rotaract-pink">See Our Impact</h3>
-                  <p className="text-gray-700">
-                    View photos and videos from our community service initiatives and social events
-                  </p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-xl font-bold mb-3 text-rotaract-pink">Join the Conversation</h3>
-                  <p className="text-gray-700">
-                    Engage with our community and share your thoughts and ideas
-                  </p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-xl font-bold mb-3 text-rotaract-pink">Get Inspired</h3>
-                  <p className="text-gray-700">
-                    Discover stories of leadership, service, and fellowship from our members
-                  </p>
-                </div>
-              </div>
-            </motion.div>
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:scale-110 transition-all">
+                    <span className="material-symbols-outlined text-primary text-2xl group-hover:text-white">{item.icon}</span>
+                  </div>
+                  <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">{item.title}</h3>
+                  <p className="text-gray-600 dark:text-gray-300">{item.desc}</p>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-6 text-rotaract-darkpink">Want More Updates?</h2>
-          <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
+      <section className="py-20 bg-primary relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23ffffff\" fill-opacity=\"0.4\"%3E%3Cpath d=\"M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')" }}></div>
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <h2 className="text-3xl md:text-4xl font-black mb-6 text-white">Want More Updates?</h2>
+          <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
             Subscribe to our newsletter for comprehensive monthly updates
           </p>
-          <a
+          <Link
             href="/newsletter-sign-up"
-            className="inline-block bg-white text-rotaract-pink font-semibold px-8 py-3 rounded-full border-2 border-rotaract-pink hover:bg-rotaract-pink hover:text-white transition-all"
+            className="inline-flex items-center gap-2 h-14 px-8 bg-white text-primary font-bold rounded-full transition-all shadow-xl hover:bg-accent hover:text-white hover:scale-105"
           >
+            <span className="material-symbols-outlined">mail</span>
             Subscribe to Newsletter
-          </a>
+          </Link>
         </div>
       </section>
     </div>

@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import Image from 'next/image'
+import Link from 'next/link'
 import { DEFAULT_GALLERY } from '@/lib/content/gallery'
 import { useEffect, useState } from 'react'
 
@@ -53,19 +54,23 @@ export default function GalleryPage() {
   }, [])
 
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-14 overflow-hidden bg-white">
-        <div className="absolute -top-40 -right-40 h-[520px] w-[520px] rounded-full bg-rotaract-pink/10 blur-3xl" />
-        <div className="absolute -bottom-56 -left-56 h-[640px] w-[640px] rounded-full bg-rotaract-darkpink/10 blur-3xl" />
-        <div className="container mx-auto px-4 relative">
+    <div className="min-h-screen bg-white dark:bg-background-dark">
+      {/* Premium Hero Section */}
+      <section className="relative pt-32 pb-20 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary-800"></div>
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23ffffff\" fill-opacity=\"0.4\"%3E%3Cpath d=\"M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')" }}></div>
+        <div className="container mx-auto px-4 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center"
+            className="text-center max-w-3xl mx-auto"
           >
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-rotaract-darkpink tracking-tight">Gallery</h1>
-            <p className="text-lg md:text-xl max-w-3xl mx-auto text-gray-700">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-6">
+              <span className="material-symbols-outlined text-accent text-sm">photo_library</span>
+              <span className="text-white/90 text-sm font-semibold">Our Memories</span>
+            </span>
+            <h1 className="text-4xl md:text-6xl font-black mb-6 text-white tracking-tight">Gallery</h1>
+            <p className="text-xl text-white/80 leading-relaxed">
               Moments from our events, service projects, and social gatherings
             </p>
           </motion.div>
@@ -73,7 +78,7 @@ export default function GalleryPage() {
       </section>
 
       {/* Gallery Grid */}
-      <section className="py-16">
+      <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {images.map((image, index) => (
@@ -83,16 +88,16 @@ export default function GalleryPage() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="group relative overflow-hidden rounded-lg shadow-lg hover:shadow-2xl transition-shadow"
+                className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500"
               >
                 <div className="relative h-80">
                   <Image
                     src={image.imageUrl}
                     alt={image.alt}
                     fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-300"
+                    className="object-cover group-hover:scale-110 transition-transform duration-700"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-rotaract-darkpink/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
                     <div className="p-6 text-white">
                       <h3 className="text-xl font-bold">{image.title}</h3>
                     </div>
@@ -104,49 +109,60 @@ export default function GalleryPage() {
         </div>
       </section>
 
-      {/* Additional Gallery Sections */}
-      <section className="py-16 bg-gray-50">
+      {/* Social CTA */}
+      <section className="py-20 bg-gray-50 dark:bg-zinc-900">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-6 text-rotaract-darkpink">More Photos Coming Soon</h2>
-            <p className="text-lg text-gray-700 mb-8">
-              We&apos;re constantly updating our gallery with new photos from our events and activities. Follow us on social media to see the latest updates!
-            </p>
-            <div className="flex justify-center space-x-4">
-              <a
-                href="https://www.facebook.com/rotaractnewyorkcity/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-white text-rotaract-pink font-semibold px-6 py-3 rounded-full border-2 border-rotaract-pink hover:bg-rotaract-pink hover:text-white transition-all"
-              >
-                Facebook
-              </a>
-              <a
-                href="http://instagram.com/rotaractnyc"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-white text-rotaract-pink font-semibold px-6 py-3 rounded-full border-2 border-rotaract-pink hover:bg-rotaract-pink hover:text-white transition-all"
-              >
-                Instagram
-              </a>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <span className="material-symbols-outlined text-primary/30 text-7xl mb-4">add_a_photo</span>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-white">More Photos Coming Soon</h2>
+              <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
+                We&apos;re constantly updating our gallery with new photos from events and activities. Follow us on social media for the latest!
+              </p>
+              <div className="flex flex-wrap justify-center gap-4">
+                <a
+                  href="https://www.facebook.com/rotaractnewyorkcity/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-primary text-primary font-semibold hover:bg-primary hover:text-white transition-all"
+                >
+                  <span className="material-symbols-outlined">thumb_up</span>
+                  Facebook
+                </a>
+                <a
+                  href="http://instagram.com/rotaractnyc"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-primary text-primary font-semibold hover:bg-primary hover:text-white transition-all"
+                >
+                  <span className="material-symbols-outlined">photo_camera</span>
+                  Instagram
+                </a>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-6 text-rotaract-darkpink">Want to Be in Our Next Photo?</h2>
-          <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
+      <section className="py-20 bg-primary relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23ffffff\" fill-opacity=\"0.4\"%3E%3Cpath d=\"M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')" }}></div>
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <h2 className="text-3xl md:text-4xl font-black mb-6 text-white">Want to Be in Our Next Photo?</h2>
+          <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
             Join us at our next event and become part of our story
           </p>
-          <a
+          <Link
             href="/events"
-            className="inline-block bg-white text-rotaract-pink font-semibold px-8 py-3 rounded-full border-2 border-rotaract-pink hover:bg-rotaract-pink hover:text-white transition-all"
+            className="inline-flex items-center gap-2 h-14 px-8 bg-white text-primary font-bold rounded-full transition-all shadow-xl hover:bg-accent hover:text-white hover:scale-105"
           >
+            <span className="material-symbols-outlined">event</span>
             View Upcoming Events
-          </a>
+          </Link>
         </div>
       </section>
     </div>

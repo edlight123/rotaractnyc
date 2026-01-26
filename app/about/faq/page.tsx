@@ -22,14 +22,14 @@ function AccordionItem({ question, answer }: { question: string; answer: string 
     <details
       open={isOpen}
       onToggle={(e) => setIsOpen((e.target as HTMLDetailsElement).open)}
-      className="group bg-gray-50 dark:bg-gray-800/50 rounded-md overflow-hidden transition-all duration-300 open:bg-white dark:open:bg-gray-800 open:shadow-sm open:ring-1 open:ring-black/5 dark:open:ring-white/10"
+      className="group bg-gray-50 dark:bg-gray-800/50 rounded-xl overflow-hidden transition-all duration-300 open:bg-white dark:open:bg-gray-800 open:shadow-md open:ring-1 open:ring-primary/10 dark:open:ring-white/10"
     >
       <summary className="flex cursor-pointer items-center justify-between p-5 list-none select-none">
-        <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 group-hover:text-rotaract-pink transition-colors pr-4">
+        <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 group-hover:text-primary transition-colors pr-4">
           {question}
         </h3>
         <svg
-          className={`w-5 h-5 text-slate-400 transition-transform duration-300 flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-5 h-5 text-primary transition-transform duration-300 flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -189,24 +189,23 @@ export default function FAQPage() {
           </div>
 
           {/* Footer CTA */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl p-8 md:p-12 text-center shadow-card border border-rotaract-pink/10 relative overflow-hidden group">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-rotaract-pink to-transparent opacity-50"></div>
-            <div className="absolute -right-12 -top-12 w-40 h-40 bg-rotaract-pink/5 rounded-full blur-3xl group-hover:bg-rotaract-pink/10 transition-colors"></div>
+          <div className="bg-primary rounded-2xl p-8 md:p-12 text-center shadow-xl relative overflow-hidden">
+            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23ffffff\" fill-opacity=\"0.4\"%3E%3Cpath d=\"M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')" }}></div>
             <div className="relative z-10 flex flex-col items-center gap-6">
-              <div className="size-14 rounded-full bg-rotaract-pink/10 flex items-center justify-center text-rotaract-pink mb-2">
+              <div className="size-16 rounded-2xl bg-white/10 flex items-center justify-center text-white mb-2">
                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
+              <h2 className="text-2xl md:text-3xl font-bold text-white">
                 Still have questions?
               </h2>
-              <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+              <p className="text-white/80 max-w-md mx-auto">
                 We&apos;re here to help. If you couldn&apos;t find what you were looking for, reach out to our membership chair directly.
               </p>
               <a
                 href="/contact"
-                className="bg-rotaract-pink hover:bg-rotaract-darkpink text-white text-base font-bold py-3 px-8 rounded-sm transition-all transform hover:-translate-y-0.5 shadow-md hover:shadow-lg flex items-center gap-2"
+                className="bg-white text-primary text-base font-bold py-4 px-8 rounded-full transition-all transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl hover:bg-accent hover:text-white flex items-center gap-2"
               >
                 <span>Contact Support</span>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
