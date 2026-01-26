@@ -22,6 +22,7 @@ import Link from 'next/link';
 
 type FilterType = 'all' | 'member' | 'public' | 'board';
 type TimeFilter = 'upcoming' | 'past' | 'all';
+type ViewMode = 'all-events' | 'my-events';
 
 type EventFormData = {
   title: string
@@ -52,7 +53,9 @@ export default function EventsPage() {
   const [updatingRsvp, setUpdatingRsvp] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('upcoming');
+  const [viewMode, setViewMode] = useState<ViewMode>('all-events');
   const [searchTerm, setSearchTerm] = useState('');
+  const [serviceHoursTotal, setServiceHoursTotal] = useState(0);
 
   useEffect(() => {
     if (!loading && user) {
@@ -62,10 +65,15 @@ export default function EventsPage() {
 
   useEffect(() => {
     applyFilter();
-  }, [events, activeFilter, timeFilter, searchTerm]);
+  }, [events, activeFilter, timeFilter, viewMode, searchTerm, rsvps]);
 
   const applyFilter = () => {
     let filtered = events;
+    
+    // Apply "My Events" filter first - only show events user has RSVPed to
+    if (viewMode === 'my-events') {
+      filtered = filtered.filter(e => rsvps.has(e.id));
+    }
     
     // Apply time filter (upcoming vs past)
     const now = Date.now();
@@ -81,8 +89,8 @@ export default function EventsPage() {
       });
     }
     
-    // Apply visibility filter
-    if (activeFilter !== 'all') {
+    // Apply visibility filter (only in all-events mode)
+    if (viewMode === 'all-events' && activeFilter !== 'all') {
       filtered = filtered.filter(e => e.visibility === activeFilter);
     }
     
@@ -199,6 +207,23 @@ export default function EventsPage() {
       setRsvps(rsvpMap);
       setAttendeeCounts(countsMap);
       
+      // Load user's service hours total
+      try {
+        const hoursQuery = query(
+          collection(db, 'serviceHours'),
+          where('userId', '==', user.uid),
+          where('status', '==', 'approved')
+        );
+        const hoursSnapshot = await getDocs(hoursQuery);
+        const totalHours = hoursSnapshot.docs.reduce((sum, doc) => {
+          const data = doc.data();
+          return sum + (Number(data.hours) || 0);
+        }, 0);
+        setServiceHoursTotal(totalHours);
+      } catch (err) {
+        console.warn('Could not load service hours:', err);
+      }
+      
     } catch (error) {
       console.error('Error loading events:', error);
     } finally {
@@ -293,9 +318,35 @@ export default function EventsPage() {
   };
 
   const getEventStats = () => {
-    const rsvpCount = Array.from(rsvps.values()).filter(r => r.status === 'going').length;
-    const totalHours = 12.5; // This would come from service hours tracking
-    return { rsvpCount, totalHours };
+    const now = Date.now();
+    
+    // Count upcoming RSVPs (going)
+    const upcomingRsvps = Array.from(rsvps.entries()).filter(([eventId, rsvp]) => {
+      if (rsvp.status !== 'going') return false;
+      const event = events.find(e => e.id === eventId);
+      if (!event) return false;
+      const eventTime = event.startAt instanceof Timestamp ? event.startAt.toMillis() : 0;
+      return eventTime >= now;
+    }).length;
+    
+    // Count past events attended (RSVPed going)
+    const pastAttended = Array.from(rsvps.entries()).filter(([eventId, rsvp]) => {
+      if (rsvp.status !== 'going') return false;
+      const event = events.find(e => e.id === eventId);
+      if (!event) return false;
+      const eventTime = event.startAt instanceof Timestamp ? event.startAt.toMillis() : 0;
+      return eventTime < now;
+    }).length;
+    
+    // Total events RSVPed to
+    const totalRsvps = rsvps.size;
+    
+    return { 
+      upcomingRsvps, 
+      pastAttended, 
+      totalRsvps,
+      serviceHours: serviceHoursTotal 
+    };
   };
 
   if (loading || loadingData) {
@@ -323,27 +374,63 @@ export default function EventsPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           {/* Quick Stats Cards */}
-          <div className="flex min-w-[150px] flex-col gap-0.5 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50">
-            <div className="flex items-center gap-1.5 text-primary">
+          <div className="flex min-w-[120px] flex-col gap-0.5 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50">
+            <div className="flex items-center gap-1.5 text-green-600">
               <span className="material-symbols-outlined text-base">event_available</span>
-              <p className="text-xs font-semibold uppercase tracking-wide">RSVPs</p>
+              <p className="text-xs font-semibold uppercase tracking-wide">Upcoming</p>
             </div>
             <div className="flex items-baseline gap-1.5 mt-1">
-              <p className="text-2xl font-display font-bold text-[#161217] dark:text-white">{stats.rsvpCount}</p>
-              <p className="text-[#07884c] text-xs font-medium">confirmed</p>
+              <p className="text-2xl font-display font-bold text-[#161217] dark:text-white">{stats.upcomingRsvps}</p>
+              <p className="text-green-600 text-xs font-medium">RSVPs</p>
             </div>
           </div>
-          <div className="flex min-w-[150px] flex-col gap-0.5 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50">
-            <div className="flex items-center gap-1.5 text-secondary-accent">
-              <span className="material-symbols-outlined text-base">volunteer_activism</span>
-              <p className="text-xs font-semibold uppercase tracking-wide">Impact</p>
+          <div className="flex min-w-[120px] flex-col gap-0.5 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50">
+            <div className="flex items-center gap-1.5 text-primary">
+              <span className="material-symbols-outlined text-base">history</span>
+              <p className="text-xs font-semibold uppercase tracking-wide">Attended</p>
             </div>
             <div className="flex items-baseline gap-1.5 mt-1">
-              <p className="text-2xl font-display font-bold text-[#161217] dark:text-white">{stats.totalHours}</p>
+              <p className="text-2xl font-display font-bold text-[#161217] dark:text-white">{stats.pastAttended}</p>
+              <p className="text-primary text-xs font-medium">events</p>
+            </div>
+          </div>
+          <div className="flex min-w-[120px] flex-col gap-0.5 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50">
+            <div className="flex items-center gap-1.5 text-secondary-accent">
+              <span className="material-symbols-outlined text-base">volunteer_activism</span>
+              <p className="text-xs font-semibold uppercase tracking-wide">Service</p>
+            </div>
+            <div className="flex items-baseline gap-1.5 mt-1">
+              <p className="text-2xl font-display font-bold text-[#161217] dark:text-white">{stats.serviceHours}</p>
               <p className="text-[#07884c] text-xs font-medium">hrs</p>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* View Mode Toggle */}
+      <div className="flex mb-4 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg w-fit">
+        <button
+          onClick={() => setViewMode('all-events')}
+          className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+            viewMode === 'all-events'
+              ? 'bg-white dark:bg-gray-700 shadow-sm text-primary'
+              : 'text-gray-600 dark:text-gray-400 hover:text-primary'
+          }`}
+        >
+          <span className="material-symbols-outlined text-base align-middle mr-1">calendar_month</span>
+          All Events
+        </button>
+        <button
+          onClick={() => setViewMode('my-events')}
+          className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+            viewMode === 'my-events'
+              ? 'bg-white dark:bg-gray-700 shadow-sm text-primary'
+              : 'text-gray-600 dark:text-gray-400 hover:text-primary'
+          }`}
+        >
+          <span className="material-symbols-outlined text-base align-middle mr-1">person</span>
+          My Events ({stats.totalRsvps})
+        </button>
       </div>
 
       {/* Filter Bar */}
