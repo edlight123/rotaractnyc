@@ -68,12 +68,12 @@ export async function POST(req: NextRequest) {
           title: member.title,
           name: member.name,
           role: member.role,
-          photoUrl: member.photoUrl,
+          photoUrl: member.photoUrl ?? null,
           order: member.order,
           active: member.active,
-          bio: member.bio || null,
-          linkedin: member.linkedin || null,
-          email: member.email || null,
+          bio: member.bio ?? null,
+          linkedin: member.linkedin ?? null,
+          email: member.email ?? null,
           seeded: true,
           testData: true,
           updatedAt: FieldValue.serverTimestamp(),
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
           venueType: event.venueType,
           description: event.description,
           location: event.location,
-          virtualLink: event.virtualLink || null,
+          virtualLink: event.virtualLink ?? null,
           
           // Date/time fields
           date: event.startDate,
@@ -122,25 +122,25 @@ export async function POST(req: NextRequest) {
           
           // Registration settings
           visibility: event.visibility,
-          requiresRegistration: event.requiresRegistration,
-          allowGuests: event.allowGuests,
-          capacity: event.capacity || null,
-          registrationDeadline: event.registrationDeadline || null,
+          requiresRegistration: event.requiresRegistration ?? true,
+          allowGuests: event.allowGuests ?? false,
+          capacity: event.capacity ?? null,
+          registrationDeadline: event.registrationDeadline ?? null,
           
           // Pricing (for paid events)
-          memberPrice: event.memberPrice || null,
-          memberEarlyBirdPrice: event.memberEarlyBirdPrice || null,
-          guestPrice: event.guestPrice || null,
-          guestEarlyBirdPrice: event.guestEarlyBirdPrice || null,
-          earlyBirdDeadline: event.earlyBirdDeadline || null,
+          memberPrice: event.memberPrice ?? null,
+          memberEarlyBirdPrice: event.memberEarlyBirdPrice ?? null,
+          guestPrice: event.guestPrice ?? null,
+          guestEarlyBirdPrice: event.guestEarlyBirdPrice ?? null,
+          earlyBirdDeadline: event.earlyBirdDeadline ?? null,
           
           // Service event details
-          serviceHours: event.serviceHours || null,
-          serviceDescription: event.serviceDescription || null,
+          serviceHours: event.serviceHours ?? null,
+          serviceDescription: event.serviceDescription ?? null,
           
           // Media
-          imageUrl: event.imageUrl || null,
-          tags: event.tags || [],
+          imageUrl: event.imageUrl ?? null,
+          tags: event.tags ?? [],
           
           // Status
           status: event.status,
@@ -172,8 +172,8 @@ export async function POST(req: NextRequest) {
           category: article.category,
           excerpt: article.excerpt,
           content: article.content,
-          imageUrl: article.imageUrl || null,
-          readTime: article.readTime || null,
+          imageUrl: article.imageUrl ?? null,
+          readTime: article.readTime ?? null,
           published: article.published,
           seeded: true,
           testData: true,
@@ -195,11 +195,11 @@ export async function POST(req: NextRequest) {
         {
           title: doc.title,
           category: doc.category,
-          description: doc.description || null,
+          description: doc.description ?? null,
           url: doc.url,
           visibility: doc.visibility,
-          fileSize: doc.fileSize || null,
-          fileType: doc.fileType || null,
+          fileSize: doc.fileSize ?? null,
+          fileType: doc.fileType ?? null,
           createdBy: 'system',
           seeded: true,
           testData: true,
