@@ -62,9 +62,10 @@ export async function GET(req: NextRequest) {
       const startAt = data.startAt
       const endAt = data.endAt
       
-      // Convert Timestamp to legacy format for admin UI
-      const startDate = startAt ? new Date(startAt.toDate()) : new Date()
-      const endDate = endAt ? new Date(endAt.toDate()) : startDate
+      // Handle both old format (date string) and new format (startAt timestamp)
+      const hasTimestamp = startAt && typeof startAt.toDate === 'function'
+      const startDate = hasTimestamp ? new Date(startAt.toDate()) : new Date()
+      const endDate = endAt && typeof endAt.toDate === 'function' ? new Date(endAt.toDate()) : startDate
       
       const formatDate = (date: Date) => {
         return date.toLocaleDateString('en-US', {
@@ -95,22 +96,30 @@ export async function GET(req: NextRequest) {
         return `${hours}:${minutes}`
       }
       
-      // Determine category based on date
+      // Determine category - use stored category for old format, calculate for new format
       const now = new Date()
-      const category = startDate < now ? 'past' : 'upcoming'
+      const category = data.category || (startDate < now ? 'past' : 'upcoming')
+      
+      // For old format events, preserve the original date/time strings
+      // For new format events, generate from timestamps
+      const displayDate = hasTimestamp ? formatDate(startDate) : (data.date || formatDate(startDate))
+      const displayTime = hasTimestamp ? formatTime(startDate) : (data.time || formatTime(startDate))
+      const isoStartDate = hasTimestamp ? formatISODate(startDate) : (data.startDate || formatISODate(startDate))
+      const isoStartTime = hasTimestamp ? formatISOTime(startDate) : (data.startTime || formatISOTime(startDate))
+      const isoEndTime = hasTimestamp ? formatISOTime(endDate) : (data.endTime || formatISOTime(endDate))
       
       return {
         id: d.id,
         title: data.title,
         description: data.description,
         location: data.location,
-        visibility: data.visibility,
-        date: formatDate(startDate),
-        time: formatTime(startDate),
-        startDate: formatISODate(startDate),
-        startTime: formatISOTime(startDate),
-        endTime: formatISOTime(endDate),
-        timezone: 'America/New_York',
+        visibility: data.visibility || 'public', // Default to public for legacy events
+        date: displayDate,
+        time: displayTime,
+        startDate: isoStartDate,
+        startTime: isoStartTime,
+        endTime: isoEndTime,
+        timezone: data.timezone || 'America/New_York',
         category,
         order: data.order || 1,
         status: (data.status || 'published') as 'published' | 'draft' | 'cancelled',
