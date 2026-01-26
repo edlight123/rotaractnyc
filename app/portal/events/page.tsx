@@ -20,7 +20,7 @@ import { getFirebaseClientApp } from '@/lib/firebase/client';
 import { Event, RSVP, RSVPStatus, Visibility } from '@/types/portal';
 import Link from 'next/link';
 
-type FilterType = 'all' | 'member' | 'public';
+type FilterType = 'all' | 'member' | 'public' | 'board';
 
 type EventFormData = {
   title: string
@@ -91,7 +91,10 @@ export default function EventsPage() {
     try {
       console.log('[Events] Starting to load events...');
       
-      // Load upcoming events - query for both member and public visibility
+      // Check if user is a board member (BOARD, TREASURER, or ADMIN)
+      const isBoardMember = userData?.role === 'BOARD' || userData?.role === 'TREASURER' || userData?.role === 'ADMIN';
+      
+      // Load upcoming events - query for member and public visibility
       const eventsRef = collection(db, 'portalEvents');
       
       // Query for member-visible events
@@ -110,14 +113,24 @@ export default function EventsPage() {
         orderBy('startAt', 'asc')
       );
       
-      console.log('[Events] Executing queries...');
-      const [memberSnapshot, publicSnapshot] = await Promise.all([
-        getDocs(memberQuery),
-        getDocs(publicQuery)
-      ]);
+      // Query for board events (only if user is a board member)
+      const boardQuery = isBoardMember ? query(
+        eventsRef,
+        where('visibility', '==', 'board'),
+        where('startAt', '>=', Timestamp.now()),
+        orderBy('startAt', 'asc')
+      ) : null;
+      
+      console.log('[Events] Executing queries... (isBoardMember:', isBoardMember, ')');
+      const queries = [getDocs(memberQuery), getDocs(publicQuery)];
+      if (boardQuery) queries.push(getDocs(boardQuery));
+      
+      const snapshots = await Promise.all(queries);
+      const [memberSnapshot, publicSnapshot, boardSnapshot] = snapshots;
       
       console.log('[Events] Member events count:', memberSnapshot.size);
       console.log('[Events] Public events count:', publicSnapshot.size);
+      if (boardSnapshot) console.log('[Events] Board events count:', boardSnapshot.size);
       
       const memberEvents = memberSnapshot.docs.map(doc => ({
         id: doc.id,
@@ -129,8 +142,13 @@ export default function EventsPage() {
         ...doc.data()
       })) as Event[];
       
+      const boardEvents = boardSnapshot ? boardSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Event[] : [];
+      
       // Combine and sort by startAt
-      const allEvents = [...memberEvents, ...publicEvents].sort((a, b) => {
+      const allEvents = [...memberEvents, ...publicEvents, ...boardEvents].sort((a, b) => {
         const aTime = a.startAt instanceof Timestamp ? a.startAt.toMillis() : 0;
         const bTime = b.startAt instanceof Timestamp ? b.startAt.toMillis() : 0;
         return aTime - bTime;
@@ -348,6 +366,19 @@ export default function EventsPage() {
           >
             Public
           </button>
+          {/* Board filter - only visible to board members */}
+          {(userData?.role === 'BOARD' || userData?.role === 'TREASURER' || userData?.role === 'ADMIN') && (
+            <button 
+              onClick={() => setActiveFilter('board')}
+              className={`flex-1 sm:flex-none px-5 py-1.5 rounded-md text-sm font-semibold transition-all ${
+                activeFilter === 'board' 
+                  ? 'bg-amber-600 text-white shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-amber-600'
+              }`}
+            >
+              Board
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:flex-initial">
