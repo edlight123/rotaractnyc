@@ -80,7 +80,7 @@ export function HeroCarousel({
 
   return (
     <div className="w-full">
-      <div className="relative overflow-hidden rounded-2xl border border-rotaract-pink/20 bg-white shadow-sm">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-white shadow-sm">
         <div className="relative aspect-[16/9] w-full">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
@@ -114,7 +114,7 @@ export function HeroCarousel({
                 onClick={() => setActiveIndex(index)}
                 className={
                   "h-2.5 w-2.5 rounded-full transition-colors " +
-                  (index === activeIndex ? "bg-rotaract-pink" : "bg-rotaract-pink/30 hover:bg-rotaract-pink/60")
+                  (index === activeIndex ? "bg-primary" : "bg-primary/30 hover:bg-primary/60")
                 }
               />
             ))}

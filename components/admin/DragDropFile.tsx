@@ -55,7 +55,7 @@ export default function DragDropFile({ label, accept, file, onFile, uploadedUrl,
             href={uploadedUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-2 inline-block text-xs text-rotaract-darkpink hover:underline break-all"
+            className="mt-2 inline-block text-xs text-primary hover:underline break-all"
           >
             {uploadedUrl}
           </a>
@@ -65,7 +65,7 @@ export default function DragDropFile({ label, accept, file, onFile, uploadedUrl,
       <div
         className={
           'border-2 border-dashed rounded-lg p-4 bg-white transition-colors ' +
-          (isDragging ? 'border-rotaract-pink bg-rotaract-pink/5' : 'border-gray-200')
+          (isDragging ? 'border-primary bg-primary/5' : 'border-gray-200')
         }
         onDragEnter={(e) => {
           e.preventDefault()
