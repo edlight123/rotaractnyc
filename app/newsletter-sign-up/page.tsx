@@ -1,1 +1,5 @@
-export { default } from '../contact/newsletter/page'
+import { redirect } from 'next/navigation'
+
+export default function NewsletterSignUpPage() {
+  redirect('/contact')
+}

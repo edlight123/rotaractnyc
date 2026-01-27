@@ -1,1 +1,5 @@
-export { default } from '../contact/follow/page'
+import { redirect } from 'next/navigation'
+
+export default function FollowUsPage() {
+  redirect('/contact')
+}

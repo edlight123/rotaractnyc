@@ -1,10 +1,8 @@
 'use client'
 
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { useRouter } from 'next/navigation'
-import { FaEnvelope, FaInstagram, FaLinkedin, FaMapMarkerAlt, FaFacebook, FaArrowRight, FaClock, FaPhone, FaGlobe } from 'react-icons/fa'
+import { FaEnvelope, FaInstagram, FaLinkedin, FaMapMarkerAlt, FaFacebook, FaArrowRight, FaClock } from 'react-icons/fa'
 import { useState, useRef } from 'react'
-import Image from 'next/image'
 
 const fadeInUp = {
   initial: { opacity: 0, y: 30 },
@@ -24,7 +22,6 @@ const staggerContainer = {
 }
 
 export default function ContactPage() {
-  const router = useRouter()
   const heroRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -37,8 +34,39 @@ export default function ContactPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [newsletterEmail, setNewsletterEmail] = useState('')
   const [focusedField, setFocusedField] = useState<string | null>(null)
+  
+  // Newsletter state
+  const [newsletterLoading, setNewsletterLoading] = useState(false)
+  const [newsletterSuccess, setNewsletterSuccess] = useState(false)
+
+  // Social links data
+  const socialLinks = [
+    {
+      name: 'Instagram',
+      icon: FaInstagram,
+      url: 'http://instagram.com/rotaractnyc',
+      handle: '@rotaractnyc',
+      color: 'hover:text-pink-500',
+      bgColor: 'hover:bg-pink-500/10'
+    },
+    {
+      name: 'LinkedIn',
+      icon: FaLinkedin,
+      url: 'https://www.linkedin.com/company/rotaract-at-the-un-nyc/',
+      handle: 'Rotaract at the UN',
+      color: 'hover:text-blue-600',
+      bgColor: 'hover:bg-blue-600/10'
+    },
+    {
+      name: 'Facebook',
+      icon: FaFacebook,
+      url: 'https://www.facebook.com/rotaractnewyorkcity/',
+      handle: 'Rotaract NYC',
+      color: 'hover:text-blue-500',
+      bgColor: 'hover:bg-blue-500/10'
+    },
+  ]
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -78,11 +106,14 @@ export default function ContactPage() {
     }
   }
 
-  const handleNewsletterSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleNewsletterSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const email = newsletterEmail.trim()
-    const target = email ? `/newsletter-sign-up?email=${encodeURIComponent(email)}` : '/newsletter-sign-up'
-    router.push(target)
+    setNewsletterLoading(true)
+    
+    // Simulate newsletter signup - in production, this would call an API
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    setNewsletterSuccess(true)
+    setNewsletterLoading(false)
   }
 
   return (
@@ -148,6 +179,30 @@ export default function ContactPage() {
             Reach out about membership, volunteering, partnerships, or upcoming events. 
             We&apos;re here to help you make a difference.
           </motion.p>
+
+          {/* Small Social Icons */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.25 }}
+            className="mt-6 flex items-center justify-center gap-3"
+          >
+            {socialLinks.map((social) => {
+              const IconComponent = social.icon
+              return (
+                <a
+                  key={social.name}
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`group flex items-center justify-center w-11 h-11 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 transition-all duration-300 hover:scale-110 hover:shadow-lg ${social.color} ${social.bgColor}`}
+                  title={social.name}
+                >
+                  <IconComponent className="text-lg" />
+                </a>
+              )
+            })}
+          </motion.div>
 
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -260,135 +315,6 @@ export default function ContactPage() {
               </div>
             </motion.div>
           </motion.div>
-        </div>
-      </section>
-
-      {/* Social Connect Section */}
-      <section className="py-20 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
-        <div className="container mx-auto px-4 relative">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-300 text-sm font-semibold mb-4">
-              Connect With Us
-            </span>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              Follow Our Journey
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Stay updated with our latest events, volunteer opportunities, and community impact.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Instagram */}
-            <motion.a
-              href="http://instagram.com/rotaractnyc"
-              target="_blank"
-              rel="noopener noreferrer"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              whileHover={{ y: -8, scale: 1.02 }}
-              className="group relative overflow-hidden rounded-3xl p-8 bg-gradient-to-br from-pink-500 via-purple-500 to-orange-400 text-white shadow-xl hover:shadow-2xl transition-all duration-500"
-            >
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-              <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-white/10 blur-2xl group-hover:scale-150 transition-transform duration-700" />
-              <div className="relative">
-                <div className="flex items-center justify-between mb-12">
-                  <FaInstagram className="text-4xl" />
-                  <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-semibold">Follow</span>
-                </div>
-                <div>
-                  <p className="text-white/80 text-sm mb-1">@rotaractnyc</p>
-                  <h3 className="text-2xl font-bold">Instagram</h3>
-                  <p className="text-white/70 text-sm mt-2">Photos, stories & reels</p>
-                </div>
-              </div>
-            </motion.a>
-
-            {/* LinkedIn */}
-            <motion.a
-              href="https://www.linkedin.com/company/rotaract-at-the-un-nyc/"
-              target="_blank"
-              rel="noopener noreferrer"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              whileHover={{ y: -8, scale: 1.02 }}
-              className="group relative overflow-hidden rounded-3xl p-8 bg-gradient-to-br from-blue-600 to-blue-800 text-white shadow-xl hover:shadow-2xl transition-all duration-500"
-            >
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-              <div className="absolute -bottom-20 -left-20 w-40 h-40 rounded-full bg-white/10 blur-2xl group-hover:scale-150 transition-transform duration-700" />
-              <div className="relative">
-                <div className="flex items-center justify-between mb-12">
-                  <FaLinkedin className="text-4xl" />
-                  <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-semibold">Connect</span>
-                </div>
-                <div>
-                  <p className="text-white/80 text-sm mb-1">Rotaract at the UN</p>
-                  <h3 className="text-2xl font-bold">LinkedIn</h3>
-                  <p className="text-white/70 text-sm mt-2">Professional network</p>
-                </div>
-              </div>
-            </motion.a>
-
-            {/* Facebook */}
-            <motion.a
-              href="https://www.facebook.com/rotaractnewyorkcity/"
-              target="_blank"
-              rel="noopener noreferrer"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              whileHover={{ y: -8, scale: 1.02 }}
-              className="group relative overflow-hidden rounded-3xl p-8 bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-xl hover:shadow-2xl transition-all duration-500"
-            >
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-              <div className="absolute -top-20 -left-20 w-40 h-40 rounded-full bg-white/10 blur-2xl group-hover:scale-150 transition-transform duration-700" />
-              <div className="relative">
-                <div className="flex items-center justify-between mb-12">
-                  <FaFacebook className="text-4xl" />
-                  <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-semibold">Like</span>
-                </div>
-                <div>
-                  <p className="text-white/80 text-sm mb-1">Community page</p>
-                  <h3 className="text-2xl font-bold">Facebook</h3>
-                  <p className="text-white/70 text-sm mt-2">Events & updates</p>
-                </div>
-              </div>
-            </motion.a>
-
-            {/* All Socials */}
-            <motion.a
-              href="/follow-us"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
-              whileHover={{ y: -8, scale: 1.02 }}
-              className="group relative overflow-hidden rounded-3xl p-8 bg-gradient-to-br from-gray-900 to-gray-800 dark:from-gray-800 dark:to-gray-700 text-white shadow-xl hover:shadow-2xl transition-all duration-500"
-            >
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(255,255,255,0.1)_0%,_transparent_50%)] group-hover:scale-150 transition-transform duration-700" />
-              <div className="relative">
-                <div className="flex items-center justify-between mb-12">
-                  <FaGlobe className="text-4xl" />
-                  <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-semibold">Explore</span>
-                </div>
-                <div>
-                  <p className="text-white/80 text-sm mb-1">All platforms</p>
-                  <h3 className="text-2xl font-bold">More Links</h3>
-                  <p className="text-white/70 text-sm mt-2">Find us everywhere</p>
-                </div>
-              </div>
-            </motion.a>
-          </div>
         </div>
       </section>
 
@@ -616,40 +542,132 @@ export default function ContactPage() {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="max-w-3xl mx-auto text-center"
+            className="max-w-2xl mx-auto"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium mb-8">
-              <FaEnvelope className="text-sm" />
-              Stay in the Loop
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium mb-6">
+                <FaEnvelope className="text-sm" />
+                Stay in the Loop
+              </div>
+
+              <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                Subscribe to Our Newsletter
+              </h2>
+              <p className="text-lg text-white/80">
+                Get monthly updates about events, service projects, and club news.
+              </p>
             </div>
 
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Never Miss an Update
-            </h2>
-            <p className="text-xl text-white/80 mb-10">
-              Get the latest news on volunteering opportunities, social events, and guest speakers 
-              delivered straight to your inbox.
-            </p>
-
-            <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-4 justify-center">
-              <input
-                type="email"
-                value={newsletterEmail}
-                onChange={(e) => setNewsletterEmail(e.target.value)}
-                placeholder="Enter your email address"
-                className="flex-1 max-w-md w-full px-6 py-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
-              />
-              <button
-                type="submit"
-                className="px-8 py-4 rounded-2xl bg-white text-primary font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 whitespace-nowrap"
+            {newsletterSuccess ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 text-center border border-white/20"
               >
-                Subscribe Now
-              </button>
-            </form>
+                <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="material-symbols-outlined text-emerald-300 text-3xl">check_circle</span>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">You&apos;re Subscribed!</h3>
+                <p className="text-white/70">
+                  Thank you for subscribing. Check your inbox for a confirmation email.
+                </p>
+              </motion.div>
+            ) : (
+              <form onSubmit={handleNewsletterSubmit} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/20">
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="space-y-2">
+                    <label htmlFor="firstName" className="text-sm font-semibold text-white/90">
+                      First Name <span className="text-red-300">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="firstName"
+                      name="firstName"
+                      required
+                      placeholder="John"
+                      className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-white/40 focus:ring-2 focus:ring-white/10 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="lastName" className="text-sm font-semibold text-white/90">
+                      Last Name <span className="text-red-300">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      required
+                      placeholder="Doe"
+                      className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-white/40 focus:ring-2 focus:ring-white/10 transition-all"
+                    />
+                  </div>
+                </div>
 
-            <p className="text-white/60 text-sm mt-6">
-              We respect your privacy. Unsubscribe at any time.
-            </p>
+                <div className="space-y-2 mb-4">
+                  <label htmlFor="newsletterEmail" className="text-sm font-semibold text-white/90">
+                    Email Address <span className="text-red-300">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    id="newsletterEmail"
+                    name="newsletterEmail"
+                    required
+                    placeholder="your.email@example.com"
+                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-white/40 focus:ring-2 focus:ring-white/10 transition-all"
+                  />
+                </div>
+
+                <div className="flex items-start gap-3 mb-6">
+                  <input
+                    type="checkbox"
+                    id="consent"
+                    name="consent"
+                    required
+                    className="mt-1 w-5 h-5 rounded border-white/30 bg-white/10 text-primary focus:ring-white/20"
+                  />
+                  <label htmlFor="consent" className="text-sm text-white/70">
+                    I agree to receive email communications from Rotaract NYC. I can unsubscribe at any time.
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={newsletterLoading}
+                  className="w-full bg-white text-primary font-semibold rounded-xl py-4 transition-all duration-300 hover:bg-gray-100 disabled:opacity-60 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                >
+                  {newsletterLoading ? (
+                    <>
+                      <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span>
+                      Subscribing...
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-lg">mail</span>
+                      Subscribe Now
+                    </>
+                  )}
+                </button>
+
+                <p className="text-white/50 text-xs text-center mt-4">
+                  Note: Please email <a href="mailto:rotaractnewyorkcity@gmail.com" className="text-white/70 underline hover:text-white">rotaractnewyorkcity@gmail.com</a> to be added to our mailing list.
+                </p>
+              </form>
+            )}
+
+            {/* What you'll get */}
+            <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { icon: 'event', text: 'Event updates' },
+                { icon: 'volunteer_activism', text: 'Service projects' },
+                { icon: 'groups', text: 'Member spotlights' },
+                { icon: 'auto_awesome', text: 'Exclusive content' },
+              ].map((item) => (
+                <div key={item.text} className="flex items-center gap-2 text-sm text-white/70 bg-white/5 rounded-lg px-3 py-2">
+                  <span className="material-symbols-outlined text-white/80 text-lg">{item.icon}</span>
+                  {item.text}
+                </div>
+              ))}
+            </div>
           </motion.div>
         </div>
       </section>
