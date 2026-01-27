@@ -119,7 +119,7 @@ export default function ContactPage() {
   return (
     <div className="bg-gradient-to-b from-slate-50 via-white to-slate-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 min-h-screen">
       {/* Premium Hero Section */}
-      <section ref={heroRef} className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
+      <section ref={heroRef} className="relative min-h-[50vh] flex items-center justify-center overflow-hidden">
         {/* Animated background elements */}
         <div className="absolute inset-0">
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent" />
@@ -208,44 +208,28 @@ export default function ContactPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.3 }}
-            className="mt-10 flex flex-wrap items-center justify-center gap-6"
+            className="mt-8 flex flex-wrap items-center justify-center gap-4"
           >
             <a 
               href="#contact-form" 
-              className="group inline-flex items-center gap-3 px-8 py-4 bg-primary hover:bg-primary-600 text-white font-semibold rounded-2xl transition-all duration-300 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
+              className="group inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary-600 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5"
             >
               Send a Message
-              <FaArrowRight className="group-hover:translate-x-1 transition-transform" />
+              <FaArrowRight className="group-hover:translate-x-1 transition-transform text-sm" />
             </a>
             <a 
               href="#location" 
-              className="inline-flex items-center gap-3 px-8 py-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-2xl border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-xl border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:-translate-y-0.5"
             >
               <FaMapMarkerAlt className="text-primary" />
               Visit Us
             </a>
           </motion.div>
         </motion.div>
-
-        {/* Scroll indicator */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
-        >
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="w-6 h-10 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-start justify-center p-2"
-          >
-            <motion.div className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500" />
-          </motion.div>
-        </motion.div>
       </section>
 
       {/* Quick Contact Cards */}
-      <section className="py-20 relative">
+      <section className="py-12 relative">
         <div className="container mx-auto px-4">
           <motion.div 
             variants={staggerContainer}
@@ -258,19 +242,19 @@ export default function ContactPage() {
             <motion.a
               href="mailto:rotaractnewyorkcity@gmail.com"
               variants={fadeInUp}
-              whileHover={{ y: -8, transition: { duration: 0.3 } }}
-              className="group relative overflow-hidden rounded-3xl p-8 bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 shadow-lg hover:shadow-2xl transition-all duration-500"
+              whileHover={{ y: -4, transition: { duration: 0.3 } }}
+              className="group relative overflow-hidden rounded-2xl p-6 bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 shadow-md hover:shadow-xl transition-all duration-500"
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-700" />
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-700" />
               <div className="relative">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary-600 flex items-center justify-center mb-6 shadow-lg shadow-primary/25">
-                  <FaEnvelope className="text-2xl text-white" />
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary-600 flex items-center justify-center mb-4 shadow-md shadow-primary/25">
+                  <FaEnvelope className="text-xl text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Email Us</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">Send us an email anytime</p>
-                <span className="inline-flex items-center gap-2 text-primary font-semibold group-hover:gap-3 transition-all">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Email Us</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">Send us an email anytime</p>
+                <span className="inline-flex items-center gap-2 text-primary font-medium text-sm group-hover:gap-3 transition-all">
                   rotaractnewyorkcity@gmail.com
-                  <FaArrowRight className="text-sm" />
+                  <FaArrowRight className="text-xs" />
                 </span>
               </div>
             </motion.a>
@@ -279,19 +263,19 @@ export default function ContactPage() {
             <motion.a
               href="#location"
               variants={fadeInUp}
-              whileHover={{ y: -8, transition: { duration: 0.3 } }}
-              className="group relative overflow-hidden rounded-3xl p-8 bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 shadow-lg hover:shadow-2xl transition-all duration-500"
+              whileHover={{ y: -4, transition: { duration: 0.3 } }}
+              className="group relative overflow-hidden rounded-2xl p-6 bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 shadow-md hover:shadow-xl transition-all duration-500"
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-700" />
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-amber-500/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-700" />
               <div className="relative">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center mb-6 shadow-lg shadow-amber-500/25">
-                  <FaMapMarkerAlt className="text-2xl text-white" />
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center mb-4 shadow-md shadow-amber-500/25">
+                  <FaMapMarkerAlt className="text-xl text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Visit Us</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">Join our weekly meetings</p>
-                <span className="inline-flex items-center gap-2 text-amber-600 dark:text-amber-500 font-semibold group-hover:gap-3 transition-all">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Visit Us</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">Join our weekly meetings</p>
+                <span className="inline-flex items-center gap-2 text-amber-600 dark:text-amber-500 font-medium text-sm group-hover:gap-3 transition-all">
                   216 E 45th St, NYC
-                  <FaArrowRight className="text-sm" />
+                  <FaArrowRight className="text-xs" />
                 </span>
               </div>
             </motion.a>
@@ -299,17 +283,17 @@ export default function ContactPage() {
             {/* Meeting Times Card */}
             <motion.div
               variants={fadeInUp}
-              whileHover={{ y: -8, transition: { duration: 0.3 } }}
-              className="group relative overflow-hidden rounded-3xl p-8 bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 shadow-lg hover:shadow-2xl transition-all duration-500"
+              whileHover={{ y: -4, transition: { duration: 0.3 } }}
+              className="group relative overflow-hidden rounded-2xl p-6 bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 shadow-md hover:shadow-xl transition-all duration-500"
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-700" />
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-700" />
               <div className="relative">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center mb-6 shadow-lg shadow-emerald-500/25">
-                  <FaClock className="text-2xl text-white" />
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center mb-4 shadow-md shadow-emerald-500/25">
+                  <FaClock className="text-xl text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Meeting Times</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">Every 2nd & 4th Thursday</p>
-                <span className="inline-flex items-center gap-2 text-emerald-600 dark:text-emerald-500 font-semibold">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Meeting Times</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">Every 2nd & 4th Thursday</p>
+                <span className="inline-flex items-center gap-2 text-emerald-600 dark:text-emerald-500 font-medium text-sm">
                   7:00 – 9:00 PM EST
                 </span>
               </div>
@@ -319,56 +303,56 @@ export default function ContactPage() {
       </section>
 
       {/* Contact Form Section */}
-      <section id="contact-form" className="py-24 relative">
+      <section id="contact-form" className="py-16 relative">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
             {/* Left Column - Info */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="lg:sticky lg:top-32"
+              className="lg:sticky lg:top-24"
             >
-              <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-300 text-sm font-semibold mb-6">
+              <span className="inline-block px-3 py-1 rounded-full bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-300 text-sm font-semibold mb-4">
                 Send a Message
               </span>
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
                 Have a Question?<br />
                 <span className="text-primary">We&apos;re Here to Help</span>
               </h2>
-              <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
-                Whether you&apos;re interested in joining our club, have questions about volunteering, 
-                or want to explore partnership opportunities, we&apos;d love to hear from you.
+              <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+                Whether you&apos;re interested in joining, have questions about volunteering, 
+                or want to explore partnerships, we&apos;d love to hear from you.
               </p>
 
-              <div className="space-y-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
-                    <FaClock className="text-xl text-primary" />
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
+                    <FaClock className="text-lg text-primary" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">Quick Response</h4>
-                    <p className="text-gray-600 dark:text-gray-400">We typically respond within 24-48 hours</p>
+                    <h4 className="font-semibold text-gray-900 dark:text-white text-sm">Quick Response</h4>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">We respond within 24-48 hours</p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
-                    <FaEnvelope className="text-xl text-primary" />
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
+                    <FaEnvelope className="text-lg text-primary" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">Direct Support</h4>
-                    <p className="text-gray-600 dark:text-gray-400">rotaractnewyorkcity@gmail.com</p>
+                    <h4 className="font-semibold text-gray-900 dark:text-white text-sm">Direct Support</h4>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">rotaractnewyorkcity@gmail.com</p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
-                    <FaMapMarkerAlt className="text-xl text-primary" />
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
+                    <FaMapMarkerAlt className="text-lg text-primary" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">In-Person Meetings</h4>
-                    <p className="text-gray-600 dark:text-gray-400">Every 2nd & 4th Thursday, 7-9 PM</p>
+                    <h4 className="font-semibold text-gray-900 dark:text-white text-sm">In-Person Meetings</h4>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">Every 2nd & 4th Thursday, 7-9 PM</p>
                   </div>
                 </div>
               </div>
@@ -381,18 +365,18 @@ export default function ContactPage() {
               viewport={{ once: true }}
             >
               <form 
-                className="relative bg-white dark:bg-gray-800/50 rounded-3xl p-8 md:p-10 shadow-xl border border-gray-100 dark:border-gray-700/50"
+                className="relative bg-white dark:bg-gray-800/50 rounded-2xl p-6 md:p-8 shadow-lg border border-gray-100 dark:border-gray-700/50"
                 onSubmit={handleSubmit}
               >
-                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
                 
                 {error && (
                   <motion.div 
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-400 px-5 py-4 rounded-2xl flex items-center gap-3"
+                    className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl flex items-center gap-2 text-sm"
                   >
-                    <span className="material-symbols-outlined text-lg">error</span>
+                    <span className="material-symbols-outlined text-base">error</span>
                     {error}
                   </motion.div>
                 )}
@@ -401,16 +385,16 @@ export default function ContactPage() {
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="mb-6 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-400 px-5 py-4 rounded-2xl flex items-center gap-3"
+                    className="mb-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-400 px-4 py-3 rounded-xl flex items-center gap-2 text-sm"
                   >
-                    <span className="material-symbols-outlined text-lg">check_circle</span>
+                    <span className="material-symbols-outlined text-base">check_circle</span>
                     Message sent successfully! We&apos;ll be in touch soon.
                   </motion.div>
                 )}
 
-                <div className="space-y-6 relative">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
+                <div className="space-y-4 relative">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
                       <label htmlFor="name" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                         Full Name <span className="text-red-500">*</span>
                       </label>
@@ -422,15 +406,15 @@ export default function ContactPage() {
                         placeholder="Jane Doe"
                         onFocus={() => setFocusedField('name')}
                         onBlur={() => setFocusedField(null)}
-                        className={`w-full bg-gray-50 dark:bg-gray-900/50 border-2 rounded-xl px-5 py-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none transition-all duration-300 ${
+                        className={`w-full bg-gray-50 dark:bg-gray-900/50 border-2 rounded-lg px-4 py-3 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none transition-all duration-300 ${
                           focusedField === 'name' 
-                            ? 'border-primary ring-4 ring-primary/10' 
+                            ? 'border-primary ring-2 ring-primary/10' 
                             : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                         }`}
                       />
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <label htmlFor="email" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                         Email Address <span className="text-red-500">*</span>
                       </label>
@@ -442,16 +426,16 @@ export default function ContactPage() {
                         placeholder="jane@example.com"
                         onFocus={() => setFocusedField('email')}
                         onBlur={() => setFocusedField(null)}
-                        className={`w-full bg-gray-50 dark:bg-gray-900/50 border-2 rounded-xl px-5 py-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none transition-all duration-300 ${
+                        className={`w-full bg-gray-50 dark:bg-gray-900/50 border-2 rounded-lg px-4 py-3 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none transition-all duration-300 ${
                           focusedField === 'email' 
-                            ? 'border-primary ring-4 ring-primary/10' 
+                            ? 'border-primary ring-2 ring-primary/10' 
                             : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                         }`}
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <label htmlFor="topic" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                       How can we help?
                     </label>
@@ -460,9 +444,9 @@ export default function ContactPage() {
                       name="topic"
                       onFocus={() => setFocusedField('topic')}
                       onBlur={() => setFocusedField(null)}
-                      className={`w-full bg-gray-50 dark:bg-gray-900/50 border-2 rounded-xl px-5 py-4 text-gray-900 dark:text-white focus:outline-none transition-all duration-300 ${
+                      className={`w-full bg-gray-50 dark:bg-gray-900/50 border-2 rounded-lg px-4 py-3 text-gray-900 dark:text-white focus:outline-none transition-all duration-300 ${
                         focusedField === 'topic' 
-                          ? 'border-primary ring-4 ring-primary/10' 
+                          ? 'border-primary ring-2 ring-primary/10' 
                           : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                       }`}
                       defaultValue="Membership Inquiry"
@@ -478,7 +462,7 @@ export default function ContactPage() {
 
                   <input type="hidden" name="subject" value="" />
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <label htmlFor="message" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Your Message <span className="text-red-500">*</span>
                     </label>
@@ -486,13 +470,13 @@ export default function ContactPage() {
                       id="message"
                       name="message"
                       required
-                      rows={5}
+                      rows={4}
                       placeholder="Tell us more about how we can help you..."
                       onFocus={() => setFocusedField('message')}
                       onBlur={() => setFocusedField(null)}
-                      className={`w-full bg-gray-50 dark:bg-gray-900/50 border-2 rounded-xl px-5 py-4 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none transition-all duration-300 resize-none ${
+                      className={`w-full bg-gray-50 dark:bg-gray-900/50 border-2 rounded-lg px-4 py-3 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none transition-all duration-300 resize-none ${
                         focusedField === 'message' 
-                          ? 'border-primary ring-4 ring-primary/10' 
+                          ? 'border-primary ring-2 ring-primary/10' 
                           : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                       }`}
                     />
@@ -501,19 +485,20 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-primary to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-semibold rounded-xl py-4 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
+                    className="w-full bg-gradient-to-r from-primary to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-semibold rounded-lg py-3 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md shadow-primary/25 hover:shadow-lg hover:-translate-y-0.5"
                   >
                     {loading ? (
                       <>
-                        <span className="material-symbols-outlined animate-spin">progress_activity</span>
-                        Sending Message...
+                        <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span>
+                        Sending...
                       </>
                     ) : (
                       <>
-                        <span className="material-symbols-outlined">send</span>
+                        <span className="material-symbols-outlined text-lg">send</span>
                         Send Message
                       </>
                     )}
+                  </button>
                   </button>
                 </div>
               </form>
@@ -523,7 +508,7 @@ export default function ContactPage() {
       </section>
 
       {/* Newsletter Section */}
-      <section className="py-24 relative overflow-hidden">
+      <section className="py-16 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary-600 to-primary-800" />
         <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10" />
         <motion.div 
@@ -544,7 +529,7 @@ export default function ContactPage() {
             viewport={{ once: true }}
             className="max-w-2xl mx-auto"
           >
-            <div className="text-center mb-10">
+            <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium mb-6">
                 <FaEnvelope className="text-sm" />
                 Stay in the Loop
@@ -673,13 +658,13 @@ export default function ContactPage() {
       </section>
 
       {/* Location Section */}
-      <section id="location" className="py-24 relative">
+      <section id="location" className="py-16 relative">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-10"
           >
             <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-300 text-sm font-semibold mb-4">
               Our Location
@@ -699,7 +684,7 @@ export default function ContactPage() {
             className="relative rounded-3xl overflow-hidden shadow-2xl"
           >
             {/* Map Background */}
-            <div className="relative h-[500px] w-full">
+            <div className="relative h-[400px] w-full">
               <div
                 className="absolute inset-0 bg-cover bg-center"
                 style={{ backgroundImage: "url('/ce9ea973f79cb6988ad3e2945e3a87ae.jpg')" }}

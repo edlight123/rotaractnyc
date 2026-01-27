@@ -38,15 +38,7 @@ const Navbar = () => {
       ],
     },
     { name: 'News', href: '/rcun-news' },
-    {
-      name: 'Contact',
-      href: '/contact',
-      submenu: [
-        { name: 'Follow Us', href: '/follow-us' },
-        { name: 'Newsletter Sign Up', href: '/newsletter-sign-up' },
-        { name: 'Contact Us', href: '/contact' },
-      ],
-    },
+    { name: 'Contact', href: '/contact' },
   ]
 
   return (
