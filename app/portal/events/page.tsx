@@ -67,6 +67,20 @@ export default function EventsPage() {
     applyFilter();
   }, [events, activeFilter, timeFilter, viewMode, searchTerm, rsvps]);
 
+  // Helper to get event time (handles both old date string and new startAt timestamp)
+  const getEventTimeMs = (event: Event): number => {
+    if (event.startAt instanceof Timestamp) {
+      return event.startAt.toMillis();
+    }
+    // For legacy events, try to parse the date string
+    if (event.date) {
+      const parsed = Date.parse(event.date);
+      if (!isNaN(parsed)) return parsed;
+    }
+    // Fallback: treat as very old (past) event
+    return 0;
+  };
+
   const applyFilter = () => {
     let filtered = events;
     
@@ -79,12 +93,12 @@ export default function EventsPage() {
     const now = Date.now();
     if (timeFilter === 'upcoming') {
       filtered = filtered.filter(e => {
-        const eventTime = e.startAt instanceof Timestamp ? e.startAt.toMillis() : 0;
+        const eventTime = getEventTimeMs(e);
         return eventTime >= now;
       });
     } else if (timeFilter === 'past') {
       filtered = filtered.filter(e => {
-        const eventTime = e.startAt instanceof Timestamp ? e.startAt.toMillis() : 0;
+        const eventTime = getEventTimeMs(e);
         return eventTime < now;
       });
     }
@@ -119,27 +133,26 @@ export default function EventsPage() {
       const isBoardMember = userData?.role === 'BOARD' || userData?.role === 'TREASURER' || userData?.role === 'ADMIN';
       
       // Load ALL events (filtering by time is done client-side)
+      // Note: We don't use orderBy here because some legacy events don't have startAt field
+      // Sorting is done client-side to include all events
       const eventsRef = collection(db, 'portalEvents');
       
-      // Query for member-visible events (all, not just upcoming)
+      // Query for member-visible events
       const memberQuery = query(
         eventsRef,
-        where('visibility', '==', 'member'),
-        orderBy('startAt', 'desc')
+        where('visibility', '==', 'member')
       );
       
-      // Query for public events (all, not just upcoming)
+      // Query for public events
       const publicQuery = query(
         eventsRef,
-        where('visibility', '==', 'public'),
-        orderBy('startAt', 'desc')
+        where('visibility', '==', 'public')
       );
       
       // Query for board events (only if user is a board member)
       const boardQuery = isBoardMember ? query(
         eventsRef,
-        where('visibility', '==', 'board'),
-        orderBy('startAt', 'desc')
+        where('visibility', '==', 'board')
       ) : null;
       
       console.log('[Events] Executing queries... (isBoardMember:', isBoardMember, ')');
@@ -168,10 +181,23 @@ export default function EventsPage() {
         ...doc.data()
       })) as Event[] : [];
       
-      // Combine and sort by startAt (upcoming first)
+      // Helper to get event time for sorting (handles both old and new format)
+      const getEventTime = (event: Event): number => {
+        if (event.startAt instanceof Timestamp) {
+          return event.startAt.toMillis();
+        }
+        // For legacy events, try to parse the date string
+        if (event.date) {
+          const parsed = Date.parse(event.date);
+          if (!isNaN(parsed)) return parsed;
+        }
+        return 0;
+      };
+      
+      // Combine and sort by startAt (newest first)
       const allEvents = [...memberEvents, ...publicEvents, ...boardEvents].sort((a, b) => {
-        const aTime = a.startAt instanceof Timestamp ? a.startAt.toMillis() : 0;
-        const bTime = b.startAt instanceof Timestamp ? b.startAt.toMillis() : 0;
+        const aTime = getEventTime(a);
+        const bTime = getEventTime(b);
         return bTime - aTime; // descending (newest first);
       });
       
