@@ -4,6 +4,20 @@ import { requireAdmin } from '@/app/api/admin/_utils'
 import { getFirebaseAdminDb } from '@/lib/firebase/admin'
 import { logActivity } from '@/lib/admin/activities'
 
+export type RecurrencePattern = 'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'custom'
+export type WeekDay = 'SU' | 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA'
+
+export type RecurrenceConfig = {
+  pattern: RecurrencePattern
+  interval: number
+  endDate?: string
+  occurrences?: number
+  weekDays?: WeekDay[]
+  monthDay?: number
+  monthWeek?: number
+  monthWeekDay?: WeekDay
+}
+
 export type EventDoc = {
   title: string
   description: string
@@ -44,6 +58,10 @@ export type EventDoc = {
   // Service event
   serviceHours?: number
   serviceDescription?: string
+  // Recurring events
+  isRecurring?: boolean
+  recurrence?: RecurrenceConfig
+  parentEventId?: string
   // Admin
   adminNotes?: string
   tags?: string[]
@@ -220,6 +238,10 @@ export async function POST(req: NextRequest) {
     // Service event
     serviceHours: body.serviceHours,
     serviceDescription: body.serviceDescription,
+    // Recurring events
+    isRecurring: body.isRecurring ?? false,
+    recurrence: body.recurrence,
+    parentEventId: body.parentEventId,
     // Admin
     adminNotes: body.adminNotes,
     tags: body.tags,
@@ -298,6 +320,10 @@ export async function PUT(req: NextRequest) {
   if (body.serviceDescription !== undefined) updates.serviceDescription = body.serviceDescription
   if (body.adminNotes !== undefined) updates.adminNotes = body.adminNotes
   if (body.tags !== undefined) updates.tags = body.tags
+  // Recurring events
+  if (body.isRecurring !== undefined) updates.isRecurring = body.isRecurring
+  if (body.recurrence !== undefined) updates.recurrence = body.recurrence
+  if (body.parentEventId !== undefined) updates.parentEventId = body.parentEventId
 
   await db.collection('portalEvents').doc(body.id).set(updates, { merge: true })
   return NextResponse.json({ ok: true })

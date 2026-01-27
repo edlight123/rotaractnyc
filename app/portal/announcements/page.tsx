@@ -12,8 +12,7 @@ import MemberSpotlight from '../_components/MemberSpotlight';
 import UpcomingDeadlines from '../_components/UpcomingDeadlines';
 import QuickLinks from '../_components/QuickLinks';
 import DashboardSummary from '../_components/DashboardSummary';
-import NewPostModal from '../_components/NewPostModal';
-import { canManagePosts } from '@/lib/portal/roles';
+import PostComposer from '../_components/PostComposer';
 
 interface CommunityPost {
   id: string;
@@ -79,8 +78,6 @@ export default function AnnouncementsPage() {
   const observerTarget = useRef(null);
   const POSTS_PER_PAGE = 10;
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
-  const [showNewPostModal, setShowNewPostModal] = useState(false);
-  const canCreatePosts = canManagePosts(userData?.role);
 
   useEffect(() => {
     if (!loading) {
@@ -473,64 +470,8 @@ export default function AnnouncementsPage() {
               </div>
             </div>
 
-            {/* Create Post Composer */}
-            <div className="bg-white dark:bg-[#1e1e1e] rounded-xl shadow-sm border border-gray-200 dark:border-[#2a2a2a] p-4">
-              <div className="flex items-center gap-3">
-                {/* User Avatar */}
-                <div 
-                  className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0 flex items-center justify-center overflow-hidden"
-                  style={user?.photoURL ? { backgroundImage: `url(${user.photoURL})`, backgroundSize: 'cover' } : {}}
-                >
-                  {!user?.photoURL && (
-                    <span className="material-symbols-outlined text-gray-400 dark:text-gray-500">person</span>
-                  )}
-                </div>
-                
-                {/* Post Input Button */}
-                <button
-                  onClick={() => setShowNewPostModal(true)}
-                  className="flex-1 text-left px-4 py-2.5 bg-gray-50 dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#333] transition-colors"
-                >
-                  What's on your mind, {userData?.name?.split(' ')[0] || 'Member'}?
-                </button>
-              </div>
-              
-              {/* Quick Action Buttons */}
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setShowNewPostModal(true)}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] rounded-lg transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-green-500 text-lg">image</span>
-                    <span className="hidden sm:inline">Photo</span>
-                  </button>
-                  <button
-                    onClick={() => setShowNewPostModal(true)}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] rounded-lg transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-blue-500 text-lg">event</span>
-                    <span className="hidden sm:inline">Event</span>
-                  </button>
-                  <button
-                    onClick={() => setShowNewPostModal(true)}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] rounded-lg transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-amber-500 text-lg">article</span>
-                    <span className="hidden sm:inline">Article</span>
-                  </button>
-                </div>
-                {canCreatePosts && (
-                  <button
-                    onClick={() => setShowNewPostModal(true)}
-                    className="flex items-center gap-1.5 px-4 py-1.5 bg-primary hover:bg-primary-600 text-white text-sm font-medium rounded-lg transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-lg">add</span>
-                    Post
-                  </button>
-                )}
-              </div>
-            </div>
+            {/* Create Post/Announcement Composer */}
+            <PostComposer onPostCreated={() => loadFeed()} />
 
             {/* Filters Row */}
             <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-[#1e1e1e] rounded-xl shadow-sm border border-gray-200 dark:border-[#2a2a2a] p-3">
@@ -740,9 +681,6 @@ export default function AnnouncementsPage() {
         </aside>
       </div>
     </div>
-    
-    {/* New Post Modal */}
-    <NewPostModal isOpen={showNewPostModal} onClose={() => setShowNewPostModal(false)} />
     </main>
   );
 }

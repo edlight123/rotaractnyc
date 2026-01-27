@@ -61,6 +61,21 @@ export interface EventPricing {
   };
 }
 
+// Recurrence types for events
+export type RecurrencePattern = 'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'custom';
+export type WeekDay = 'SU' | 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA';
+
+export interface RecurrenceConfig {
+  pattern: RecurrencePattern;
+  interval: number; // e.g., every 2 weeks
+  endDate?: string; // YYYY-MM-DD when recurrence ends
+  occurrences?: number; // OR number of occurrences
+  weekDays?: WeekDay[]; // For weekly: which days
+  monthDay?: number; // For monthly: which day of month (1-31)
+  monthWeek?: number; // For monthly: which week (1-4, -1 for last)
+  monthWeekDay?: WeekDay; // For monthly: which day of that week
+}
+
 // Event type
 export interface Event {
   id: string;
@@ -73,6 +88,15 @@ export interface Event {
   createdBy: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  
+  // Legacy fields for backward compatibility
+  date?: string;
+  time?: string;
+  startDate?: string;
+  startTime?: string;
+  endTime?: string;
+  timezone?: string;
+  order?: number;
   
   // Enhanced registration & pricing
   requiresRegistration: boolean;
@@ -88,6 +112,11 @@ export interface Event {
   category?: string[];
   tags?: string[];
   status: 'draft' | 'published' | 'cancelled';
+  
+  // Recurring event fields
+  isRecurring?: boolean;
+  recurrence?: RecurrenceConfig;
+  parentEventId?: string; // For recurring instances, reference to parent
   
   // Admin notes
   adminNotes?: string;
