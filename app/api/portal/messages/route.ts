@@ -47,15 +47,25 @@ export async function POST(request: NextRequest) {
     const { uid } = await adminAuth.verifySessionCookie(sessionCookie, true);
     const body = await request.json();
 
-    if (!body.recipientId || !body.content) {
+    const recipientId = body.recipientId || body.toId;
+    const content = body.content || body.body;
+    if (!recipientId || !content) {
       return NextResponse.json({ error: 'Recipient and content required' }, { status: 400 });
     }
 
+    // Fetch sender info
+    const senderDoc = await adminDb.collection('members').doc(uid).get();
+    const senderData = senderDoc.data();
+
     const message = {
-      senderId: uid,
-      senderName: body.senderName || '',
-      recipientId: body.recipientId,
-      content: body.content,
+      fromId: uid,
+      fromName: senderData?.displayName || body.senderName || '',
+      toId: recipientId,
+      toName: body.toName || '',
+      recipientId, // keep for backward compat query
+      subject: body.subject || '',
+      content,
+      sentAt: new Date().toISOString(),
       read: false,
       createdAt: FieldValue.serverTimestamp(),
     };

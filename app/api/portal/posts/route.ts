@@ -45,18 +45,20 @@ export async function POST(request: NextRequest) {
     const { uid } = await adminAuth.verifySessionCookie(sessionCookie, true);
     const body = await request.json();
 
+    // Fetch member info for the post
+    const memberDoc = await adminDb.collection('members').doc(uid).get();
+    const memberData = memberDoc.data();
+
     const post = {
-      type: body.type || 'general',
+      type: body.type || 'text',
       content: body.content,
       authorId: uid,
-      author: {
-        uid,
-        name: body.authorName || '',
-        photoURL: body.authorPhotoURL || '',
-      },
-      likes: [],
+      authorName: memberData?.displayName || body.authorName || '',
+      authorPhoto: memberData?.photoURL || body.authorPhotoURL || '',
+      imageURLs: body.imageURLs || [],
+      likeCount: 0,
       commentCount: 0,
-      pinned: false,
+      likedBy: [],
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     };

@@ -18,7 +18,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
 
     // Whitelist allowed fields
-    const allowed = ['firstName', 'lastName', 'bio', 'phone', 'linkedIn', 'committee', 'occupation', 'employer', 'interests', 'memberType', 'photoURL'];
+    const allowed = ['firstName', 'lastName', 'displayName', 'bio', 'phone', 'linkedIn', 'committee', 'occupation', 'employer', 'interests', 'memberType', 'photoURL', 'onboardingComplete'];
     const updates: Record<string, any> = {};
     for (const key of allowed) {
       if (body[key] !== undefined) {

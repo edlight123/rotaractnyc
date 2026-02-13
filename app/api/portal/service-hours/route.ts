@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     const entry = {
       memberId: uid,
       eventId: body.eventId || null,
-      eventName: body.eventName || '',
+      eventTitle: body.eventTitle || body.eventName || '',
       hours: Number(body.hours),
       date: body.date || new Date().toISOString().split('T')[0],
       notes: body.notes || '',
