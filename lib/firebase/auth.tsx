@@ -57,13 +57,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await setDoc(memberRef, { ...newMember, createdAt: serverTimestamp() });
           setMember({ id: firebaseUser.uid, ...newMember });
         }
-        // Set session cookie
-        const idToken = await firebaseUser.getIdToken();
-        await fetch('/api/portal/auth/session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken }),
-        });
+        // Set session cookie (non-blocking — portal still works via client auth)
+        try {
+          const idToken = await firebaseUser.getIdToken();
+          const res = await fetch('/api/portal/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken }),
+          });
+          if (!res.ok) {
+            console.warn('Session cookie creation returned', res.status, '— server-side auth may be limited');
+          }
+        } catch (err) {
+          console.warn('Session cookie creation failed:', err);
+        }
       } else {
         setMember(null);
       }

@@ -44,12 +44,19 @@ export function getAdminStorage(): Storage {
 }
 
 // Convenience aliases (lazy)
-export const adminAuth = new Proxy({} as Auth, {
-  get(_, prop) { return (getAdminAuth() as any)[prop]; },
-});
-export const adminDb = new Proxy({} as Firestore, {
-  get(_, prop) { return (getAdminDb() as any)[prop]; },
-});
-export const adminStorage = new Proxy({} as Storage, {
-  get(_, prop) { return (getAdminStorage() as any)[prop]; },
-});
+// IMPORTANT: We must bind returned functions to the real instance so that
+// `this` inside Firebase Admin methods (e.g. createSessionCookie) points
+// to the real Auth/Firestore/Storage object, not the Proxy target.
+function lazyProxy<T extends object>(getter: () => T): T {
+  return new Proxy({} as T, {
+    get(_, prop) {
+      const target = getter();
+      const value = (target as any)[prop];
+      return typeof value === 'function' ? value.bind(target) : value;
+    },
+  });
+}
+
+export const adminAuth = lazyProxy(getAdminAuth);
+export const adminDb = lazyProxy(getAdminDb);
+export const adminStorage = lazyProxy(getAdminStorage);

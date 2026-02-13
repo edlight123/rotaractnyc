@@ -21,9 +21,18 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Session creation error:', error);
-    return NextResponse.json({ error: 'Failed to create session' }, { status: 401 });
+  } catch (error: any) {
+    const message = error?.message || String(error);
+    console.error('Session creation error:', message);
+    // Surface whether it's a credentials issue vs an invalid token
+    const isCredentials = message.includes('credentials') || message.includes('FIREBASE');
+    return NextResponse.json(
+      { error: isCredentials
+          ? 'Firebase Admin not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY or FIREBASE_PROJECT_ID env vars.'
+          : 'Failed to create session — token may be expired. Please sign in again.'
+      },
+      { status: 401 },
+    );
   }
 }
 
