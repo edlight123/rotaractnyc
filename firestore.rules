@@ -2,249 +2,247 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
+    // ───────────────────────────────────────
     // Helper functions
+    // ───────────────────────────────────────
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    function getUserRole() {
+
+    function role() {
       return request.auth.token.role;
     }
-    
-    function isMember() {
-      return isAuthenticated() && getUserRole() in ['MEMBER', 'BOARD', 'TREASURER', 'ADMIN'];
-    }
-    
-    function isBoard() {
-      return isAuthenticated() && getUserRole() in ['BOARD', 'TREASURER', 'ADMIN'];
-    }
-    
-    function isTreasurer() {
-      return isAuthenticated() && getUserRole() in ['TREASURER', 'ADMIN'];
-    }
-    
-    function isAdmin() {
-      return isAuthenticated() && getUserRole() == 'ADMIN';
-    }
-    
-    // Users collection
-    match /users/{userId} {
-      // Members can read users; signed-in users can also read their own profile for approval status.
-      allow read: if isMember() || (isAuthenticated() && request.auth.uid == userId);
 
-      // Signed-in users can create their own pending profile (no access to member content until approved).
-      allow create: if isAuthenticated()
-                    && request.auth.uid == userId
-                    && request.resource.data.email == request.auth.token.email
-                    && request.resource.data.role == 'MEMBER'
+    function isMember() {
+      return isAuthenticated() && role() in ['member', 'board', 'treasurer', 'president'];
+    }
+
+    function isBoard() {
+      return isAuthenticated() && role() in ['board', 'treasurer', 'president'];
+    }
+
+    function isTreasurer() {
+      return isAuthenticated() && role() in ['treasurer', 'president'];
+    }
+
+    function isPresident() {
+      return isAuthenticated() && role() == 'president';
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ───────────────────────────────────────
+    // Members
+    // ───────────────────────────────────────
+    match /members/{memberId} {
+      // Members can read the full directory; pending users can read their own doc
+      allow read: if isMember() || isOwner(memberId);
+
+      // A signed-in user can create their own pending profile (auto-created on first Google Sign-In)
+      allow create: if isOwner(memberId)
                     && request.resource.data.status == 'pending';
 
-      // Users can update their own profile (limited fields)
-      allow update: if isAuthenticated() && request.auth.uid == userId
-                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status']);
-      // Only admins can create users or change role/status
-      allow delete: if isAdmin();
-      allow update: if isAdmin();
+      // Members can update their own profile (but not role or status)
+      allow update: if isOwner(memberId)
+                    && !request.resource.data.diff(resource.data).affectedKeys()
+                        .hasAny(['role', 'status']);
+
+      // Board+ can update any member (role changes, approval, etc.)
+      allow update: if isBoard();
+
+      // Only president can delete members
+      allow delete: if isPresident();
     }
-    
-    // Events collection
+
+    // ───────────────────────────────────────
+    // Events (public + portal)
+    // ───────────────────────────────────────
     match /events/{eventId} {
-      // Members can read member-visible events, board can read all
-      allow read: if (isMember() && resource.data.visibility == 'member')
-                  || (isBoard() && resource.data.visibility in ['member', 'board'])
-                  || resource.data.visibility == 'public';
-      // Board can create/edit events
-      allow create, update, delete: if isBoard();
-      
-      // RSVPs subcollection
-      match /rsvps/{userId} {
-        // Members can read all RSVPs for an event
-        allow read: if isMember();
-        // Members can only write their own RSVP
-        allow write: if isAuthenticated() && request.auth.uid == userId;
-      }
-    }
-
-    // Portal Events (separate from public site events)
-    match /portalEvents/{eventId} {
-      // Anyone can read public events; members can read member+public; board can read all
+      // Public events readable by anyone; portal-only events by members
       allow read: if resource.data.visibility == 'public'
-                  || (isMember() && resource.data.visibility in ['public', 'member'])
-                  || (isBoard() && resource.data.visibility in ['public', 'member', 'board']);
-      // Board can create/edit events
+                  || (isMember() && resource.data.visibility in ['public', 'members', 'both']);
+
+      // Board+ can manage events
       allow create, update, delete: if isBoard();
-
-      // RSVPs subcollection
-      match /rsvps/{userId} {
-        // Members can read all RSVPs for an event
-        allow read: if isMember();
-        // Members can only write their own RSVP
-        allow write: if isAuthenticated() && request.auth.uid == userId;
-      }
-    }
-    
-    // Event Registrations
-    match /eventRegistrations/{registrationId} {
-      // Users can read their own registrations
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      // Users can create registrations
-      allow create: if isAuthenticated();
-      // Admins can read all
-      allow read: if isAdmin() || isBoard();
-    }
-    
-    // Event Checkouts
-    match /eventCheckouts/{checkoutId} {
-      // Users can read their own checkouts
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      // Users can create checkouts
-      allow create: if isAuthenticated();
-      // Admins can read all
-      allow read: if isAdmin() || isBoard();
-    }
-    
-    // Announcements collection
-    match /announcements/{announcementId} {
-      // Members can read member-visible, board can read all
-      allow read: if (isMember() && resource.data.visibility == 'member')
-                  || (isBoard() && resource.data.visibility in ['member', 'board']);
-      // Board can create/edit announcements
-      allow create, update, delete: if isBoard();
-
-      // Acknowledgements subcollection
-      match /acknowledgements/{userId} {
-        allow read: if isMember();
-        allow create, update, delete: if isAuthenticated() && request.auth.uid == userId;
-      }
     }
 
-    // Community posts (portal dashboard feed)
-    match /communityPosts/{postId} {
+    // ───────────────────────────────────────
+    // RSVPs (top-level, doc ID = "{uid}_{eventId}")
+    // ───────────────────────────────────────
+    match /rsvps/{rsvpId} {
+      // Members can read any RSVP (to see who else is going)
       allow read: if isMember();
-      allow create: if isMember() && request.resource.data.authorUid == request.auth.uid;
+
+      // Members can write their own RSVP (doc ID must start with their uid)
+      allow create, update: if isAuthenticated()
+                            && rsvpId.matches(request.auth.uid + '_.*');
+
+      // Only owner or board can delete
+      allow delete: if (isAuthenticated() && rsvpId.matches(request.auth.uid + '_.*'))
+                    || isBoard();
+    }
+
+    // ───────────────────────────────────────
+    // Articles (news / blog)
+    // ───────────────────────────────────────
+    match /articles/{articleId} {
+      // Published articles readable by anyone (public site); members can read all
+      allow read: if resource.data.status == 'published' || isMember();
+
+      // Board+ can manage articles
+      allow create, update, delete: if isBoard();
+    }
+
+    // ───────────────────────────────────────
+    // Gallery
+    // ───────────────────────────────────────
+    match /gallery/{imageId} {
+      // Gallery is publicly readable
+      allow read: if true;
+
+      // Board+ can manage gallery
+      allow create, update, delete: if isBoard();
+    }
+
+    // ───────────────────────────────────────
+    // Community Posts (portal feed)
+    // ───────────────────────────────────────
+    match /posts/{postId} {
+      // Members can read all posts
+      allow read: if isMember();
+
+      // Members can create posts (must be authored by them)
+      allow create: if isMember()
+                    && request.resource.data.authorId == request.auth.uid;
+
+      // Author can update their own post; any member can toggle likes
       allow update: if isMember() && (
-        // Allow any member to update likes array (like/unlike)
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
-        // Allow author or admin to update other fields
-        || resource.data.authorUid == request.auth.uid
-        || isAdmin()
+        resource.data.authorId == request.auth.uid
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
       );
-      allow delete: if resource.data.authorUid == request.auth.uid || isAdmin();
-      
+
+      // Board+ can update/delete any post
+      allow update, delete: if isBoard();
+
+      // Author can delete their own post
+      allow delete: if isAuthenticated() && resource.data.authorId == request.auth.uid;
+
       // Comments subcollection
       match /comments/{commentId} {
         allow read: if isMember();
-        allow create: if isMember() && request.resource.data.authorUid == request.auth.uid;
-        allow update: if isMember() && (
-          // Allow any member to update likes array
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
-          // Allow author or admin to update other fields
-          || resource.data.authorUid == request.auth.uid
-          || isAdmin()
-        );
-        allow delete: if resource.data.authorUid == request.auth.uid || isAdmin();
+        allow create: if isMember();
+        allow update, delete: if isAuthenticated()
+                              && resource.data.authorId == request.auth.uid;
+        allow update, delete: if isBoard();
       }
     }
 
-    // Posts collection (articles & news)
-    match /posts/{postId} {
-      // Members can read published posts
-      allow read: if isMember() && resource.data.published == true;
-      // Board can create/edit posts
-      allow create, update, delete: if isBoard();
-    }
-    
-    // Documents collection
+    // ───────────────────────────────────────
+    // Documents (meeting minutes, handbooks, etc.)
+    // ───────────────────────────────────────
     match /documents/{documentId} {
-      // Members can read member-visible, board can read all
-      allow read: if (isMember() && resource.data.visibility == 'member')
-                  || (isBoard() && resource.data.visibility in ['member', 'board']);
-      // Board can create/edit documents
+      // Members can read documents
+      allow read: if isMember();
+
+      // Board+ can manage documents
       allow create, update, delete: if isBoard();
     }
-    
-    // Transactions collection
-    match /transactions/{transactionId} {
-      // Members can read member-visible, board can read all
-      allow read: if (isMember() && resource.data.visibility == 'member')
-                  || (isBoard() && resource.data.visibility in ['member', 'board']);
-      // Only treasurer/admin can create/edit transactions
-      allow create, update, delete: if isTreasurer();
-    }
-    
-    // Monthly summaries collection
-    match /monthlySummaries/{monthId} {
-      // All members can read monthly summaries
-      allow read: if isMember();
-      // Only treasurer/admin can write summaries
-      allow create, update, delete: if isTreasurer();
-    }
-    
-    // Service hours collection
-    match /serviceHours/{submissionId} {
-      // Members can read their own submissions, board/admin can read all
-      allow read: if (isAuthenticated() && resource.data.uid == request.auth.uid) 
+
+    // ───────────────────────────────────────
+    // Service Hours
+    // ───────────────────────────────────────
+    match /serviceHours/{entryId} {
+      // Members can read their own entries; board can read all
+      allow read: if (isAuthenticated() && resource.data.memberId == request.auth.uid)
                   || isBoard();
-      // Members can create their own submissions
-      allow create: if isMember() 
-                    && request.resource.data.uid == request.auth.uid
+
+      // Members can create their own entries (must be pending)
+      allow create: if isMember()
+                    && request.resource.data.memberId == request.auth.uid
                     && request.resource.data.status == 'pending';
-      // Only board/admin can update (for review/approval)
-      allow update: if isBoard();
-      // Only admin can delete
-      allow delete: if isAdmin();
+
+      // Members can update their own pending entries
+      allow update: if isAuthenticated()
+                    && resource.data.memberId == request.auth.uid
+                    && resource.data.status == 'pending';
+
+      // Board+ can approve/reject (update status) and delete
+      allow update, delete: if isBoard();
     }
-    
-    // Members collection (onboarding)
-    match /members/{memberId} {
-      // Members can read their own record, admins can read all
-      allow read: if isAuthenticated() && (request.auth.uid == memberId || isAdmin());
-      // System creates during onboarding
-      allow write: if false; // Server-side only
+
+    // ───────────────────────────────────────
+    // Dues Cycles
+    // ───────────────────────────────────────
+    match /duesCycles/{cycleId} {
+      // All members can read dues cycles
+      allow read: if isMember();
+
+      // Only treasurer/president can manage cycles
+      allow create, update, delete: if isTreasurer();
     }
-    
-    // Invitations collection (onboarding)
-    match /invitations/{inviteId} {
-      allow read, write: if false; // Server-side only
+
+    // ───────────────────────────────────────
+    // Member Dues (per-member dues status)
+    // ───────────────────────────────────────
+    match /memberDues/{duesId} {
+      // Members can read their own dues; treasurer+ can read all
+      allow read: if (isAuthenticated() && resource.data.memberId == request.auth.uid)
+                  || isTreasurer();
+
+      // Treasurer+ can manage dues records
+      allow create, update: if isTreasurer();
+      allow delete: if isPresident();
     }
-    
-    // Payments collection (onboarding)
-    match /payments/{paymentId} {
-      // Members can read their own payment records
-      allow read: if isAuthenticated() && resource.data.memberId == request.auth.uid;
-      allow write: if false; // Server-side only
+
+    // ───────────────────────────────────────
+    // Transactions (finance)
+    // ───────────────────────────────────────
+    match /transactions/{transactionId} {
+      // Only treasurer/president can read & manage transactions
+      allow read, create, update, delete: if isTreasurer();
     }
-    
-    // Dues cycles collection
-    match /dues_cycles/{cycleId} {
-      // All authenticated users can read cycles
-      allow read: if isAuthenticated();
-      // Only admins can write
-      allow write: if isAdmin();
+
+    // ───────────────────────────────────────
+    // Messages (member-to-member)
+    // ───────────────────────────────────────
+    match /messages/{messageId} {
+      // Members can read messages sent to them or by them
+      allow read: if isAuthenticated()
+                  && (resource.data.recipientId == request.auth.uid
+                      || resource.data.senderId == request.auth.uid);
+
+      // Members can send messages
+      allow create: if isMember()
+                    && request.resource.data.senderId == request.auth.uid;
+
+      // Recipient can mark as read
+      allow update: if isAuthenticated()
+                    && resource.data.recipientId == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+
+      // Sender or recipient can delete their copy
+      allow delete: if isAuthenticated()
+                    && (resource.data.senderId == request.auth.uid
+                        || resource.data.recipientId == request.auth.uid);
     }
-    
-    // Member dues collection
-    match /member_dues/{memberId} {
-      // Members can read their own dues, admins can read all
-      allow read: if isAuthenticated() && (request.auth.uid == memberId || isAdmin());
-      allow write: if false; // Server-side only
-      
-      match /cycles/{cycleId} {
-        // Members can read their own cycle dues, admins can read all
-        allow read: if isAuthenticated() && (request.auth.uid == memberId || isAdmin());
-        allow write: if false; // Server-side only
-      }
+
+    // ───────────────────────────────────────
+    // Site Settings (public)
+    // ───────────────────────────────────────
+    match /settings/{settingId} {
+      // Anyone can read site settings (used on public site)
+      allow read: if true;
+
+      // Only president can update settings
+      allow write: if isPresident();
     }
-    
-    // Dues payments collection
-    match /dues_payments/{paymentId} {
-      // Members can read their own payment records
-      allow read: if isAuthenticated() && resource.data.memberId == request.auth.uid;
-      allow write: if false; // Server-side only
-    }
-    
-    // Deny all other access
+
+    // ───────────────────────────────────────
+    // Deny everything else
+    // ───────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
     }

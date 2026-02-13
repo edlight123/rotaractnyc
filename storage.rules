@@ -2,67 +2,76 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    
+
     // Helper functions
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    function getUserRole() {
+
+    function role() {
       return request.auth.token.role;
     }
-    
+
     function isMember() {
-      return isAuthenticated() && getUserRole() in ['MEMBER', 'BOARD', 'TREASURER', 'ADMIN'];
+      return isAuthenticated() && role() in ['member', 'board', 'treasurer', 'president'];
     }
-    
+
     function isBoard() {
-      return isAuthenticated() && getUserRole() in ['BOARD', 'TREASURER', 'ADMIN'];
+      return isAuthenticated() && role() in ['board', 'treasurer', 'president'];
     }
-    
-    function isAdmin() {
-      return isAuthenticated() && getUserRole() == 'ADMIN';
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
     }
-    
-    // Community posts - members can read all, write their own
-    match /community-posts/{userId}/{fileName} {
+
+    // Max file size: 10 MB
+    function isValidSize() {
+      return request.resource.size < 10 * 1024 * 1024;
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    // ── Profile Photos ──
+    match /profile-photos/{userId}/{fileName} {
       allow read: if isMember();
-      allow write: if isAuthenticated() && request.auth.uid == userId;
-      allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == userId);
+      allow write: if isOwner(userId) && isImage() && isValidSize();
+      allow delete: if isOwner(userId) || isBoard();
     }
-    
-    // Documents - members can read, board can write
-    match /documents/{userId}/{fileName} {
+
+    // ── Community Post Attachments ──
+    match /post-attachments/{userId}/{fileName} {
       allow read: if isMember();
-      allow write, delete: if isBoard();
+      allow write: if isOwner(userId) && isValidSize();
+      allow delete: if isOwner(userId) || isBoard();
     }
-    
-    // Legacy documents path (flat structure)
+
+    // ── Documents (meeting minutes, handbooks) ──
     match /documents/{fileName} {
       allow read: if isMember();
       allow write, delete: if isBoard();
     }
-    
-    // Profile photos - members can read all, write their own
-    match /profile-photos/{userId}/{fileName} {
-      allow read: if isMember();
-      allow write: if isAuthenticated() && request.auth.uid == userId;
-      allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == userId);
-    }
-    
-    // Event images - members can read, board can write
+
+    // ── Event Images ──
     match /event-images/{eventId}/{fileName} {
-      allow read: if isMember();
+      allow read: if true;
       allow write, delete: if isBoard();
     }
-    
-    // Gallery images - public read for public galleries, members for member galleries
-    match /gallery/{category}/{fileName} {
-      allow read: if true; // Public galleries
+
+    // ── Gallery Images ──
+    match /gallery/{fileName} {
+      allow read: if true;
       allow write, delete: if isBoard();
     }
-    
-    // Deny all other access
+
+    // ── Article Images ──
+    match /article-images/{fileName} {
+      allow read: if true;
+      allow write, delete: if isBoard();
+    }
+
+    // Deny everything else
     match /{allPaths=**} {
       allow read, write: if false;
     }
