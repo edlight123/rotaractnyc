@@ -17,16 +17,10 @@
       ]
     },
     {
-      "collectionGroup": "gallery",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "posts",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "pinned", "order": "DESCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
@@ -47,13 +41,6 @@
       ]
     },
     {
-      "collectionGroup": "duesCycles",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "active", "order": "DESCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "memberDues",
       "queryScope": "COLLECTION",
       "fields": [
@@ -62,25 +49,11 @@
       ]
     },
     {
-      "collectionGroup": "transactions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "date", "order": "DESCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "messages",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "recipientId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "members",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "displayName", "order": "ASCENDING" }
       ]
     }
   ],
