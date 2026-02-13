@@ -30,7 +30,7 @@
     },
     {
       "name": "News",
-      "url": "/rcun-news",
+      "url": "/news",
       "description": "Read latest news"
     },
     {

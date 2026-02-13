@@ -1,12 +1,10 @@
 import Link from 'next/link';
 import { SITE } from '@/lib/constants';
+import { getPublicEvents, getPublishedArticles } from '@/lib/firebase/queries';
+import { formatDate } from '@/lib/utils/format';
+import Badge from '@/components/ui/Badge';
 
-const stats = [
-  { value: '5,000+', label: 'Service Hours' },
-  { value: '120+', label: 'Active Members' },
-  { value: '$50K+', label: 'Raised for Charity' },
-  { value: '15+', label: 'Global Partners' },
-];
+export const dynamic = 'force-dynamic';
 
 const pillars = [
   {
@@ -46,7 +44,23 @@ const testimonials = [
   },
 ];
 
-export default function HomePage() {
+const typeColors: Record<string, 'cranberry' | 'green' | 'azure' | 'gold'> = {
+  free: 'green',
+  service: 'azure',
+  paid: 'gold',
+  hybrid: 'cranberry',
+};
+
+export default async function HomePage() {
+  const [events, articles] = await Promise.all([
+    getPublicEvents(),
+    getPublishedArticles(),
+  ]);
+
+  // Take only the next 3 upcoming events
+  const upcomingEvents = events.slice(0, 3);
+  // Take the 3 most recent articles
+  const recentArticles = articles.slice(0, 3);
   return (
     <>
       {/* Hero */}
@@ -100,7 +114,12 @@ export default function HomePage() {
       <section className="relative -mt-16 z-20">
         <div className="container-page">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {stats.map((stat, i) => (
+            {[
+              { value: '5,000+', label: 'Service Hours' },
+              { value: '120+', label: 'Active Members' },
+              { value: '$50K+', label: 'Raised for Charity' },
+              { value: '15+', label: 'Global Partners' },
+            ].map((stat) => (
               <div
                 key={stat.label}
                 className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-6 text-center hover:shadow-xl transition-shadow"
@@ -112,6 +131,56 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Upcoming Events */}
+      {upcomingEvents.length > 0 && (
+        <section className="section-padding bg-white dark:bg-gray-950">
+          <div className="container-page">
+            <div className="flex items-center justify-between mb-10">
+              <div>
+                <p className="text-sm font-semibold text-cranberry uppercase tracking-wider mb-2">What&apos;s Coming Up</p>
+                <h2 className="text-3xl sm:text-4xl font-display font-bold text-gray-900 dark:text-white">Upcoming Events</h2>
+              </div>
+              <Link href="/events" className="hidden sm:inline-flex btn-sm btn-outline">
+                View All Events →
+              </Link>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {upcomingEvents.map((event) => (
+                <Link
+                  key={event.id}
+                  href={`/events/${event.slug}`}
+                  className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 overflow-hidden hover:shadow-lg hover:border-cranberry-200 dark:hover:border-cranberry-800 transition-all duration-200"
+                >
+                  <div className="bg-gradient-to-r from-cranberry to-cranberry-800 px-5 py-3 flex items-center justify-between">
+                    <div className="text-white">
+                      <p className="text-xs font-medium text-cranberry-200">{formatDate(event.date, { weekday: 'short' })}</p>
+                      <p className="text-sm font-bold">{formatDate(event.date, { month: 'short', day: 'numeric' })}</p>
+                    </div>
+                    <Badge variant={typeColors[event.type] || 'green'}>
+                      {event.type === 'service' ? '🤝 Service' : event.type === 'paid' ? '🎟️ Ticketed' : event.type === 'hybrid' ? '⭐ Hybrid' : '✓ Free'}
+                    </Badge>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-display font-bold text-gray-900 dark:text-white group-hover:text-cranberry transition-colors line-clamp-2">{event.title}</h3>
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{event.description}</p>
+                    <div className="mt-3 flex items-center gap-3 text-xs text-gray-400">
+                      <span>{event.time}</span>
+                      <span>·</span>
+                      <span className="truncate">{event.location.split(',')[0]}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            <Link href="/events" className="sm:hidden block text-center mt-6 btn-sm btn-outline">
+              View All Events →
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* Three Pillars */}
       <section className="section-padding bg-white dark:bg-gray-950">
@@ -168,6 +237,51 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Recent News */}
+      {recentArticles.length > 0 && (
+        <section className="section-padding bg-white dark:bg-gray-950">
+          <div className="container-page">
+            <div className="flex items-center justify-between mb-10">
+              <div>
+                <p className="text-sm font-semibold text-azure uppercase tracking-wider mb-2">Latest Updates</p>
+                <h2 className="text-3xl sm:text-4xl font-display font-bold text-gray-900 dark:text-white">News & Stories</h2>
+              </div>
+              <Link href="/news" className="hidden sm:inline-flex btn-sm btn-outline">
+                All News →
+              </Link>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              {recentArticles.map((article) => (
+                <Link
+                  key={article.id}
+                  href={`/news/${article.slug}`}
+                  className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 overflow-hidden hover:shadow-lg hover:border-cranberry-200 dark:hover:border-cranberry-800 transition-all duration-200"
+                >
+                  <div className="h-40 bg-gradient-to-br from-cranberry-100 to-cranberry-50 dark:from-cranberry-900/20 dark:to-cranberry-950/30 flex items-center justify-center">
+                    <svg className="w-10 h-10 text-cranberry-300 dark:text-cranberry-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                    </svg>
+                  </div>
+                  <div className="p-5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="azure">{article.category}</Badge>
+                      {article.publishedAt && <span className="text-xs text-gray-400">{formatDate(article.publishedAt)}</span>}
+                    </div>
+                    <h3 className="font-display font-bold text-gray-900 dark:text-white group-hover:text-cranberry transition-colors line-clamp-2">{article.title}</h3>
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{article.excerpt}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            <Link href="/news" className="sm:hidden block text-center mt-6 btn-sm btn-outline">
+              All News →
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* CTA */}
       <section className="section-padding bg-gradient-to-br from-cranberry-900 via-cranberry to-cranberry-800 text-white">

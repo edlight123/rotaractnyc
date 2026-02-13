@@ -119,7 +119,7 @@ export function usePortalEvents() {
 
 export function useArticles(onlyPublished = true) {
   const constraints = onlyPublished
-    ? [where('status', '==', 'published'), orderBy('publishedAt', 'desc'), limit(20)]
+    ? [where('isPublished', '==', true), orderBy('publishedAt', 'desc'), limit(20)]
     : [orderBy('publishedAt', 'desc'), limit(20)];
   return useCollection('articles', constraints);
 }
@@ -142,7 +142,7 @@ export function useMembers(activeOnly = true) {
 export function useServiceHours(memberId: string | null) {
   return useCollection(
     'serviceHours',
-    memberId ? [where('memberId', '==', memberId), orderBy('date', 'desc'), limit(50)] : [],
+    memberId ? [where('memberId', '==', memberId), orderBy('createdAt', 'desc'), limit(50)] : [],
     !!memberId,
   );
 }

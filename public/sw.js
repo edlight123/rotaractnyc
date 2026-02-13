@@ -4,9 +4,9 @@ const CACHE_NAME = 'rotaractnyc-v' + Date.now()
 const urlsToCache = [
   '/',
   '/events',
-  '/rcun-news',
+  '/news',
   '/about',
-  '/mission',
+  '/gallery',
   '/manifest.json',
 ]
 

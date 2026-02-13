@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { Inter, Manrope } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/react';
 import { SITE } from '@/lib/constants';
 import { ToastProvider } from '@/components/ui/Toast';
+import PWARegister from '@/components/PWARegister';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -14,6 +16,8 @@ export const metadata: Metadata = {
   },
   description: SITE.description,
   metadataBase: new URL(SITE.url),
+  manifest: '/manifest.json',
+  themeColor: '#9B1B30',
   openGraph: {
     type: 'website',
     siteName: SITE.name,
@@ -41,6 +45,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="font-sans antialiased">
         <ToastProvider>{children}</ToastProvider>
+        <PWARegister />
+        <Analytics />
       </body>
     </html>
   );
