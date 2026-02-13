@@ -13,10 +13,18 @@ export async function GET() {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('rotaract_portal_session')?.value;
     if (!sessionCookie) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      // Return empty data so the page renders the default "unpaid" state
+      return NextResponse.json({ cycle: null, dues: null });
     }
 
-    const { uid } = await adminAuth.verifySessionCookie(sessionCookie, true);
+    let uid: string;
+    try {
+      const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
+      uid = decoded.uid;
+    } catch {
+      // Session expired or invalid — return safe defaults
+      return NextResponse.json({ cycle: null, dues: null });
+    }
 
     // Get current dues cycle
     const cycleSnap = await adminDb

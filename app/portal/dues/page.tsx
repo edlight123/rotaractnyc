@@ -23,14 +23,17 @@ export default function DuesPage() {
 
   // Fetch dues status
   useEffect(() => {
-    if (!member?.id) return;
+    if (!member?.id) {
+      setLoading(false);
+      return;
+    }
     (async () => {
       try {
         const data = await apiGet('/api/portal/dues');
-        if (data.dues?.status) setDuesStatus(data.dues.status);
-        if (data.cycle?.name) setCycleName(data.cycle.name);
+        if (data?.dues?.status) setDuesStatus(data.dues.status);
+        if (data?.cycle?.name) setCycleName(data.cycle.name);
       } catch {
-        // Default to UNPAID
+        // Default to UNPAID — page renders fine with defaults
       } finally {
         setLoading(false);
       }

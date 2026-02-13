@@ -22,12 +22,15 @@ export default function PortalEventsPage() {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [rsvpLoading, setRsvpLoading] = useState<string | null>(null);
 
-  const allEvents = (firestoreEvents.length > 0 ? firestoreEvents : defaultEvents) as RotaractEvent[];
+  const allEvents = ((firestoreEvents || []).length > 0 ? firestoreEvents : defaultEvents) as RotaractEvent[];
   const now = new Date();
 
   const events = allEvents
     .filter((e) => {
-      const matchSearch = e.title.toLowerCase().includes(search.toLowerCase()) || e.description.toLowerCase().includes(search.toLowerCase());
+      const title = (e.title || '').toLowerCase();
+      const desc = (e.description || '').toLowerCase();
+      const q = search.toLowerCase();
+      const matchSearch = title.includes(q) || desc.includes(q);
       const isFuture = new Date(e.date) >= now;
       return activeTab === 'upcoming' ? matchSearch && isFuture : matchSearch && !isFuture;
     })

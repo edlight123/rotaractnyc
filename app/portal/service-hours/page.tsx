@@ -23,18 +23,22 @@ export default function ServiceHoursPage() {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ eventId: '', hours: '', notes: '' });
 
-  const serviceHours = hours as ServiceHour[];
+  const serviceHours = (hours || []) as ServiceHour[];
   const approvedHours = serviceHours.filter((h) => h.status === 'approved');
-  const totalHours = approvedHours.reduce((sum, h) => sum + h.hours, 0);
+  const totalHours = approvedHours.reduce((sum, h) => sum + (h.hours || 0), 0);
 
   // Current year hours (July-June)
   const now = new Date();
   const yearStart = now.getMonth() >= 6 ? new Date(now.getFullYear(), 6, 1) : new Date(now.getFullYear() - 1, 6, 1);
   const thisYearHours = approvedHours
-    .filter((h) => new Date(h.createdAt) >= yearStart)
-    .reduce((sum, h) => sum + h.hours, 0);
+    .filter((h) => {
+      const raw = h.createdAt as any;
+      const d = raw?.toDate ? raw.toDate() : new Date(raw);
+      return !isNaN(d.getTime()) && d >= yearStart;
+    })
+    .reduce((sum, h) => sum + (h.hours || 0), 0);
 
-  const serviceEvents = (events as RotaractEvent[]).filter((e) => e.type === 'service' || e.type === 'free');
+  const serviceEvents = ((events || []) as RotaractEvent[]).filter((e) => e.type === 'service' || e.type === 'free');
 
   const statusColors: Record<string, 'green' | 'gold' | 'red'> = {
     approved: 'green',
