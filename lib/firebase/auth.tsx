@@ -4,6 +4,8 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import {
   onAuthStateChanged,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut as firebaseSignOut,
   GoogleAuthProvider,
   type User,
@@ -32,6 +34,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Handle redirect result (from signInWithRedirect fallback)
+  useEffect(() => {
+    getRedirectResult(getAuth()).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(getAuth(), async (firebaseUser) => {
@@ -82,7 +89,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(getAuth(), provider);
+    provider.setCustomParameters({ prompt: 'select_account' });
+    try {
+      await signInWithPopup(getAuth(), provider);
+    } catch (err: any) {
+      // If popup is blocked or fails, fall back to redirect
+      if (
+        err?.code === 'auth/popup-blocked' ||
+        err?.code === 'auth/popup-closed-by-user' ||
+        err?.code === 'auth/cancelled-popup-request'
+      ) {
+        console.warn('Popup blocked/closed, falling back to redirect');
+        await signInWithRedirect(getAuth(), provider);
+      } else {
+        console.error('Google sign-in error:', err?.code, err?.message);
+        throw err;
+      }
+    }
   };
 
   const signOut = async () => {
