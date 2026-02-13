@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import HeroSection from '@/components/public/HeroSection';
+import MembershipInterestForm from '@/components/public/MembershipInterestForm';
 import { generateMeta } from '@/lib/seo';
 import { SITE } from '@/lib/constants';
 
@@ -126,6 +127,24 @@ export default function MembershipPage() {
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-6">
             The Rotary year runs July 1 – June 30. Dues can be paid online or in person.
           </p>
+        </div>
+      </section>
+
+      {/* Interest Form */}
+      <section className="section-padding bg-gray-50 dark:bg-gray-900/50">
+        <div className="container-page">
+          <div className="max-w-xl mx-auto">
+            <div className="text-center mb-10">
+              <p className="text-sm font-semibold text-gold uppercase tracking-wider mb-3">Interested?</p>
+              <h2 className="text-3xl font-display font-bold text-gray-900 dark:text-white mb-3">
+                Let Us Know You&apos;re Coming
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Fill out this quick form and a board member will reach out with details on our next meeting.
+              </p>
+            </div>
+            <MembershipInterestForm />
+          </div>
         </div>
       </section>
     </>

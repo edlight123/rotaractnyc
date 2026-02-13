@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#9B1B30"/>
+  <circle cx="256" cy="200" r="96" fill="none" stroke="#EBC85B" stroke-width="12"/>
+  <path d="M256 104 L256 78 M256 322 L256 296 M160 200 L134 200 M378 200 L352 200"
+        stroke="#EBC85B" stroke-width="10" stroke-linecap="round"/>
+  <text x="256" y="218" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="800" font-size="76" fill="#FFFFFF">R</text>
+  <text x="256" y="394" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="700" font-size="48" fill="#FFFFFF">NYC</text>
+  <text x="256" y="446" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="500" font-size="28" fill="#EBC85B">ROTARACT</text>
+</svg>
