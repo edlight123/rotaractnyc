@@ -211,3 +211,48 @@
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ─── Novel / ProseMirror Editor Styles ─── */
+
+.novel-editor .ProseMirror {
+  @apply outline-none;
+}
+
+.novel-editor .ProseMirror p.is-editor-empty:first-child::before {
+  @apply text-gray-400 dark:text-gray-600 float-left h-0 pointer-events-none;
+  content: attr(data-placeholder);
+}
+
+.novel-editor .ProseMirror .is-empty::before {
+  @apply text-gray-400 dark:text-gray-600 float-left h-0 pointer-events-none;
+  content: attr(data-placeholder);
+}
+
+.novel-editor .ProseMirror img {
+  @apply transition-all rounded-lg max-w-full;
+}
+
+.novel-editor .ProseMirror img.ProseMirror-selectednode {
+  @apply outline-2 outline-cranberry outline-offset-2;
+}
+
+.novel-editor .ProseMirror ul[data-type="taskList"] li > label {
+  @apply mr-2;
+}
+
+.novel-editor .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"] {
+  @apply accent-cranberry;
+}
+
+.novel-editor .ProseMirror hr {
+  @apply border-t border-gray-300 dark:border-gray-700 my-6;
+}
+
+.novel-editor .ProseMirror .ProseMirror-gapcursor::after {
+  @apply border-t-cranberry;
+}
+
+.novel-editor .ProseMirror mark {
+  @apply bg-yellow-200 dark:bg-yellow-800/50 rounded px-0.5;
+}
+

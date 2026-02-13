@@ -12,6 +12,7 @@ import SearchInput from '@/components/ui/SearchInput';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
 import { defaultEvents } from '@/lib/defaults/data';
+import { formatCurrency } from '@/lib/utils/format';
 import type { RotaractEvent, RSVPStatus } from '@/types';
 
 export default function PortalEventsPage() {
@@ -50,7 +51,22 @@ export default function PortalEventsPage() {
       setRsvpLoading(null);
     }
   };
-
+  const handleTicketPurchase = async (eventId: string, ticketType: 'member' | 'guest' = 'member') => {
+    if (!user) return;
+    setRsvpLoading(eventId);
+    try {
+      const res = await apiPost('/api/portal/events/checkout', { eventId, ticketType });
+      if (res.free) {
+        toast(res.message || "You're in! \uD83C\uDF89");
+      } else if (res.url) {
+        window.location.href = res.url;
+      }
+    } catch (err: any) {
+      toast(err.message || 'Ticket purchase failed', 'error');
+    } finally {
+      setRsvpLoading(null);
+    }
+  };
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div>
@@ -88,11 +104,42 @@ export default function PortalEventsPage() {
                         <span>🕐 {event.time}{event.endTime ? ` – ${event.endTime}` : ''}</span>
                         <span>📍 {event.location?.split(',')[0]}</span>
                       </div>
+                      {event.pricing && (event.type === 'paid' || event.type === 'hybrid') && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="inline-flex items-center gap-1 bg-cranberry-50 dark:bg-cranberry-900/20 text-cranberry-700 dark:text-cranberry-300 px-2 py-0.5 rounded text-xs font-semibold">
+                            {event.pricing.memberPrice === 0 ? 'Free' : formatCurrency(event.pricing.memberPrice)} member
+                          </span>
+                          <span className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded text-xs font-semibold">
+                            {formatCurrency(event.pricing.guestPrice)} guest
+                          </span>
+                          {event.pricing.earlyBirdPrice != null && event.pricing.earlyBirdDeadline && new Date(event.pricing.earlyBirdDeadline) > new Date() && (
+                            <span className="text-xs text-green-600 dark:text-green-400 font-medium">🐦 Early bird: {formatCurrency(event.pricing.earlyBirdPrice)}</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     {new Date(event.date) >= now && (
                       <div className="flex gap-2 shrink-0">
-                        <Button size="sm" variant="primary" loading={rsvpLoading === event.id} onClick={() => handleRSVP(event.id, 'going')}>Going</Button>
-                        <Button size="sm" variant="ghost" onClick={() => handleRSVP(event.id, 'maybe')}>Maybe</Button>
+                        {event.pricing && (event.type === 'paid' || event.type === 'hybrid') && event.pricing.memberPrice > 0 ? (
+                          <>
+                            <Button size="sm" variant="primary" loading={rsvpLoading === event.id} onClick={() => handleTicketPurchase(event.id, 'member')}>
+                              Buy Ticket
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => handleRSVP(event.id, 'maybe')}>Maybe</Button>
+                          </>
+                        ) : event.pricing && (event.type === 'paid' || event.type === 'hybrid') && event.pricing.memberPrice === 0 ? (
+                          <>
+                            <Button size="sm" variant="primary" loading={rsvpLoading === event.id} onClick={() => handleTicketPurchase(event.id, 'member')}>
+                              Free Ticket
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => handleRSVP(event.id, 'maybe')}>Maybe</Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button size="sm" variant="primary" loading={rsvpLoading === event.id} onClick={() => handleRSVP(event.id, 'going')}>Going</Button>
+                            <Button size="sm" variant="ghost" onClick={() => handleRSVP(event.id, 'maybe')}>Maybe</Button>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>

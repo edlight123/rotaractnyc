@@ -31,7 +31,49 @@ export async function POST(request: NextRequest) {
   // Handle checkout.session.completed
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
-    const { memberId, cycleId, memberType, amount } = session.metadata || {};
+    const metadata = session.metadata || {};
+
+    // ── Event ticket payment ──
+    if (metadata.type === 'event_ticket') {
+      const { eventId, memberId, ticketType, amountCents, eventTitle } = metadata;
+      try {
+        if (memberId && eventId) {
+          // Auto-RSVP as "going"
+          const rsvpRef = adminDb.collection('rsvps').doc(`${memberId}_${eventId}`);
+          await rsvpRef.set(
+            {
+              memberId,
+              eventId,
+              status: 'going',
+              ticketType: ticketType || 'guest',
+              paidAmount: Number(amountCents) || 0,
+              stripePaymentId: session.payment_intent as string,
+              paidAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            { merge: true },
+          );
+
+          // Record transaction
+          await adminDb.collection('transactions').add({
+            type: 'income',
+            category: 'Event Tickets',
+            amount: Number(amountCents) || 0,
+            description: `${ticketType} ticket – ${eventTitle || 'Event'}`,
+            date: new Date().toISOString(),
+            createdBy: memberId || 'guest',
+            createdAt: new Date().toISOString(),
+          });
+
+          console.log(`Event ticket recorded: ${memberId} → ${eventId}`);
+        }
+      } catch (err) {
+        console.error('Error recording event ticket payment:', err);
+      }
+    }
+
+    // ── Dues payment ──
+    const { memberId, cycleId, memberType, amount } = metadata;
 
     if (memberId && cycleId) {
       try {

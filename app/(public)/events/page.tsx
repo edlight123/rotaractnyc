@@ -4,7 +4,7 @@ import HeroSection from '@/components/public/HeroSection';
 import Badge from '@/components/ui/Badge';
 import { generateMeta } from '@/lib/seo';
 import { getPublicEvents } from '@/lib/firebase/queries';
-import { formatDate } from '@/lib/utils/format';
+import { formatDate, formatCurrency } from '@/lib/utils/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,6 +71,24 @@ export default async function EventsPage() {
                       {event.location.split(',')[0]}
                     </span>
                   </div>
+
+                  {event.pricing && (event.type === 'paid' || event.type === 'hybrid') && (
+                    <div className="mt-3 flex items-center gap-3 text-sm">
+                      <span className="inline-flex items-center gap-1 bg-cranberry-50 dark:bg-cranberry-900/20 text-cranberry-700 dark:text-cranberry-300 px-2.5 py-1 rounded-lg font-semibold">
+                        {event.pricing.memberPrice === 0 ? 'Free for members' : formatCurrency(event.pricing.memberPrice)}
+                        <span className="font-normal text-cranberry-500 dark:text-cranberry-400 text-xs">member</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2.5 py-1 rounded-lg font-semibold">
+                        {formatCurrency(event.pricing.guestPrice)}
+                        <span className="font-normal text-gray-500 text-xs">guest</span>
+                      </span>
+                      {event.pricing.earlyBirdPrice != null && event.pricing.earlyBirdDeadline && new Date(event.pricing.earlyBirdDeadline) > new Date() && (
+                        <span className="inline-flex items-center gap-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 px-2.5 py-1 rounded-lg text-xs font-medium">
+                          🐦 Early bird {formatCurrency(event.pricing.earlyBirdPrice)}
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   {event.tags && (
                     <div className="mt-3 flex flex-wrap gap-1.5">

@@ -17,7 +17,13 @@ export async function GET() {
       ...doc.data(),
     }));
 
-    return NextResponse.json(articles);
+    if (articles.length > 0) {
+      return NextResponse.json(articles);
+    }
+
+    // 3. Default data
+    const { defaultArticles } = await import('@/lib/defaults/data');
+    return NextResponse.json(defaultArticles);
   } catch (error) {
     console.error('Error fetching articles:', error);
     const { defaultArticles } = await import('@/lib/defaults/data');

@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getEventBySlug } from '@/lib/firebase/queries';
-import { formatDate } from '@/lib/utils/format';
+import { formatDate, formatCurrency } from '@/lib/utils/format';
 import Badge from '@/components/ui/Badge';
 
 export const dynamic = 'force-dynamic';
@@ -48,14 +48,48 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
               <p>{event.description}</p>
             </div>
 
+            {/* Pricing */}
+            {event.pricing && (event.type === 'paid' || event.type === 'hybrid') && (
+              <div className="mt-10 p-6 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
+                <h3 className="font-display font-bold text-gray-900 dark:text-white mb-4">Pricing</h3>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
+                    <p className="text-xs font-semibold text-cranberry uppercase mb-1">Member Price</p>
+                    <p className="text-2xl font-display font-bold text-gray-900 dark:text-white">
+                      {event.pricing.memberPrice === 0 ? 'Free' : formatCurrency(event.pricing.memberPrice)}
+                    </p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
+                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Guest Price</p>
+                    <p className="text-2xl font-display font-bold text-gray-900 dark:text-white">
+                      {formatCurrency(event.pricing.guestPrice)}
+                    </p>
+                  </div>
+                </div>
+                {event.pricing.earlyBirdPrice != null && event.pricing.earlyBirdDeadline && (
+                  <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                    <p className="text-sm font-semibold text-green-800 dark:text-green-300">
+                      🐦 Early Bird: {formatCurrency(event.pricing.earlyBirdPrice)}
+                    </p>
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                      Available until {formatDate(event.pricing.earlyBirdDeadline)}
+                      {new Date(event.pricing.earlyBirdDeadline) < new Date() && ' — expired'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Auth-aware CTA */}
             <div className="mt-10 p-6 bg-cranberry-50 dark:bg-cranberry-900/10 rounded-2xl border border-cranberry-100 dark:border-cranberry-900/30">
               <h3 className="font-display font-bold text-gray-900 dark:text-white mb-2">Want to attend?</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Sign in to your member portal to RSVP, or join Rotaract NYC to access all events.
+                {event.pricing && event.type === 'paid'
+                  ? 'Sign in to get member pricing, or join Rotaract NYC for exclusive discounts.'
+                  : 'Sign in to your member portal to RSVP, or join Rotaract NYC to access all events.'}
               </p>
               <div className="flex gap-3">
-                <Link href="/portal/login" className="btn-sm btn-primary">Member RSVP</Link>
+                <Link href="/portal/login" className="btn-sm btn-primary">{event.type === 'paid' ? 'Member Ticket' : 'Member RSVP'}</Link>
                 <Link href="/membership" className="btn-sm btn-outline">Join Us</Link>
               </div>
             </div>
