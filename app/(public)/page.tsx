@@ -210,7 +210,7 @@ export default async function HomePage() {
                     <div className="mt-3 flex items-center gap-3 text-xs text-gray-400">
                       <span>{event.time}</span>
                       <span>·</span>
-                      <span className="truncate">{event.location.split(',')[0]}</span>
+                      <span className="truncate">{event.location?.split(',')[0]}</span>
                     </div>
                   </div>
                 </Link>

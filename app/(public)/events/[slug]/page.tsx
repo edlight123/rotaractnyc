@@ -40,8 +40,8 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
     startDate: event.date,
     location: {
       '@type': 'Place',
-      name: event.location.split(',')[0],
-      address: event.location,
+      name: event.location?.split(',')[0] || '',
+      address: event.location || '',
     },
     organizer: {
       '@type': 'Organization',
