@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/firebase/auth';
-import { useServiceHours, usePortalEvents, apiPost } from '@/hooks/useFirestore';
+import { useServiceHours, usePortalEvents, apiPost, apiPatch, apiGet } from '@/hooks/useFirestore';
 import { useToast } from '@/components/ui/Toast';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
+import Tabs from '@/components/ui/Tabs';
 import StatCard from '@/components/ui/StatCard';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
@@ -22,6 +23,12 @@ export default function ServiceHoursPage() {
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ eventId: '', hours: '', notes: '' });
+  const [activeTab, setActiveTab] = useState('my-hours');
+  const [pendingEntries, setPendingEntries] = useState<any[]>([]);
+  const [pendingLoading, setPendingLoading] = useState(false);
+  const [reviewing, setReviewing] = useState<string | null>(null);
+
+  const isBoardOrAbove = member?.role === 'board' || member?.role === 'president' || member?.role === 'treasurer';
 
   const serviceHours = (hours || []) as ServiceHour[];
   const approvedHours = serviceHours.filter((h) => h.status === 'approved');
@@ -46,6 +53,30 @@ export default function ServiceHoursPage() {
     rejected: 'red',
   };
 
+  // Fetch pending entries for board review
+  useEffect(() => {
+    if (activeTab === 'review' && isBoardOrAbove) {
+      setPendingLoading(true);
+      apiGet('/api/portal/service-hours?filter=pending')
+        .then((data) => setPendingEntries(Array.isArray(data) ? data : []))
+        .catch(() => setPendingEntries([]))
+        .finally(() => setPendingLoading(false));
+    }
+  }, [activeTab, isBoardOrAbove]);
+
+  const handleReview = async (entryId: string, status: 'approved' | 'rejected') => {
+    setReviewing(entryId);
+    try {
+      await apiPatch('/api/portal/service-hours', { entryId, status });
+      setPendingEntries((prev) => prev.filter((e) => e.id !== entryId));
+      toast(`Hours ${status}!`);
+    } catch (err: any) {
+      toast(err.message || 'Failed to update', 'error');
+    } finally {
+      setReviewing(null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.hours || !member) return;
@@ -66,6 +97,11 @@ export default function ServiceHoursPage() {
       setSubmitting(false);
     }
   };
+
+  const tabs = [
+    { id: 'my-hours', label: 'My Hours' },
+    ...(isBoardOrAbove ? [{ id: 'review', label: 'Review Pending' }] : []),
+  ];
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -111,36 +147,84 @@ export default function ServiceHoursPage() {
         </Card>
       )}
 
-      {/* Recent Hours */}
-      <div>
-        <h3 className="font-display font-bold text-gray-900 dark:text-white mb-4">Recent Submissions</h3>
-        {loading ? (
-          <div className="flex justify-center py-8"><Spinner /></div>
-        ) : serviceHours.length === 0 ? (
-          <EmptyState icon="⏱️" title="No service hours logged" description="Click 'Log Hours' to submit your first service contribution." />
-        ) : (
-          <div className="space-y-3">
-            {serviceHours.map((entry) => (
-              <Card key={entry.id} padding="md">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white text-sm">{entry.eventTitle || 'Service Hours'}</h4>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xs text-gray-500">{entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : ''}</span>
-                      <Badge variant={statusColors[entry.status] || 'gold'}>{entry.status}</Badge>
+      {isBoardOrAbove && <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />}
+
+      {activeTab === 'review' && isBoardOrAbove ? (
+        /* Board Review Tab */
+        <div>
+          <h3 className="font-display font-bold text-gray-900 dark:text-white mb-4">Pending Approvals</h3>
+          {pendingLoading ? (
+            <div className="flex justify-center py-8"><Spinner /></div>
+          ) : pendingEntries.length === 0 ? (
+            <EmptyState icon="✅" title="All caught up" description="No pending service hours to review." />
+          ) : (
+            <div className="space-y-3">
+              {pendingEntries.map((entry) => (
+                <Card key={entry.id} padding="md">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
+                        {entry.memberName || 'Member'} — {entry.eventTitle || 'Service Hours'}
+                      </h4>
+                      <p className="text-xs text-gray-500 mt-1">{entry.hours} hours · {entry.date || ''}</p>
+                      {entry.notes && <p className="text-xs text-gray-400 mt-1">{entry.notes}</p>}
                     </div>
-                    {entry.notes && <p className="text-xs text-gray-400 mt-1">{entry.notes}</p>}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        loading={reviewing === entry.id}
+                        onClick={() => handleReview(entry.id, 'approved')}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        loading={reviewing === entry.id}
+                        onClick={() => handleReview(entry.id, 'rejected')}
+                      >
+                        Reject
+                      </Button>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xl font-display font-bold text-cranberry">{entry.hours}</p>
-                    <p className="text-xs text-gray-400">hours</p>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* My Hours Tab */
+        <div>
+          <h3 className="font-display font-bold text-gray-900 dark:text-white mb-4">Recent Submissions</h3>
+          {loading ? (
+            <div className="flex justify-center py-8"><Spinner /></div>
+          ) : serviceHours.length === 0 ? (
+            <EmptyState icon="⏱️" title="No service hours logged" description="Click 'Log Hours' to submit your first service contribution." />
+          ) : (
+            <div className="space-y-3">
+              {serviceHours.map((entry) => (
+                <Card key={entry.id} padding="md">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-gray-900 dark:text-white text-sm">{entry.eventTitle || 'Service Hours'}</h4>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-xs text-gray-500">{entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : ''}</span>
+                        <Badge variant={statusColors[entry.status] || 'gold'}>{entry.status}</Badge>
+                      </div>
+                      {entry.notes && <p className="text-xs text-gray-400 mt-1">{entry.notes}</p>}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-display font-bold text-cranberry">{entry.hours}</p>
+                      <p className="text-xs text-gray-400">hours</p>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

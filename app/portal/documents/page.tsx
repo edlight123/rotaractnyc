@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useAuth } from '@/lib/firebase/auth';
-import { useDocuments } from '@/hooks/useFirestore';
+import { useDocuments, apiDelete } from '@/hooks/useFirestore';
 import { useToast } from '@/components/ui/Toast';
 import { uploadFile, validateFile } from '@/lib/firebase/upload';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
@@ -71,6 +71,16 @@ export default function DocumentsPage() {
 
   const isBoardOrAbove = member?.role === 'board' || member?.role === 'president' || member?.role === 'treasurer';
 
+  const handleDelete = async (docId: string) => {
+    if (!confirm('Delete this document?')) return;
+    try {
+      await apiDelete(`/api/portal/documents?id=${docId}`);
+      toast('Document deleted.');
+    } catch (err: any) {
+      toast(err.message || 'Failed to delete', 'error');
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -133,7 +143,12 @@ export default function DocumentsPage() {
                   </div>
                 </div>
                 {doc.fileURL && (
-                  <a href={doc.fileURL} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg text-gray-400 hover:text-cranberry hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" title="Download">⬇️</a>
+                  <div className="flex items-center gap-1">
+                    <a href={doc.fileURL} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg text-gray-400 hover:text-cranberry hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" title="Download">⬇️</a>
+                    {isBoardOrAbove && (
+                      <button onClick={() => handleDelete(doc.id)} className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors" title="Delete">🗑️</button>
+                    )}
+                  </div>
                 )}
               </div>
             </Card>

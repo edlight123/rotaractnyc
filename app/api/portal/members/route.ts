@@ -129,3 +129,64 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// ─── PATCH — update member status / role (board+ only) ───
+export async function PATCH(request: NextRequest) {
+  try {
+    const decoded = await verifySession();
+    const role = await getMemberRole(decoded.uid);
+    if (!role || !['president', 'board', 'treasurer'].includes(role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { memberId, status, role: newRole } = body;
+
+    if (!memberId) {
+      return NextResponse.json({ error: 'memberId required' }, { status: 400 });
+    }
+
+    const memberRef = adminDb.collection('members').doc(memberId);
+    const memberDoc = await memberRef.get();
+    if (!memberDoc.exists) {
+      return NextResponse.json({ error: 'Member not found' }, { status: 404 });
+    }
+
+    const updates: Record<string, any> = { updatedAt: new Date().toISOString() };
+
+    if (status && ['pending', 'active', 'inactive', 'alumni'].includes(status)) {
+      updates.status = status;
+    }
+    // Only president can change roles
+    if (newRole && role === 'president' && ['member', 'board', 'treasurer', 'president'].includes(newRole)) {
+      updates.role = newRole;
+    }
+
+    await memberRef.update(updates);
+
+    // If approving a pending member, send welcome email
+    if (status === 'active' && memberDoc.data()?.status === 'pending') {
+      try {
+        const { sendEmail } = await import('@/lib/email/send');
+        const { welcomeEmail } = await import('@/lib/email/templates');
+        const memberData = memberDoc.data();
+        const template = welcomeEmail(memberData?.displayName || memberData?.firstName || 'Member');
+        await sendEmail({
+          to: memberData?.email,
+          subject: template.subject,
+          html: template.html,
+        });
+      } catch (emailErr) {
+        console.error('Welcome email failed:', emailErr);
+      }
+    }
+
+    return NextResponse.json({ success: true, ...updates });
+  } catch (error: any) {
+    console.error('Error updating member:', error);
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    return NextResponse.json({ error: 'Failed to update member' }, { status: 500 });
+  }
+}

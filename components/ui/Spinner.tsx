@@ -13,7 +13,13 @@ const sizes = {
 
 export default function Spinner({ size = 'md', className }: SpinnerProps) {
   return (
-    <div className={cn('animate-spin rounded-full border-2 border-gray-300 border-t-cranberry', sizes[size], className)} />
+    <div
+      className={cn('animate-spin rounded-full border-2 border-gray-300 dark:border-gray-700 border-t-cranberry', sizes[size], className)}
+      role="status"
+      aria-label="Loading"
+    >
+      <span className="sr-only">Loading…</span>
+    </div>
   );
 }
 

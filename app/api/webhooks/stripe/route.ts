@@ -70,12 +70,10 @@ export async function POST(request: NextRequest) {
       } catch (err) {
         console.error('Error recording event ticket payment:', err);
       }
-    }
+    } else if (metadata.type === 'dues' && metadata.memberId && metadata.cycleId) {
+      // ── Dues payment ──
+      const { memberId, cycleId, memberType, amount } = metadata;
 
-    // ── Dues payment ──
-    const { memberId, cycleId, memberType, amount } = metadata;
-
-    if (memberId && cycleId) {
       try {
         // Find existing memberDues doc
         const snap = await adminDb

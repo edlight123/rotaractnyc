@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/auth';
+import { useDues } from '@/hooks/useDues';
 import Avatar from '@/components/ui/Avatar';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
+import DuesBanner from '@/components/portal/DuesBanner';
 import { cn } from '@/lib/utils/cn';
 
 const sidebarNav = [
@@ -73,6 +75,15 @@ const sidebarNav = [
     ),
   },
   {
+    label: 'Messages',
+    href: '/portal/messages',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+      </svg>
+    ),
+  },
+  {
     label: 'Finance',
     href: '/portal/finance',
     icon: (
@@ -87,7 +98,9 @@ const sidebarNav = [
 export default function PortalShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const { member, signOut, loading } = useAuth();
+  const { status: duesStatus } = useDues();
 
   const isActive = (href: string) => href === '/portal' ? pathname === '/portal' : pathname.startsWith(href);
 
@@ -196,6 +209,8 @@ export default function PortalShell({ children }: { children: React.ReactNode })
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            aria-label="Open navigation menu"
+            aria-expanded={sidebarOpen}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -228,7 +243,8 @@ export default function PortalShell({ children }: { children: React.ReactNode })
         </header>
 
         {/* Page content */}
-        <main className="p-4 lg:p-6">
+        <main className="p-4 lg:p-6 space-y-4">
+          {duesStatus === 'UNPAID' && <DuesBanner status={duesStatus} />}
           {children}
         </main>
       </div>

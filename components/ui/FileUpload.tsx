@@ -58,6 +58,10 @@ export default function FileUpload({
         </label>
       )}
       <div
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        aria-label={label ? `${label} — click to upload or drag and drop` : 'Click to upload or drag and drop files'}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); !disabled && inputRef.current?.click(); } }}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}

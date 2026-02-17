@@ -1,10 +1,18 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SITE } from '@/lib/constants';
+import { generateMeta } from '@/lib/seo';
 import { getPublicEvents, getPublishedArticles } from '@/lib/firebase/queries';
 import { formatDate } from '@/lib/utils/format';
 import Badge from '@/components/ui/Badge';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = generateMeta({
+  title: `${SITE.shortName} — Service Above Self`,
+  description: SITE.description,
+  path: '/',
+});
 
 const pillars = [
   {
@@ -63,6 +71,40 @@ export default async function HomePage() {
   const recentArticles = articles.slice(0, 3);
   return (
     <>
+      {/* JSON-LD Organization Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            name: SITE.name,
+            alternateName: SITE.shortName,
+            url: SITE.url,
+            email: SITE.email,
+            address: {
+              '@type': 'PostalAddress',
+              streetAddress: '216 East 45th Street',
+              addressLocality: 'New York',
+              addressRegion: 'NY',
+              postalCode: '10017',
+              addressCountry: 'US',
+            },
+            sameAs: [
+              SITE.social.instagram,
+              SITE.social.linkedin,
+              SITE.social.facebook,
+            ],
+            description: SITE.description,
+            parentOrganization: {
+              '@type': 'Organization',
+              name: 'Rotary International',
+              url: 'https://www.rotary.org',
+            },
+          }),
+        }}
+      />
+
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-cranberry-950 via-cranberry-900 to-cranberry-800">
         {/* Background pattern */}

@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { rateLimit, getRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
+import { clampNumber } from '@/lib/utils/sanitize';
 
 export const dynamic = 'force-dynamic';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://rotaractnyc.org';
+
+const MAX_DONATION_CENTS = 1_000_000; // $10,000 cap
 
 const PRESET_AMOUNTS: Record<string, { cents: number; label: string }> = {
   '25': { cents: 2500, label: 'Supplies for a service day' },
@@ -12,6 +16,11 @@ const PRESET_AMOUNTS: Record<string, { cents: number; label: string }> = {
 };
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 10 checkout attempts per 60 s per IP
+  const rlKey = getRateLimitKey(request, 'donate');
+  const rl = rateLimit(rlKey, { max: 10, windowSec: 60 });
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt);
+
   try {
     const { amount, customAmount } = await request.json();
 
@@ -29,8 +38,8 @@ export async function POST(request: NextRequest) {
       cents = PRESET_AMOUNTS[amount].cents;
       description = PRESET_AMOUNTS[amount].label;
     } else if (customAmount && Number(customAmount) >= 5) {
-      cents = Math.round(Number(customAmount) * 100);
-      description = `Custom donation — $${Number(customAmount).toFixed(2)}`;
+      cents = clampNumber(Math.round(Number(customAmount) * 100), 500, MAX_DONATION_CENTS);
+      description = `Custom donation — $${(cents / 100).toFixed(2)}`;
     } else {
       return NextResponse.json(
         { error: 'Please select a donation amount (minimum $5).' },

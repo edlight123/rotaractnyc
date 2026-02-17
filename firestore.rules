@@ -73,7 +73,7 @@ service cloud.firestore {
     // ───────────────────────────────────────
     match /events/{eventId} {
       // Public events readable by anyone; portal-only events by active members
-      allow read: if resource.data.visibility == 'public' || isMember();
+      allow read: if resource.data.isPublic == true || isMember();
 
       // Board+ can manage events
       allow create, update, delete: if isBoard();
@@ -100,7 +100,7 @@ service cloud.firestore {
     // ───────────────────────────────────────
     match /articles/{articleId} {
       // Published articles readable by anyone (public site); active members can read all
-      allow read: if resource.data.status == 'published' || isMember();
+      allow read: if resource.data.isPublished == true || isMember();
 
       // Board+ can manage articles
       allow create, update, delete: if isBoard();
@@ -221,22 +221,22 @@ service cloud.firestore {
     match /messages/{messageId} {
       // Members can read messages sent to them or by them
       allow read: if isMember()
-                  && (resource.data.recipientId == request.auth.uid
-                      || resource.data.senderId == request.auth.uid);
+                  && (resource.data.toId == request.auth.uid
+                      || resource.data.fromId == request.auth.uid);
 
       // Members can send messages
       allow create: if isMember()
-                    && request.resource.data.senderId == request.auth.uid;
+                    && request.resource.data.fromId == request.auth.uid;
 
       // Recipient can mark as read
       allow update: if isMember()
-                    && resource.data.recipientId == request.auth.uid
+                    && resource.data.toId == request.auth.uid
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
 
       // Sender or recipient can delete their copy
       allow delete: if isMember()
-                    && (resource.data.senderId == request.auth.uid
-                        || resource.data.recipientId == request.auth.uid);
+                    && (resource.data.fromId == request.auth.uid
+                        || resource.data.toId == request.auth.uid);
     }
 
     // ───────────────────────────────────────

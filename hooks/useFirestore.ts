@@ -203,3 +203,12 @@ export async function apiGet<T = any>(url: string): Promise<T> {
   }
   return res.json();
 }
+
+export async function apiDelete<T = any>(url: string): Promise<T> {
+  const res = await fetch(url, { method: 'DELETE' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Request failed' }));
+    throw new Error(err.error || 'Request failed');
+  }
+  return res.json();
+}

@@ -35,12 +35,22 @@ export default function Dropdown({ trigger, items, align = 'right', className }:
 
   return (
     <div ref={ref} className={cn('relative inline-block', className)}>
-      <div onClick={() => setOpen(!open)} className="cursor-pointer">
+      <div
+        onClick={() => setOpen(!open)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(!open); } }}
+        role="button"
+        tabIndex={0}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="cursor-pointer"
+      >
         {trigger}
       </div>
 
       {open && (
         <div
+          role="menu"
+          aria-orientation="vertical"
           className={cn(
             'absolute z-50 mt-2 w-48 rounded-xl border border-gray-200 bg-white shadow-lg dark:bg-gray-900 dark:border-gray-800 py-1 animate-scale-in origin-top',
             align === 'right' ? 'right-0' : 'left-0',
@@ -49,6 +59,7 @@ export default function Dropdown({ trigger, items, align = 'right', className }:
           {items.map((item) => (
             <button
               key={item.id}
+              role="menuitem"
               onClick={() => {
                 if (item.disabled) return;
                 item.onClick();
@@ -63,7 +74,7 @@ export default function Dropdown({ trigger, items, align = 'right', className }:
                 item.disabled && 'opacity-50 cursor-not-allowed',
               )}
             >
-              {item.icon && <span className="w-4 h-4 shrink-0">{item.icon}</span>}
+              {item.icon && <span className="w-4 h-4 shrink-0" aria-hidden="true">{item.icon}</span>}
               {item.label}
             </button>
           ))}

@@ -77,7 +77,15 @@ export default function Navbar() {
           : 'bg-transparent'
       )}
     >
-      <nav className="container-page flex items-center justify-between h-[72px]">
+      {/* Skip to content */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-cranberry focus:text-white focus:rounded-xl focus:text-sm focus:font-semibold"
+      >
+        Skip to content
+      </a>
+
+      <nav className="container-page flex items-center justify-between h-[72px]" aria-label="Main navigation">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 group">
           <div className="w-9 h-9 bg-cranberry rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
@@ -190,6 +198,9 @@ export default function Navbar() {
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-nav"
             className={cn(
               'lg:hidden p-2 rounded-lg transition-colors',
               scrolled
@@ -212,7 +223,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="lg:hidden bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 animate-slide-down">
+        <div id="mobile-nav" className="lg:hidden bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 animate-slide-down">
           <div className="container-page py-4 space-y-1">
             {navigation.map((item) => (
               <div key={item.label}>

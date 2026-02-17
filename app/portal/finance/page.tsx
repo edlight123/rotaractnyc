@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/lib/firebase/auth';
 import { apiGet } from '@/hooks/useFirestore';
 import Card from '@/components/ui/Card';
 import StatCard from '@/components/ui/StatCard';
@@ -10,25 +11,49 @@ import EmptyState from '@/components/ui/EmptyState';
 import type { FinanceSummary, Transaction } from '@/types';
 
 export default function FinancePage() {
+  const { member } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [forbidden, setForbidden] = useState(false);
   const [summary, setSummary] = useState<FinanceSummary>({ totalIncome: 0, totalExpenses: 0, balance: 0, monthlyBreakdown: [] });
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
+  const hasAccess = member?.role === 'treasurer' || member?.role === 'president';
+
   useEffect(() => {
+    if (!hasAccess) {
+      setForbidden(true);
+      setLoading(false);
+      return;
+    }
     (async () => {
       try {
         const data = await apiGet('/api/portal/finance');
         if (data.summary) setSummary({ totalIncome: 0, totalExpenses: 0, balance: 0, monthlyBreakdown: [], ...data.summary });
         if (data.transactions) setTransactions(data.transactions);
       } catch {
-        // Silently fail — show empty state
+        // API returns 403 if not treasurer/president
+        setForbidden(true);
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [hasAccess]);
 
   if (loading) return <div className="flex justify-center py-16"><Spinner /></div>;
+
+  if (forbidden) {
+    return (
+      <div className="max-w-lg mx-auto py-20 text-center">
+        <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-display font-bold text-gray-900 dark:text-white mb-2">Access Restricted</h2>
+        <p className="text-gray-500 dark:text-gray-400">The finance dashboard is only available to the Treasurer and President.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">

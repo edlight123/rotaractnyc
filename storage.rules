@@ -8,16 +8,22 @@ service firebase.storage {
       return request.auth != null;
     }
 
-    function role() {
-      return request.auth.token.role;
+    // Look up the member doc in Firestore to determine role + status.
+    // Storage rules support firestore.get() for cross-service lookups.
+    function memberData() {
+      return firestore.get(/databases/(default)/documents/members/$(request.auth.uid)).data;
+    }
+
+    function hasMemberDoc() {
+      return firestore.exists(/databases/(default)/documents/members/$(request.auth.uid));
     }
 
     function isMember() {
-      return isAuthenticated() && role() in ['member', 'board', 'treasurer', 'president'];
+      return isAuthenticated() && hasMemberDoc() && memberData().status == 'active';
     }
 
     function isBoard() {
-      return isAuthenticated() && role() in ['board', 'treasurer', 'president'];
+      return isMember() && memberData().role in ['board', 'treasurer', 'president'];
     }
 
     function isOwner(userId) {

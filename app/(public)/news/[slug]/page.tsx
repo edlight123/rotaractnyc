@@ -1,10 +1,35 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getArticleBySlug } from '@/lib/firebase/queries';
 import { formatDate } from '@/lib/utils/format';
+import { SITE } from '@/lib/constants';
 import Badge from '@/components/ui/Badge';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const article = await getArticleBySlug(slug);
+  if (!article) return {};
+  return {
+    title: `${article.title} | News | ${SITE.shortName}`,
+    description: article.excerpt?.slice(0, 160),
+    openGraph: {
+      title: article.title,
+      description: article.excerpt?.slice(0, 160),
+      url: `${SITE.url}/news/${slug}`,
+      type: 'article',
+      siteName: SITE.name,
+      ...(article.coverImage && { images: [{ url: article.coverImage }] }),
+      ...(article.publishedAt && {
+        publishedTime: article.publishedAt,
+        authors: [article.author.name],
+      }),
+    },
+    alternates: { canonical: `${SITE.url}/news/${slug}` },
+  };
+}
 
 const categoryColors: Record<string, 'cranberry' | 'azure' | 'green' | 'gold' | 'gray'> = {
   Service: 'azure',
@@ -19,8 +44,31 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
 
   if (!article) notFound();
 
+  const articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: article.title,
+    description: article.excerpt,
+    ...(article.coverImage && { image: article.coverImage }),
+    author: {
+      '@type': 'Person',
+      name: article.author.name,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: SITE.name,
+      url: SITE.url,
+    },
+    datePublished: article.publishedAt,
+    mainEntityOfPage: `${SITE.url}/news/${slug}`,
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       {/* Hero with optional cover image */}
       <section className="relative py-28 sm:py-36 bg-gradient-to-br from-cranberry-900 via-cranberry to-cranberry-800 text-white overflow-hidden">
         {article.coverImage && (

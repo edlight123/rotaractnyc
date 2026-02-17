@@ -1,10 +1,30 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getEventBySlug } from '@/lib/firebase/queries';
 import { formatDate, formatCurrency } from '@/lib/utils/format';
+import { SITE } from '@/lib/constants';
 import Badge from '@/components/ui/Badge';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const event = await getEventBySlug(slug);
+  if (!event) return {};
+  return {
+    title: `${event.title} | Events | ${SITE.shortName}`,
+    description: event.description?.slice(0, 160),
+    openGraph: {
+      title: event.title,
+      description: event.description?.slice(0, 160),
+      url: `${SITE.url}/events/${slug}`,
+      type: 'website',
+      siteName: SITE.name,
+    },
+    alternates: { canonical: `${SITE.url}/events/${slug}` },
+  };
+}
 
 export default async function EventDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -12,8 +32,40 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
 
   if (!event) notFound();
 
+  const eventJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Event',
+    name: event.title,
+    description: event.description,
+    startDate: event.date,
+    location: {
+      '@type': 'Place',
+      name: event.location.split(',')[0],
+      address: event.location,
+    },
+    organizer: {
+      '@type': 'Organization',
+      name: SITE.name,
+      url: SITE.url,
+    },
+    ...(event.pricing && {
+      offers: {
+        '@type': 'Offer',
+        price: (event.pricing.memberPrice / 100).toFixed(2),
+        priceCurrency: 'USD',
+        availability: 'https://schema.org/InStock',
+      },
+    }),
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    eventStatus: 'https://schema.org/EventScheduled',
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }}
+      />
       {/* Hero */}
       <section className="relative py-28 sm:py-36 bg-gradient-to-br from-cranberry-900 via-cranberry to-cranberry-800 text-white overflow-hidden">
         <div className="container-page relative z-10">

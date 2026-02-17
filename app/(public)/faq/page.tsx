@@ -13,8 +13,26 @@ export const metadata: Metadata = generateMeta({
 export default function FAQPage() {
   const categories = Array.from(new Set(defaultFAQ.map((f) => f.category)));
 
+  // FAQ JSON-LD structured data
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: defaultFAQ.map((f) => ({
+      '@type': 'Question',
+      name: f.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: f.answer,
+      },
+    })),
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <HeroSection title="Frequently Asked Questions" subtitle="Everything you need to know about Rotaract NYC." size="sm" />
 
       <section className="section-padding bg-white dark:bg-gray-950">

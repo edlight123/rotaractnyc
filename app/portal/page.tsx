@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/lib/firebase/auth';
-import { usePosts, usePortalEvents, apiPost } from '@/hooks/useFirestore';
+import { usePosts, usePortalEvents, apiPost, apiPatch } from '@/hooks/useFirestore';
 import { useToast } from '@/components/ui/Toast';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -31,6 +31,8 @@ export default function PortalDashboard() {
   const [activeTab, setActiveTab] = useState('all');
   const [postContent, setPostContent] = useState('');
   const [posting, setPosting] = useState(false);
+  const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
 
   const handlePost = async () => {
     if (!postContent.trim() || !user) return;
@@ -48,6 +50,27 @@ export default function PortalDashboard() {
       setPosting(false);
     }
   };
+
+  const handleLike = useCallback(async (postId: string) => {
+    if (!user) return;
+    try {
+      await apiPost(`/api/portal/posts/${postId}/like`, {});
+    } catch {
+      // Silently fail — optimistic UI would handle this
+    }
+  }, [user]);
+
+  const handleComment = useCallback(async (postId: string) => {
+    const text = commentInputs[postId]?.trim();
+    if (!text || !user) return;
+    try {
+      await apiPost(`/api/portal/posts/${postId}/comments`, { content: text });
+      setCommentInputs((prev) => ({ ...prev, [postId]: '' }));
+      toast('Comment added!');
+    } catch {
+      toast('Failed to add comment', 'error');
+    }
+  }, [commentInputs, user, toast]);
 
   const filteredPosts = ((posts || []) as CommunityPost[]).filter((p) => {
     if (activeTab === 'announcements') return p.type === 'announcement';
@@ -126,9 +149,34 @@ export default function PortalDashboard() {
                       </div>
                     )}
                     <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                      <span className="flex items-center gap-1 text-sm text-gray-500">❤️ {post.likeCount || 0}</span>
-                      <span className="flex items-center gap-1 text-sm text-gray-500">💬 {post.commentCount || 0}</span>
+                      <button
+                        onClick={() => handleLike(post.id)}
+                        className={`flex items-center gap-1 text-sm transition-colors ${
+                          post.likedBy?.includes(user?.uid || '') ? 'text-cranberry font-medium' : 'text-gray-500 hover:text-cranberry'
+                        }`}
+                      >
+                        ❤️ {post.likeCount || 0}
+                      </button>
+                      <button
+                        onClick={() => setExpandedComments((prev) => ({ ...prev, [post.id]: !prev[post.id] }))}
+                        className="flex items-center gap-1 text-sm text-gray-500 hover:text-azure transition-colors"
+                      >
+                        💬 {post.commentCount || 0}
+                      </button>
                     </div>
+                    {expandedComments[post.id] && (
+                      <div className="mt-3 flex gap-2">
+                        <input
+                          type="text"
+                          className="flex-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cranberry-500/20"
+                          placeholder="Write a comment..."
+                          value={commentInputs[post.id] || ''}
+                          onChange={(e) => setCommentInputs((prev) => ({ ...prev, [post.id]: e.target.value }))}
+                          onKeyDown={(e) => e.key === 'Enter' && handleComment(post.id)}
+                        />
+                        <Button size="sm" onClick={() => handleComment(post.id)}>Send</Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </Card>

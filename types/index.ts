@@ -219,6 +219,8 @@ export interface MemberMessage {
   toId: string;
   toName: string;
   subject: string;
+  body: string;
+  read: boolean;
   sentAt: string;
 }
 
