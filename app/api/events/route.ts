@@ -1,10 +1,23 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    // Single event by ID
+    if (id) {
+      const doc = await adminDb.collection('events').doc(id).get();
+      if (!doc.exists) {
+        return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+      }
+      return NextResponse.json({ id: doc.id, ...doc.data() });
+    }
+
+    // List public, published events
     const snapshot = await adminDb
       .collection('events')
       .where('isPublic', '==', true)

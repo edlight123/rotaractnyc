@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/lib/firebase/auth';
 import { usePortalEvents, apiPost } from '@/hooks/useFirestore';
 import { useToast } from '@/components/ui/Toast';
@@ -11,17 +12,21 @@ import Tabs from '@/components/ui/Tabs';
 import SearchInput from '@/components/ui/SearchInput';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
+import CreateEventModal from '@/components/portal/CreateEventModal';
 import { defaultEvents } from '@/lib/defaults/data';
 import { formatCurrency } from '@/lib/utils/format';
 import type { RotaractEvent, RSVPStatus } from '@/types';
 
 export default function PortalEventsPage() {
-  const { user } = useAuth();
+  const { user, member } = useAuth();
   const { toast } = useToast();
   const { data: firestoreEvents, loading } = usePortalEvents();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('upcoming');
   const [rsvpLoading, setRsvpLoading] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const canManageEvents = member && ['board', 'president', 'treasurer'].includes(member.role);
 
   const allEvents = ((firestoreEvents || []).length > 0 ? firestoreEvents : defaultEvents) as RotaractEvent[];
   const now = new Date();
@@ -69,9 +74,16 @@ export default function PortalEventsPage() {
   };
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Events</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">RSVP to upcoming events and track your attendance.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Events</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">RSVP to upcoming events and track your attendance.</p>
+        </div>
+        {canManageEvents && (
+          <Button onClick={() => setShowCreateModal(true)} className="shrink-0">
+            + Create Event
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
@@ -86,18 +98,27 @@ export default function PortalEventsPage() {
       ) : (
         <div className="space-y-4">
           {events.map((event) => (
-            <Card key={event.id} padding="none" className="overflow-hidden">
+            <Card key={event.id} padding="none" className="overflow-hidden hover:shadow-md transition-shadow">
               <div className="flex flex-col sm:flex-row">
-                <div className="sm:w-24 bg-cranberry-50 dark:bg-cranberry-900/20 flex sm:flex-col items-center justify-center p-4 gap-1">
+                <Link
+                  href={`/portal/events/${event.id}`}
+                  className="sm:w-24 bg-cranberry-50 dark:bg-cranberry-900/20 flex sm:flex-col items-center justify-center p-4 gap-1 hover:bg-cranberry-100 dark:hover:bg-cranberry-900/30 transition-colors"
+                >
                   <p className="text-xs font-bold text-cranberry uppercase">{new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}</p>
                   <p className="text-2xl font-display font-bold text-cranberry-800 dark:text-cranberry-300">{new Date(event.date).getDate()}</p>
-                </div>
+                </Link>
                 <div className="flex-1 p-5">
                   <div className="flex items-start justify-between gap-4">
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-display font-bold text-gray-900 dark:text-white">{event.title}</h3>
+                        <Link
+                          href={`/portal/events/${event.id}`}
+                          className="font-display font-bold text-gray-900 dark:text-white hover:text-cranberry dark:hover:text-cranberry-400 transition-colors"
+                        >
+                          {event.title}
+                        </Link>
                         <Badge variant={event.type === 'service' ? 'azure' : event.type === 'paid' ? 'gold' : 'green'}>{event.type}</Badge>
+                        {event.status === 'draft' && <Badge variant="gray">Draft</Badge>}
                       </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{event.description}</p>
                       <div className="flex flex-wrap gap-4 mt-3 text-xs text-gray-500">
@@ -117,6 +138,12 @@ export default function PortalEventsPage() {
                           )}
                         </div>
                       )}
+                      <Link
+                        href={`/portal/events/${event.id}`}
+                        className="inline-flex items-center gap-1 text-xs text-cranberry hover:text-cranberry-700 dark:text-cranberry-400 dark:hover:text-cranberry-300 font-medium mt-2 transition-colors"
+                      >
+                        View details →
+                      </Link>
                     </div>
                     {new Date(event.date) >= now && (
                       <div className="flex gap-2 shrink-0">
@@ -149,6 +176,16 @@ export default function PortalEventsPage() {
           ))}
         </div>
       )}
+
+      {/* Create/Edit Event Modal */}
+      <CreateEventModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSaved={() => {
+          // Portal events hook will auto-refresh via real-time listener
+          toast('Event saved! 🎉');
+        }}
+      />
     </div>
   );
 }
