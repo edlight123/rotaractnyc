@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { adminAuth, adminDb, serializeDoc } from '@/lib/firebase/admin';
 
 export const dynamic = 'force-dynamic';
 import { cookies } from 'next/headers';
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       .orderBy('displayName')
       .get();
 
-    const members = snapshot.docs.map((doc) => ({
+    const members = snapshot.docs.map((doc) => serializeDoc({
       uid: doc.id,
       ...doc.data(),
     }));

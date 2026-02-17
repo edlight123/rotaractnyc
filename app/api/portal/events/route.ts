@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { adminAuth, adminDb, serializeDoc } from '@/lib/firebase/admin';
 import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       if (!doc.exists) {
         return NextResponse.json({ error: 'Event not found' }, { status: 404 });
       }
-      return NextResponse.json({ id: doc.id, ...doc.data() });
+      return NextResponse.json(serializeDoc({ id: doc.id, ...doc.data() }));
     }
 
     // Return all events (no public/status filter — portal sees everything)
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       .limit(100)
       .get();
 
-    const events = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const events = snap.docs.map((d) => serializeDoc({ id: d.id, ...d.data() }));
     return NextResponse.json(events);
   } catch (err: any) {
     const status = err.status || 500;
@@ -190,7 +190,7 @@ export async function PATCH(request: NextRequest) {
     });
 
     const updated = await docRef.get();
-    return NextResponse.json({ id: updated.id, ...updated.data() });
+    return NextResponse.json(serializeDoc({ id: updated.id, ...updated.data() }));
   } catch (err: any) {
     console.error('Update event error:', err);
     const status = err.status || 500;

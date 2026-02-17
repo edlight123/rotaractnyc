@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase/admin';
+import { adminDb, serializeDoc } from '@/lib/firebase/admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +13,7 @@ export async function GET() {
         maintenanceMode: false,
       });
     }
-    return NextResponse.json(doc.data());
+    return NextResponse.json(serializeDoc(doc.data()!));
   } catch (error) {
     console.error('Error fetching settings:', error);
     return NextResponse.json({

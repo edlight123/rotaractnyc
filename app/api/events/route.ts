@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase/admin';
+import { adminDb, serializeDoc } from '@/lib/firebase/admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       if (!doc.exists) {
         return NextResponse.json({ error: 'Event not found' }, { status: 404 });
       }
-      return NextResponse.json({ id: doc.id, ...doc.data() });
+      return NextResponse.json(serializeDoc({ id: doc.id, ...doc.data() }));
     }
 
     // List public, published events
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       .limit(20)
       .get();
 
-    const events = snapshot.docs.map((doc) => ({
+    const events = snapshot.docs.map((doc) => serializeDoc({
       id: doc.id,
       ...doc.data(),
     }));

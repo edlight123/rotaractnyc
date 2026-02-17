@@ -61,3 +61,34 @@ function lazyProxy<T extends object>(getter: () => T): T {
 export const adminAuth = lazyProxy(getAdminAuth);
 export const adminDb = lazyProxy(getAdminDb);
 export const adminStorage = lazyProxy(getAdminStorage);
+
+// ─── Serialization helper ───
+
+/**
+ * Recursively convert Firestore admin Timestamp fields to ISO strings
+ * so they can safely be returned via NextResponse.json().
+ */
+export function serializeDoc(data: Record<string, any>): Record<string, any> {
+  if (!data || typeof data !== 'object') return data;
+  const out: Record<string, any> = {};
+  for (const [key, val] of Object.entries(data)) {
+    if (val == null) {
+      out[key] = val;
+    } else if (typeof val.toDate === 'function') {
+      // Firestore Timestamp or FieldValue sentinel with toDate()
+      out[key] = val.toDate().toISOString();
+    } else if (val._seconds !== undefined && val._nanoseconds !== undefined) {
+      // Already-serialized admin Timestamp object {_seconds, _nanoseconds}
+      out[key] = new Date(val._seconds * 1000 + val._nanoseconds / 1e6).toISOString();
+    } else if (Array.isArray(val)) {
+      out[key] = val.map((v) =>
+        v && typeof v === 'object' && !Array.isArray(v) ? serializeDoc(v) : v,
+      );
+    } else if (typeof val === 'object' && !(val instanceof Date)) {
+      out[key] = serializeDoc(val);
+    } else {
+      out[key] = val;
+    }
+  }
+  return out;
+}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { adminAuth, adminDb, serializeDoc } from '@/lib/firebase/admin';
 
 export const dynamic = 'force-dynamic';
 import { cookies } from 'next/headers';
@@ -29,7 +29,7 @@ export async function GET() {
       .limit(50)
       .get();
 
-    const transactions = txSnapshot.docs.map((doc) => ({
+    const transactions = txSnapshot.docs.map((doc) => serializeDoc({
       id: doc.id,
       ...doc.data(),
     }));

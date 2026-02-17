@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase/admin';
+import { adminDb, serializeDoc } from '@/lib/firebase/admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +12,7 @@ export async function GET() {
       .limit(20)
       .get();
 
-    const articles = snapshot.docs.map((doc) => ({
+    const articles = snapshot.docs.map((doc) => serializeDoc({
       id: doc.id,
       ...doc.data(),
     }));

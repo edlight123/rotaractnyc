@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { adminAuth, adminDb, serializeDoc } from '@/lib/firebase/admin';
 import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
@@ -37,7 +37,7 @@ export async function GET() {
       return NextResponse.json({ cycle: null, status: null });
     }
 
-    const cycle = { id: cycleSnap.docs[0].id, ...cycleSnap.docs[0].data() };
+    const cycle = serializeDoc({ id: cycleSnap.docs[0].id, ...cycleSnap.docs[0].data() });
 
     // Get member's dues for this cycle
     const duesSnap = await adminDb
@@ -47,7 +47,7 @@ export async function GET() {
       .limit(1)
       .get();
 
-    const dues = duesSnap.empty ? null : { id: duesSnap.docs[0].id, ...duesSnap.docs[0].data() };
+    const dues = duesSnap.empty ? null : serializeDoc({ id: duesSnap.docs[0].id, ...duesSnap.docs[0].data() });
 
     return NextResponse.json({ cycle, dues });
   } catch (error) {

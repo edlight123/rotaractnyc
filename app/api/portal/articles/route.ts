@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { adminAuth, adminDb, serializeDoc } from '@/lib/firebase/admin';
 import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
@@ -52,7 +52,7 @@ export async function GET() {
       .limit(50)
       .get();
 
-    const articles = snapshot.docs.map((doc) => ({
+    const articles = snapshot.docs.map((doc) => serializeDoc({
       id: doc.id,
       ...doc.data(),
     }));
@@ -195,7 +195,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      article: { id, ...existing, ...updates },
+      article: serializeDoc({ id, ...existing, ...updates }),
     });
   } catch (err) {
     console.error('[PUT /api/portal/articles]', err);

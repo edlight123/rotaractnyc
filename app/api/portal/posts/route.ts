@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { adminAuth, adminDb, serializeDoc } from '@/lib/firebase/admin';
 
 export const dynamic = 'force-dynamic';
 import { cookies } from 'next/headers';
@@ -21,7 +21,7 @@ export async function GET() {
       .limit(30)
       .get();
 
-    const posts = snapshot.docs.map((doc) => ({
+    const posts = snapshot.docs.map((doc) => serializeDoc({
       id: doc.id,
       ...doc.data(),
     }));
@@ -65,7 +65,9 @@ export async function POST(request: NextRequest) {
 
     const docRef = await adminDb.collection('posts').add(post);
 
-    return NextResponse.json({ id: docRef.id, ...post }, { status: 201 });
+    // Remove FieldValue sentinels that can't be serialised
+    const { createdAt, updatedAt, ...safePost } = post;
+    return NextResponse.json({ id: docRef.id, ...safePost, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, { status: 201 });
   } catch (error) {
     console.error('Error creating post:', error);
     return NextResponse.json({ error: 'Failed to create post' }, { status: 500 });

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { adminAuth, adminDb, serializeDoc } from '@/lib/firebase/admin';
 import { cookies } from 'next/headers';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -21,7 +21,7 @@ export async function GET() {
       .limit(100)
       .get();
 
-    const documents = snapshot.docs.map((doc) => ({
+    const documents = snapshot.docs.map((doc) => serializeDoc({
       id: doc.id,
       ...doc.data(),
     }));
@@ -70,7 +70,9 @@ export async function POST(request: NextRequest) {
 
     const docRef = await adminDb.collection('documents').add(document);
 
-    return NextResponse.json({ id: docRef.id, ...document }, { status: 201 });
+    // Remove FieldValue sentinel; return a plain ISO string
+    const { createdAt, ...safeDoc } = document;
+    return NextResponse.json({ id: docRef.id, ...safeDoc, createdAt: new Date().toISOString() }, { status: 201 });
   } catch (error) {
     console.error('Error creating document:', error);
     return NextResponse.json({ error: 'Failed to create document' }, { status: 500 });

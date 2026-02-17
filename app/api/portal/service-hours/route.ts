@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { adminAuth, adminDb, serializeDoc } from '@/lib/firebase/admin';
 
 export const dynamic = 'force-dynamic';
 import { cookies } from 'next/headers';
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     const snapshot = await query.orderBy('createdAt', 'desc').limit(100).get();
 
-    const hours = snapshot.docs.map((doc) => ({
+    const hours = snapshot.docs.map((doc) => serializeDoc({
       id: doc.id,
       ...doc.data(),
     }));
@@ -77,7 +77,9 @@ export async function POST(request: NextRequest) {
 
     const docRef = await adminDb.collection('serviceHours').add(entry);
 
-    return NextResponse.json({ id: docRef.id, ...entry }, { status: 201 });
+    // Remove FieldValue sentinel; return a plain ISO string
+    const { createdAt, ...safeEntry } = entry;
+    return NextResponse.json({ id: docRef.id, ...safeEntry, createdAt: new Date().toISOString() }, { status: 201 });
   } catch (error: any) {
     if (error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { adminAuth, adminDb, serializeDoc } from '@/lib/firebase/admin';
 
 export const dynamic = 'force-dynamic';
 import { cookies } from 'next/headers';
@@ -29,16 +29,7 @@ export async function GET(request: NextRequest) {
       .limit(50)
       .get();
 
-    const messages = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      // Serialise any Firestore Timestamps to ISO strings
-      for (const key of Object.keys(data)) {
-        if (data[key] && typeof data[key].toDate === 'function') {
-          data[key] = data[key].toDate().toISOString();
-        }
-      }
-      return { id: doc.id, ...data };
-    });
+    const messages = snapshot.docs.map((doc) => serializeDoc({ id: doc.id, ...doc.data() }));
 
     return NextResponse.json(messages);
   } catch (error) {
