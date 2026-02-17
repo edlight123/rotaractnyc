@@ -40,7 +40,7 @@ export default async function LeadershipPage() {
                 ) : (
                   <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-cranberry-100 to-cranberry-200 dark:from-cranberry-900/30 dark:to-cranberry-800/30 flex items-center justify-center mb-4">
                     <span className="text-2xl font-display font-bold text-cranberry">
-                      {member.name.split(' ').map((w) => w[0]).join('')}
+                      {(member.name || '').split(' ').map((w) => w?.[0] || '').join('')}
                     </span>
                   </div>
                 )}

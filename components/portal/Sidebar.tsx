@@ -77,7 +77,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       {member && (
         <div className="px-3 py-4 border-t border-gray-200 dark:border-gray-800">
           <Link href="/portal/profile" onClick={onClose} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-            <Avatar src={member.photoURL} alt={member.displayName} size="sm" />
+            <Avatar src={member.photoURL} alt={member.displayName || member.email || ''} size="sm" />
             <div className="min-w-0">
               <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{member.displayName}</p>
               <p className="text-xs text-gray-500 truncate">{member.email}</p>

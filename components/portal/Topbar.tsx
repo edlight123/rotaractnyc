@@ -45,7 +45,7 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
             <Dropdown
               trigger={
                 <div className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer">
-                  <Avatar src={member.photoURL} alt={member.displayName} size="sm" />
+                  <Avatar src={member.photoURL} alt={member.displayName || member.email || ''} size="sm" />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:block">
                     {member.firstName || member.displayName?.split(' ')[0]}
                   </span>

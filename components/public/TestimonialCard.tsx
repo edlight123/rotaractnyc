@@ -30,9 +30,10 @@ export default function TestimonialCard({ quote, name, title, photoURL }: Testim
             />
           ) : (
             <div className="w-10 h-10 rounded-full bg-cranberry-100 dark:bg-cranberry-900/40 flex items-center justify-center text-sm font-semibold text-cranberry-700 dark:text-cranberry-300">
-              {name
+              {(name || '')
                 .split(' ')
                 .map((w) => w[0])
+                .filter(Boolean)
                 .join('')
                 .toUpperCase()
                 .slice(0, 2)}
