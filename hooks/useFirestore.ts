@@ -179,7 +179,7 @@ export function useDocuments() {
 }
 
 export function useDocumentFolders() {
-  return useCollection('documentFolders', [orderBy('createdAt', 'desc')]);
+  return useCollection('documentFolders', [orderBy('order', 'asc')]);
 }
 
 export function useRsvps(eventId: string | null) {

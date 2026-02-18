@@ -10,11 +10,15 @@ import type { DuesPaymentStatus } from '@/types';
 interface DuesBannerProps {
   status: DuesPaymentStatus;
   cycleName?: string;
+  memberType?: 'professional' | 'student';
   className?: string;
 }
 
-export default function DuesBanner({ status, cycleName = '2025-2026', className }: DuesBannerProps) {
+export default function DuesBanner({ status, cycleName = '2025-2026', memberType, className }: DuesBannerProps) {
   if (status === 'PAID' || status === 'PAID_OFFLINE' || status === 'WAIVED') return null;
+
+  const resolvedType = memberType || 'professional';
+  const amount = resolvedType === 'student' ? SITE.dues.student : SITE.dues.professional;
 
   return (
     <div className={`bg-gold-50 dark:bg-gold-900/20 border border-gold-200 dark:border-gold-800 rounded-xl p-4 flex items-center justify-between gap-4 ${className || ''}`}>
@@ -27,7 +31,7 @@ export default function DuesBanner({ status, cycleName = '2025-2026', className 
             Dues Unpaid — {cycleName}
           </p>
           <p className="text-xs text-gray-600 dark:text-gray-400">
-            Please pay your annual dues ({formatCurrency(SITE.dues.professional)} professional / {formatCurrency(SITE.dues.student)} student) to maintain active status.
+            Please pay your annual dues ({formatCurrency(amount)} — {resolvedType}) to maintain active status.
           </p>
         </div>
       </div>

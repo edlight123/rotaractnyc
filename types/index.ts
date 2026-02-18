@@ -234,7 +234,7 @@ export interface PortalDocument {
   title: string;
   description?: string;
   category: DocumentCategory;
-  folderId?: string;           // custom folder id (if placed inside one)
+  folderId?: string;
   fileURL?: string;
   linkURL?: string;
   storagePath?: string;
@@ -245,12 +245,14 @@ export interface PortalDocument {
   updatedAt?: string;
 }
 
-// ----- Document Folders -----
+// ----- Document Folder -----
 export interface DocumentFolder {
   id: string;
   name: string;
   color: 'cranberry' | 'azure' | 'gold' | 'green' | 'gray' | 'purple' | 'teal';
+  icon?: string;
   pinned?: boolean;
+  order?: number;
   createdBy: string;
   createdByName: string;
   createdAt: string;

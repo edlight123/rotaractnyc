@@ -304,7 +304,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
 
         {/* Page content */}
         <main className="p-4 lg:p-8">
-          {duesStatus === 'UNPAID' && <div className="mb-6"><DuesBanner status={duesStatus} /></div>}
+          {duesStatus === 'UNPAID' && <div className="mb-6"><DuesBanner status={duesStatus} memberType={member?.memberType} /></div>}
           {children}
         </main>
       </div>

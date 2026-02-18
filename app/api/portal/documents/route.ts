@@ -57,17 +57,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Title and category are required' }, { status: 400 });
     }
 
-    const document: Record<string, any> = {
+    const document = {
       title: body.title,
       description: body.description || '',
       category: body.category,
+      folderId: body.folderId || null,
       fileURL: body.fileURL || '',
       linkURL: body.linkURL || '',
       uploadedById: uid,
       uploadedByName: memberData?.displayName || '',
       createdAt: FieldValue.serverTimestamp(),
     };
-    if (body.folderId) document.folderId = body.folderId;
 
     const docRef = await adminDb.collection('documents').add(document);
 
@@ -109,8 +109,7 @@ export async function PATCH(request: NextRequest) {
     if (typeof updates.title === 'string') allowed.title = updates.title;
     if (typeof updates.description === 'string') allowed.description = updates.description;
     if (typeof updates.category === 'string') allowed.category = updates.category;
-    if (typeof updates.folderId === 'string') allowed.folderId = updates.folderId;
-    if (updates.folderId === null) allowed.folderId = FieldValue.delete();
+    if (updates.folderId !== undefined) allowed.folderId = updates.folderId || null;
 
     if (Object.keys(allowed).length === 0) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
