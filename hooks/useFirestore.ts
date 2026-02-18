@@ -178,6 +178,10 @@ export function useDocuments() {
   return useCollection('documents', [orderBy('createdAt', 'desc')]);
 }
 
+export function useDocumentFolders() {
+  return useCollection('documentFolders', [orderBy('createdAt', 'desc')]);
+}
+
 export function useRsvps(eventId: string | null) {
   return useCollection(
     'rsvps',
