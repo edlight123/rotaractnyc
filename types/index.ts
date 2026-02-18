@@ -183,10 +183,15 @@ export interface MemberDues {
   status: DuesPaymentStatus;
   paidAt?: string;
   stripePaymentId?: string;
+  paymentMethod?: PaymentMethod;
+  approvedBy?: string;
+  approvedAt?: string;
   createdAt: string;
 }
 
 // ----- Finance -----
+export type PaymentMethod = 'stripe' | 'zelle' | 'venmo' | 'cash' | 'check';
+
 export interface Transaction {
   id: string;
   type: 'income' | 'expense';
@@ -196,6 +201,11 @@ export interface Transaction {
   date: string;
   createdBy: string;
   createdAt: string;
+  receiptUrl?: string;
+  paymentMethod?: PaymentMethod;
+  approvedBy?: string;
+  approvedAt?: string;
+  relatedMemberId?: string;
 }
 
 export interface FinanceSummary {
@@ -294,6 +304,13 @@ export interface SiteSettings {
     linkedin?: string;
     facebook?: string;
   };
+}
+
+// ----- Payment Settings -----
+export interface PaymentSettings {
+  zellePhone: string;
+  venmoHandle: string;
+  instructions: string;
 }
 
 // ----- Onboarding -----

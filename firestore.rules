@@ -246,8 +246,8 @@ service cloud.firestore {
       // Anyone can read site settings (used on public site)
       allow read: if true;
 
-      // Only president can update settings
-      allow write: if isPresident();
+      // Treasurer+ can update settings (payment methods, site config)
+      allow write: if isTreasurer();
     }
 
     // ───────────────────────────────────────

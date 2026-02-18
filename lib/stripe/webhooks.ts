@@ -31,6 +31,8 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
       date: new Date().toISOString(),
       createdBy: 'stripe',
       createdAt: new Date().toISOString(),
+      paymentMethod: 'stripe',
+      relatedMemberId: memberId,
     });
   }
 
@@ -50,6 +52,8 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
       date: new Date().toISOString(),
       createdBy: 'stripe',
       createdAt: new Date().toISOString(),
+      paymentMethod: 'stripe',
+      relatedMemberId: memberId,
     });
   }
 }
