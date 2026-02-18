@@ -14,21 +14,53 @@ import Input from '@/components/ui/Input';
 import SearchInput from '@/components/ui/SearchInput';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
-import Tabs from '@/components/ui/Tabs';
 import type { PortalDocument, DocumentCategory } from '@/types';
 import { DOCUMENT_CATEGORIES } from '@/types';
+import {
+  ClipboardList,
+  ScrollText,
+  Scale,
+  BookOpen,
+  BarChart3,
+  DollarSign,
+  FileText,
+  FolderOpen,
+  Folder,
+  File,
+  Pin,
+  PinOff,
+  Trash2,
+  Download,
+  ExternalLink,
+  ChevronRight,
+  ChevronDown,
+  ArrowLeft,
+  Upload,
+  Link,
+  Plus,
+  Search,
+  type LucideIcon,
+} from 'lucide-react';
 
 // ── Visual config ────────────────────────────────────────────────
-const categoryMeta: Record<DocumentCategory, { color: 'cranberry' | 'azure' | 'gold' | 'green' | 'gray'; icon: string; description: string }> = {
-  Minutes:        { color: 'azure',     icon: '📋', description: 'Board & general meeting minutes' },
-  Policies:       { color: 'cranberry', icon: '📜', description: 'Club policies and procedures' },
-  Bylaws:         { color: 'cranberry', icon: '⚖️', description: 'Club bylaws and amendments' },
-  Handbook:       { color: 'gold',      icon: '📖', description: 'Member handbooks and guides' },
-  Reports:        { color: 'green',     icon: '📊', description: 'Monthly / annual reports' },
-  Financial:      { color: 'gold',      icon: '💰', description: 'Budgets, treasurer reports, receipts' },
-  Templates:      { color: 'gray',      icon: '📝', description: 'Reusable form & letter templates' },
-  'Google Drive': { color: 'azure',     icon: '🔗', description: 'Shared Google Drive folders' },
-  Other:          { color: 'gray',      icon: '📄', description: 'Miscellaneous documents' },
+const categoryMeta: Record<DocumentCategory, { color: 'cranberry' | 'azure' | 'gold' | 'green' | 'gray'; Icon: LucideIcon; description: string }> = {
+  Minutes:        { color: 'azure',     Icon: ClipboardList, description: 'Board & general meeting minutes' },
+  Policies:       { color: 'cranberry', Icon: ScrollText,    description: 'Club policies and procedures' },
+  Bylaws:         { color: 'cranberry', Icon: Scale,         description: 'Club bylaws and amendments' },
+  Handbook:       { color: 'gold',      Icon: BookOpen,      description: 'Member handbooks and guides' },
+  Reports:        { color: 'green',     Icon: BarChart3,     description: 'Monthly / annual reports' },
+  Financial:      { color: 'gold',      Icon: DollarSign,    description: 'Budgets, treasurer reports, receipts' },
+  Templates:      { color: 'gray',      Icon: FileText,      description: 'Reusable form & letter templates' },
+  'Google Drive': { color: 'azure',     Icon: FolderOpen,    description: 'Shared Google Drive folders' },
+  Other:          { color: 'gray',      Icon: File,          description: 'Miscellaneous documents' },
+};
+
+const folderColorClasses: Record<string, { bg: string; text: string; border: string }> = {
+  cranberry: { bg: 'bg-cranberry-50 dark:bg-cranberry-900/20', text: 'text-cranberry-600 dark:text-cranberry-400', border: 'border-cranberry-200 dark:border-cranberry-800' },
+  azure:     { bg: 'bg-azure-50 dark:bg-azure-900/20',       text: 'text-azure-600 dark:text-azure-400',       border: 'border-azure-200 dark:border-azure-800' },
+  gold:      { bg: 'bg-amber-50 dark:bg-amber-900/20',       text: 'text-amber-600 dark:text-amber-400',       border: 'border-amber-200 dark:border-amber-800' },
+  green:     { bg: 'bg-emerald-50 dark:bg-emerald-900/20',   text: 'text-emerald-600 dark:text-emerald-400',   border: 'border-emerald-200 dark:border-emerald-800' },
+  gray:      { bg: 'bg-gray-50 dark:bg-gray-800/50',         text: 'text-gray-500 dark:text-gray-400',         border: 'border-gray-200 dark:border-gray-700' },
 };
 
 // ── Helpers ──────────────────────────────────────────────────────
@@ -59,7 +91,7 @@ export default function DocumentsPage() {
   const docs = rawDocs as PortalDocument[];
 
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<string>('all');
+  const [openFolder, setOpenFolder] = useState<DocumentCategory | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -77,7 +109,7 @@ export default function DocumentsPage() {
   // ── Filtering ──────────────────────────────────────────────────
   const filtered = useMemo(() => {
     let list = docs;
-    if (activeTab !== 'all') list = list.filter((d) => d.category === activeTab);
+    if (openFolder) list = list.filter((d) => d.category === openFolder);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -89,33 +121,24 @@ export default function DocumentsPage() {
       );
     }
     return list;
-  }, [docs, activeTab, search]);
+  }, [docs, openFolder, search]);
 
-  const pinned = useMemo(() => filtered.filter((d) => d.pinned), [filtered]);
-  const unpinned = useMemo(() => filtered.filter((d) => !d.pinned), [filtered]);
+  const pinned = useMemo(() => docs.filter((d) => d.pinned), [docs]);
 
-  // Group unpinned by category (for the "All" tab)
-  const grouped = useMemo(() => {
-    const map = new Map<string, PortalDocument[]>();
-    unpinned.forEach((d) => {
-      const cat = d.category || 'Other';
-      if (!map.has(cat)) map.set(cat, []);
-      map.get(cat)!.push(d);
+  // Group docs by category with counts
+  const folderCounts = useMemo(() => {
+    const counts = new Map<DocumentCategory, number>();
+    docs.forEach((d) => {
+      const cat = (d.category || 'Other') as DocumentCategory;
+      counts.set(cat, (counts.get(cat) || 0) + 1);
     });
-    return map;
-  }, [unpinned]);
-
-  // Build tab list with counts
-  const tabs = useMemo(() => {
-    const counts = new Map<string, number>();
-    docs.forEach((d) => counts.set(d.category, (counts.get(d.category) || 0) + 1));
-    const items = [{ id: 'all', label: 'All', count: docs.length }];
-    DOCUMENT_CATEGORIES.forEach((cat) => {
-      const c = counts.get(cat);
-      if (c) items.push({ id: cat, label: cat, count: c });
-    });
-    return items;
+    return counts;
   }, [docs]);
+
+  // Categories that have docs (for folder view)
+  const activeFolders = useMemo(() => {
+    return DOCUMENT_CATEGORIES.filter((cat) => (folderCounts.get(cat) || 0) > 0);
+  }, [folderCounts]);
 
   // ── Upload handler ─────────────────────────────────────────────
   const handleUpload = async () => {
@@ -188,6 +211,8 @@ export default function DocumentsPage() {
   // ── Render a single document row ──────────────────────────────
   const renderDocRow = (doc: PortalDocument) => {
     const meta = categoryMeta[doc.category as DocumentCategory] || categoryMeta.Other;
+    const DocIcon = meta.Icon;
+    const colors = folderColorClasses[meta.color] || folderColorClasses.gray;
     const url = doc.fileURL || doc.linkURL;
     const isGDrive = doc.category === 'Google Drive' && doc.linkURL;
     const embedUrl = isGDrive ? toGDriveEmbedUrl(doc.linkURL!) : null;
@@ -197,19 +222,19 @@ export default function DocumentsPage() {
         <Card interactive padding="md">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-4 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0 text-lg">
-                {meta.icon}
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${colors.bg}`}>
+                <DocIcon className={`w-5 h-5 ${colors.text}`} />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  {doc.pinned && <span className="text-xs" title="Pinned">📌</span>}
+                  {doc.pinned && <Pin className="w-3.5 h-3.5 text-amber-500" />}
                   <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">{doc.title}</h3>
                 </div>
                 {doc.description && (
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">{doc.description}</p>
                 )}
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <Badge variant={meta.color}>{doc.category}</Badge>
+                  {!openFolder && <Badge variant={meta.color}>{doc.category}</Badge>}
                   <span className="text-xs text-gray-400">{doc.uploadedByName}</span>
                   {doc.createdAt && <span className="text-xs text-gray-400">· {formatDate(doc.createdAt)}</span>}
                 </div>
@@ -224,21 +249,21 @@ export default function DocumentsPage() {
                   className="p-2 rounded-lg text-gray-400 hover:text-azure-600 hover:bg-azure-50 dark:hover:bg-azure-900/10 transition-colors"
                   title="Preview in page"
                 >
-                  {expandedDrive === doc.id ? '🔽' : '▶️'}
+                  {expandedDrive === doc.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </button>
               )}
               {url && (
                 <a href={url} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg text-gray-400 hover:text-cranberry hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" title={doc.fileURL ? 'Download' : 'Open link'}>
-                  {doc.fileURL ? '⬇️' : '🔗'}
+                  {doc.fileURL ? <Download className="w-4 h-4" /> : <ExternalLink className="w-4 h-4" />}
                 </a>
               )}
               {isBoardOrAbove && (
                 <>
                   <button onClick={() => handleTogglePin(doc)} className="p-2 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors" title={doc.pinned ? 'Unpin' : 'Pin to top'}>
-                    {doc.pinned ? '📌' : '📍'}
+                    {doc.pinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
                   </button>
                   <button onClick={() => handleDelete(doc.id)} className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors" title="Delete">
-                    🗑️
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </>
               )}
@@ -256,19 +281,28 @@ export default function DocumentsPage() {
     );
   };
 
-  // ── Render a category group ────────────────────────────────────
-  const renderCategoryGroup = (category: string, items: PortalDocument[]) => {
-    const meta = categoryMeta[category as DocumentCategory] || categoryMeta.Other;
+  // ── Render a folder card ───────────────────────────────────────
+  const renderFolderCard = (category: DocumentCategory) => {
+    const meta = categoryMeta[category];
+    const FolderIcon = meta.Icon;
+    const colors = folderColorClasses[meta.color] || folderColorClasses.gray;
+    const count = folderCounts.get(category) || 0;
+
     return (
-      <div key={category} className="space-y-2">
-        <div className="flex items-center gap-2 px-1">
-          <span className="text-lg">{meta.icon}</span>
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">{category}</h2>
-          <span className="text-xs text-gray-400">({items.length})</span>
-          <span className="text-xs text-gray-400 hidden sm:inline ml-1">— {meta.description}</span>
+      <button
+        key={category}
+        onClick={() => { setOpenFolder(category); setSearch(''); }}
+        className={`group relative flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all hover:shadow-md hover:scale-[1.02] ${colors.border} ${colors.bg} cursor-pointer text-left`}
+      >
+        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${colors.bg}`}>
+          <Folder className={`w-8 h-8 ${colors.text}`} />
         </div>
-        <div className="space-y-2">{items.map(renderDocRow)}</div>
-      </div>
+        <div className="text-center">
+          <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{category}</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{count} {count === 1 ? 'document' : 'documents'}</p>
+        </div>
+        <ChevronRight className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:${colors.text} transition-colors`} />
+      </button>
     );
   };
 
@@ -277,13 +311,36 @@ export default function DocumentsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Documents</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Meeting minutes, bylaws, handbooks, reports &amp; shared Google Drive folders.
-          </p>
+          {openFolder ? (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => { setOpenFolder(null); setSearch(''); }}
+                className="p-2 -ml-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+                title="Back to folders"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <div className="flex items-center gap-2">
+                  <FolderOpen className={`w-5 h-5 ${(folderColorClasses[categoryMeta[openFolder].color] || folderColorClasses.gray).text}`} />
+                  <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">{openFolder}</h1>
+                </div>
+                <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">{categoryMeta[openFolder].description}</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Documents</h1>
+              <p className="text-gray-500 dark:text-gray-400 mt-1">
+                Meeting minutes, bylaws, handbooks, reports &amp; shared Google Drive folders.
+              </p>
+            </>
+          )}
         </div>
         {isBoardOrAbove && (
-          <Button onClick={() => setShowUpload(!showUpload)}>{showUpload ? 'Cancel' : '+ Upload'}</Button>
+          <Button onClick={() => setShowUpload(!showUpload)}>
+            {showUpload ? 'Cancel' : <><Plus className="w-4 h-4 mr-1.5 inline" />Upload</>}
+          </Button>
         )}
       </div>
 
@@ -316,7 +373,7 @@ export default function DocumentsPage() {
               >
                 {DOCUMENT_CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>
-                    {categoryMeta[cat].icon} {cat} — {categoryMeta[cat].description}
+                    {cat} — {categoryMeta[cat].description}
                   </option>
                 ))}
               </select>
@@ -363,47 +420,59 @@ export default function DocumentsPage() {
         </Card>
       )}
 
-      {/* Search + Category tabs */}
-      <div className="space-y-3">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search documents..." className="max-w-sm" />
-        <div className="overflow-x-auto -mx-1 px-1">
-          <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
-        </div>
-      </div>
-
       {/* Content */}
       {loading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          icon="📄"
-          title="No documents found"
-          description={
-            search
-              ? 'Try a different search term.'
-              : activeTab !== 'all'
-              ? `No ${activeTab} documents have been uploaded yet.`
-              : 'No documents have been uploaded yet.'
-          }
-        />
-      ) : (
+      ) : !openFolder ? (
+        /* ── Folder grid view ─────────────────────────── */
         <div className="space-y-8">
-          {/* Pinned docs */}
+          {/* Pinned docs (always visible at root) */}
           {pinned.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex items-center gap-2 px-1">
-                <span className="text-lg">📌</span>
+                <Pin className="w-4 h-4 text-amber-500" />
                 <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Pinned</h2>
               </div>
               <div className="space-y-2">{pinned.map(renderDocRow)}</div>
             </div>
           )}
 
-          {/* Categorised docs — grouped on "All" tab, flat on specific tab */}
-          {activeTab === 'all' ? (
-            Array.from(grouped.entries()).map(([cat, items]) => renderCategoryGroup(cat, items))
+          {/* Folders */}
+          {activeFolders.length > 0 ? (
+            <div>
+              <div className="flex items-center gap-2 px-1 mb-4">
+                <Folder className="w-4 h-4 text-gray-400" />
+                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Folders</h2>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {activeFolders.map(renderFolderCard)}
+              </div>
+            </div>
           ) : (
-            <div className="space-y-2">{unpinned.map(renderDocRow)}</div>
+            <EmptyState
+              icon={<File className="w-12 h-12" />}
+              title="No documents yet"
+              description="No documents have been uploaded yet."
+            />
+          )}
+        </div>
+      ) : (
+        /* ── Open folder — list docs ─────────────────── */
+        <div className="space-y-4">
+          <SearchInput value={search} onChange={setSearch} placeholder={`Search in ${openFolder}...`} className="max-w-sm" />
+
+          {filtered.length === 0 ? (
+            <EmptyState
+              icon={<FolderOpen className="w-12 h-12" />}
+              title="No documents found"
+              description={
+                search
+                  ? 'Try a different search term.'
+                  : `No ${openFolder} documents have been uploaded yet.`
+              }
+            />
+          ) : (
+            <div className="space-y-2">{filtered.map(renderDocRow)}</div>
           )}
         </div>
       )}
