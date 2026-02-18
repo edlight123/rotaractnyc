@@ -7,12 +7,11 @@ import { useToast } from '@/components/ui/Toast';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
-import Input from '@/components/ui/Input';
-import Textarea from '@/components/ui/Textarea';
 import Tabs from '@/components/ui/Tabs';
 import StatCard from '@/components/ui/StatCard';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
+import ServiceHourLogger from '@/components/portal/ServiceHourLogger';
 import type { ServiceHour, RotaractEvent } from '@/types';
 
 export default function ServiceHoursPage() {
@@ -21,8 +20,6 @@ export default function ServiceHoursPage() {
   const { data: hours, loading } = useServiceHours(member?.id || null);
   const { data: events } = usePortalEvents();
   const [showForm, setShowForm] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ eventId: '', hours: '', notes: '' });
   const [activeTab, setActiveTab] = useState('my-hours');
   const [pendingEntries, setPendingEntries] = useState<any[]>([]);
   const [pendingLoading, setPendingLoading] = useState(false);
@@ -44,8 +41,6 @@ export default function ServiceHoursPage() {
       return !isNaN(d.getTime()) && d >= yearStart;
     })
     .reduce((sum, h) => sum + (h.hours || 0), 0);
-
-  const serviceEvents = ((events || []) as RotaractEvent[]).filter((e) => e.type === 'service' || e.type === 'free');
 
   const statusColors: Record<string, 'green' | 'gold' | 'red'> = {
     approved: 'green',
@@ -77,24 +72,19 @@ export default function ServiceHoursPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.hours || !member) return;
-    setSubmitting(true);
+  const handleSubmit = async (data: { eventId: string; eventTitle: string; hours: number; notes: string }) => {
+    if (!member) return;
     try {
       await apiPost('/api/portal/service-hours', {
-        eventId: form.eventId || null,
-        eventTitle: serviceEvents.find((ev) => ev.id === form.eventId)?.title || 'Other',
-        hours: parseFloat(form.hours),
-        notes: form.notes,
+        eventId: data.eventId || null,
+        eventTitle: data.eventTitle,
+        hours: data.hours,
+        notes: data.notes,
       });
       toast('Service hours submitted for approval!');
-      setForm({ eventId: '', hours: '', notes: '' });
       setShowForm(false);
     } catch (err: any) {
       toast(err.message || 'Failed to submit hours', 'error');
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -122,29 +112,10 @@ export default function ServiceHoursPage() {
 
       {/* Log Form */}
       {showForm && (
-        <Card padding="md">
-          <h3 className="font-display font-bold text-gray-900 dark:text-white mb-4">Log Service Hours</h3>
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Event</label>
-                <select
-                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cranberry-500/20 focus:border-cranberry-500 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
-                  value={form.eventId}
-                  onChange={(e) => setForm({ ...form, eventId: e.target.value })}
-                >
-                  <option value="">Select an event (optional)</option>
-                  {serviceEvents.map((ev) => (
-                    <option key={ev.id} value={ev.id}>{ev.title}</option>
-                  ))}
-                </select>
-              </div>
-              <Input label="Hours" type="number" min="0.5" step="0.5" required value={form.hours} onChange={(e) => setForm({ ...form, hours: e.target.value })} placeholder="e.g., 3" />
-            </div>
-            <Textarea label="Notes (optional)" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Describe your service..." rows={3} />
-            <Button type="submit" loading={submitting}>Submit Hours</Button>
-          </form>
-        </Card>
+        <ServiceHourLogger
+          events={(events || []) as RotaractEvent[]}
+          onSubmit={handleSubmit}
+        />
       )}
 
       {isBoardOrAbove && <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />}

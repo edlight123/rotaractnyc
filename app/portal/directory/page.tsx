@@ -12,6 +12,7 @@ import Tabs from '@/components/ui/Tabs';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
 import AddMemberModal from '@/components/portal/AddMemberModal';
+import MemberCard from '@/components/portal/MemberCard';
 import type { Member } from '@/types';
 
 const roleColors: Record<string, 'cranberry' | 'gold' | 'azure' | 'gray'> = {
@@ -135,39 +136,11 @@ export default function DirectoryPage() {
         /* ── Grid view ── */
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((m) => (
-            <Card key={m.id} interactive padding="md">
-              <div className="flex items-start gap-3">
-                <Avatar src={m.photoURL} alt={m.displayName} size="lg" />
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                    {m.displayName}
-                  </h3>
-                  <Badge variant={roleColors[m.role] || 'gray'} className="mt-1">
-                    {m.role}
-                  </Badge>
-                  {m.committee && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{m.committee}</p>
-                  )}
-                  {m.occupation && (
-                    <p className="text-xs text-gray-400 mt-1">{m.occupation}</p>
-                  )}
-                </div>
-              </div>
-              <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex gap-2">
-                {m.linkedIn && (
-                  <a href={m.linkedIn} target="_blank" rel="noopener noreferrer" className="flex-1">
-                    <Button size="sm" variant="ghost" className="w-full">
-                      LinkedIn
-                    </Button>
-                  </a>
-                )}
-                <a href={`/portal/messages?to=${m.id}`} className="flex-1">
-                  <Button size="sm" variant="outline" className="w-full">
-                    Message
-                  </Button>
-                </a>
-              </div>
-            </Card>
+            <MemberCard
+              key={m.id}
+              member={m}
+              onMessage={() => (window.location.href = `/portal/messages?to=${m.id}`)}
+            />
           ))}
         </div>
       ) : (

@@ -12,6 +12,8 @@ import Badge from '@/components/ui/Badge';
 import Tabs from '@/components/ui/Tabs';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
+import PostComposer from '@/components/portal/PostComposer';
+import FeedCard from '@/components/portal/FeedCard';
 import Link from 'next/link';
 import { formatRelativeTime } from '@/lib/utils/format';
 import type { CommunityPost, RotaractEvent } from '@/types';
@@ -29,25 +31,19 @@ export default function PortalDashboard() {
   const { data: posts, loading: postsLoading } = usePosts();
   const { data: events, loading: eventsLoading } = usePortalEvents();
   const [activeTab, setActiveTab] = useState('all');
-  const [postContent, setPostContent] = useState('');
-  const [posting, setPosting] = useState(false);
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
 
-  const handlePost = async () => {
-    if (!postContent.trim() || !user) return;
-    setPosting(true);
+  const handlePost = async (content: string, type: string) => {
+    if (!user) return;
     try {
       await apiPost('/api/portal/posts', {
-        content: postContent.trim(),
-        type: 'text',
+        content,
+        type,
       });
-      setPostContent('');
       toast('Post shared with the community!');
     } catch (err: any) {
       toast(err.message || 'Failed to create post', 'error');
-    } finally {
-      setPosting(false);
     }
   };
 
@@ -97,23 +93,7 @@ export default function PortalDashboard() {
         {/* Main Feed */}
         <div className="lg:col-span-2 space-y-6">
           {/* Post Composer */}
-          <Card padding="md">
-            <div className="flex gap-3">
-              <Avatar src={member?.photoURL} alt={member?.displayName || ''} size="md" />
-              <div className="flex-1">
-                <textarea
-                  value={postContent}
-                  onChange={(e) => setPostContent(e.target.value)}
-                  placeholder="Share something with the community..."
-                  className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cranberry-500/20 border border-gray-200 dark:border-gray-700 resize-none"
-                  rows={3}
-                />
-                <div className="flex items-center justify-end mt-3">
-                  <Button size="sm" disabled={!postContent.trim()} loading={posting} onClick={handlePost}>Post</Button>
-                </div>
-              </div>
-            </div>
-          </Card>
+          <PostComposer onSubmit={handlePost} />
 
           <Tabs
             tabs={[
@@ -131,55 +111,26 @@ export default function PortalDashboard() {
             <EmptyState icon="💬" title="No posts yet" description="Be the first to share something with the community!" />
           ) : (
             filteredPosts.map((post) => (
-              <Card key={post.id} padding="md">
-                <div className="flex items-start gap-3">
-                  <Avatar src={post.authorPhoto} alt={post.authorName || 'Member'} size="md" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-gray-900 dark:text-white text-sm">{post.authorName}</p>
-                      {post.type === 'announcement' && <Badge variant="cranberry">Announcement</Badge>}
-                      <span className="text-xs text-gray-400">{formatRelativeTime(post.createdAt)}</span>
-                    </div>
-                    <p className="mt-2 text-gray-700 dark:text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
-                    {post.imageURLs && post.imageURLs.length > 0 && (
-                      <div className="mt-3 grid grid-cols-2 gap-2">
-                        {post.imageURLs.map((url, i) => (
-                          <Image key={i} src={url} alt="" className="rounded-xl object-cover w-full h-48" width={400} height={192} />
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                      <button
-                        onClick={() => handleLike(post.id)}
-                        className={`flex items-center gap-1 text-sm transition-colors ${
-                          post.likedBy?.includes(user?.uid || '') ? 'text-cranberry font-medium' : 'text-gray-500 hover:text-cranberry'
-                        }`}
-                      >
-                        ❤️ {post.likeCount || 0}
-                      </button>
-                      <button
-                        onClick={() => setExpandedComments((prev) => ({ ...prev, [post.id]: !prev[post.id] }))}
-                        className="flex items-center gap-1 text-sm text-gray-500 hover:text-azure transition-colors"
-                      >
-                        💬 {post.commentCount || 0}
-                      </button>
-                    </div>
-                    {expandedComments[post.id] && (
-                      <div className="mt-3 flex gap-2">
-                        <input
-                          type="text"
-                          className="flex-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cranberry-500/20"
-                          placeholder="Write a comment..."
-                          value={commentInputs[post.id] || ''}
-                          onChange={(e) => setCommentInputs((prev) => ({ ...prev, [post.id]: e.target.value }))}
-                          onKeyDown={(e) => e.key === 'Enter' && handleComment(post.id)}
-                        />
-                        <Button size="sm" onClick={() => handleComment(post.id)}>Send</Button>
-                      </div>
-                    )}
+              <div key={post.id}>
+                <FeedCard
+                  post={post}
+                  onLike={handleLike}
+                  onComment={(postId) => setExpandedComments((prev) => ({ ...prev, [postId]: !prev[postId] }))}
+                />
+                {expandedComments[post.id] && (
+                  <div className="mt-2 ml-14 flex gap-2">
+                    <input
+                      type="text"
+                      className="flex-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cranberry-500/20"
+                      placeholder="Write a comment..."
+                      value={commentInputs[post.id] || ''}
+                      onChange={(e) => setCommentInputs((prev) => ({ ...prev, [post.id]: e.target.value }))}
+                      onKeyDown={(e) => e.key === 'Enter' && handleComment(post.id)}
+                    />
+                    <Button size="sm" onClick={() => handleComment(post.id)}>Send</Button>
                   </div>
-                </div>
-              </Card>
+                )}
+              </div>
             ))
           )}
         </div>

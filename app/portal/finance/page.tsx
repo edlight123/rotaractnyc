@@ -8,6 +8,7 @@ import StatCard from '@/components/ui/StatCard';
 import Badge from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
+import FinanceCharts from '@/components/portal/FinanceCharts';
 import type { FinanceSummary, Transaction } from '@/types';
 
 export default function FinancePage() {
@@ -68,31 +69,8 @@ export default function FinancePage() {
         <StatCard label="Balance" value={`$${summary.balance.toLocaleString()}`} />
       </div>
 
-      {/* Chart placeholder */}
-      <Card padding="md">
-        <h3 className="font-display font-bold text-gray-900 dark:text-white mb-4">Monthly Overview</h3>
-        {summary.monthlyBreakdown.length > 0 ? (
-          <div className="space-y-2">
-            {summary.monthlyBreakdown.map((m) => (
-              <div key={m.month} className="flex items-center gap-4 text-sm">
-                <span className="w-16 text-gray-500">{m.month}</span>
-                <div className="flex-1 flex items-center gap-2">
-                  <div className="h-3 bg-emerald-500 rounded" style={{ width: `${Math.max(2, (m.income / Math.max(summary.totalIncome, 1)) * 100)}%` }} />
-                  <span className="text-emerald-600 text-xs">${m.income}</span>
-                </div>
-                <div className="flex-1 flex items-center gap-2">
-                  <div className="h-3 bg-red-400 rounded" style={{ width: `${Math.max(2, (m.expenses / Math.max(summary.totalExpenses, 1)) * 100)}%` }} />
-                  <span className="text-red-500 text-xs">${m.expenses}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="h-48 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center">
-            <p className="text-sm text-gray-400">📊 Financial data will appear here as transactions are recorded</p>
-          </div>
-        )}
-      </Card>
+      {/* Monthly Overview Chart */}
+      <FinanceCharts summary={summary} />
 
       {/* Transactions */}
       {transactions.length === 0 ? (

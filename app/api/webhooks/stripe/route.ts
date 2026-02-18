@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { adminDb } from '@/lib/firebase/admin';
+import { handleWebhookEvent } from '@/lib/stripe/webhooks';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,97 +28,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
-  // Handle checkout.session.completed
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const metadata = session.metadata || {};
-
-    // ── Event ticket payment ──
-    if (metadata.type === 'event_ticket') {
-      const { eventId, memberId, ticketType, amountCents, eventTitle } = metadata;
-      try {
-        if (memberId && eventId) {
-          // Auto-RSVP as "going"
-          const rsvpRef = adminDb.collection('rsvps').doc(`${memberId}_${eventId}`);
-          await rsvpRef.set(
-            {
-              memberId,
-              eventId,
-              status: 'going',
-              ticketType: ticketType || 'guest',
-              paidAmount: Number(amountCents) || 0,
-              stripePaymentId: session.payment_intent as string,
-              paidAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            },
-            { merge: true },
-          );
-
-          // Record transaction
-          await adminDb.collection('transactions').add({
-            type: 'income',
-            category: 'Event Tickets',
-            amount: Number(amountCents) || 0,
-            description: `${ticketType} ticket – ${eventTitle || 'Event'}`,
-            date: new Date().toISOString(),
-            createdBy: memberId || 'guest',
-            createdAt: new Date().toISOString(),
-          });
-
-          console.log(`Event ticket recorded: ${memberId} → ${eventId}`);
-        }
-      } catch (err) {
-        console.error('Error recording event ticket payment:', err);
-      }
-    } else if (metadata.type === 'dues' && metadata.memberId && metadata.cycleId) {
-      // ── Dues payment ──
-      const { memberId, cycleId, memberType, amount } = metadata;
-
-      try {
-        // Find existing memberDues doc
-        const snap = await adminDb
-          .collection('memberDues')
-          .where('memberId', '==', memberId)
-          .where('cycleId', '==', cycleId)
-          .limit(1)
-          .get();
-
-        if (!snap.empty) {
-          await snap.docs[0].ref.update({
-            status: 'PAID',
-            paidAt: new Date().toISOString(),
-            stripePaymentId: session.payment_intent as string,
-          });
-        } else {
-          // Create new dues record
-          await adminDb.collection('memberDues').add({
-            memberId,
-            cycleId,
-            memberType: memberType || 'professional',
-            amount: Number(amount) || 8500,
-            status: 'PAID',
-            paidAt: new Date().toISOString(),
-            stripePaymentId: session.payment_intent as string,
-            createdAt: new Date().toISOString(),
-          });
-        }
-
-        // Record transaction
-        await adminDb.collection('transactions').add({
-          type: 'income',
-          category: 'Dues',
-          amount: Number(amount) || 8500,
-          description: `Dues payment – ${memberType || 'professional'}`,
-          date: new Date().toISOString(),
-          createdBy: memberId,
-          createdAt: new Date().toISOString(),
-        });
-
-        console.log(`Dues payment recorded for member ${memberId}`);
-      } catch (err) {
-        console.error('Error recording dues payment:', err);
-      }
-    }
+  try {
+    await handleWebhookEvent(event);
+  } catch (err) {
+    console.error('Error handling webhook event:', err);
+    // Still return 200 so Stripe doesn't retry indefinitely
   }
 
   return NextResponse.json({ received: true });

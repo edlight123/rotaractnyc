@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb, serializeDoc } from '@/lib/firebase/admin';
+import { getFinanceSummary, getTransactions } from '@/lib/services/finance';
 
 export const dynamic = 'force-dynamic';
 import { cookies } from 'next/headers';
@@ -22,34 +23,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Get transactions
-    const txSnapshot = await adminDb
-      .collection('transactions')
-      .orderBy('date', 'desc')
-      .limit(50)
-      .get();
+    // Use service layer for summary (includes monthlyBreakdown)
+    const summary = await getFinanceSummary();
+    const transactions = (await getTransactions(50)).map(serializeDoc);
 
-    const transactions = txSnapshot.docs.map((doc) => serializeDoc({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    // Calculate summary
-    const income = transactions
-      .filter((t: any) => t.type === 'income')
-      .reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
-    const expenses = transactions
-      .filter((t: any) => t.type === 'expense')
-      .reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
-
-    return NextResponse.json({
-      summary: {
-        totalIncome: income,
-        totalExpenses: expenses,
-        balance: income - expenses,
-      },
-      transactions,
-    });
+    return NextResponse.json({ summary, transactions });
   } catch (error) {
     console.error('Error fetching finance data:', error);
     return NextResponse.json({ error: 'Failed to fetch finance data' }, { status: 500 });
