@@ -47,7 +47,7 @@ export default function EventRegistration({
       {/* Header accent */}
       <div className={`px-5 py-3 ${isPaid ? 'bg-gradient-to-r from-amber-500 to-orange-500' : 'bg-gradient-to-r from-cranberry to-cranberry-800'}`}>
         <h3 className="font-display font-bold text-white text-sm tracking-wide">
-          {isPaid ? '🎟️ Ticketed Event' : '✓ Free Event'}
+          {isPaid ? 'Ticketed Event' : 'Free Event'}
         </h3>
       </div>
 
@@ -71,7 +71,7 @@ export default function EventRegistration({
                   </p>
                   {hasEarlyBird && event.pricing.earlyBirdPrice != null && (
                     <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
-                      🐦 Early bird: {formatCurrency(event.pricing.earlyBirdPrice)}
+                      Early bird: {formatCurrency(event.pricing.earlyBirdPrice)}
                     </p>
                   )}
                 </div>
@@ -92,7 +92,7 @@ export default function EventRegistration({
               <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
                 <span className="text-sm text-gray-500">Your status:</span>
                 <Badge variant={currentRSVP === 'going' ? 'green' : currentRSVP === 'maybe' ? 'gold' : 'gray'}>
-                  {currentRSVP === 'going' ? '✓ Going' : currentRSVP === 'maybe' ? '🤔 Maybe' : 'Not going'}
+                  {currentRSVP === 'going' ? 'Going' : currentRSVP === 'maybe' ? 'Maybe' : 'Not going'}
                 </Badge>
               </div>
             )}
@@ -108,7 +108,7 @@ export default function EventRegistration({
                   disabled={spotsLeft === 0}
                   onClick={() => handleAction(() => onPurchaseTicket?.('member') || Promise.resolve())}
                 >
-                  {spotsLeft === 0 ? 'Sold Out' : '🎟️ Buy Member Ticket'}
+                  {spotsLeft === 0 ? 'Sold Out' : 'Buy Member Ticket'}
                 </Button>
                 <div className="flex gap-2">
                   <Button
@@ -135,7 +135,7 @@ export default function EventRegistration({
                   loading={loading}
                   onClick={() => handleAction(() => onPurchaseTicket?.('member') || Promise.resolve())}
                 >
-                  🎫 Get Free Ticket
+                  Get Free Ticket
                 </Button>
                 <Button variant="ghost" onClick={() => handleAction(() => onRSVP('maybe'))}>
                   Maybe
@@ -150,7 +150,7 @@ export default function EventRegistration({
                   loading={loading}
                   onClick={() => handleAction(() => onRSVP(currentRSVP === 'going' ? 'not' : 'going'))}
                 >
-                  {currentRSVP === 'going' ? '✓ Going' : "I'm Going"}
+                  {currentRSVP === 'going' ? 'Going' : "I'm Going"}
                 </Button>
                 <Button variant="ghost" onClick={() => handleAction(() => onRSVP('maybe'))}>
                   Maybe

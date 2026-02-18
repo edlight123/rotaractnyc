@@ -13,10 +13,10 @@ interface DashboardWidgetsProps {
 }
 
 const quickActions = [
-  { label: 'Log Service Hours', href: '/portal/service-hours', icon: '⏱️' },
-  { label: 'View Events', href: '/portal/events', icon: '📅' },
-  { label: 'Member Directory', href: '/portal/directory', icon: '👥' },
-  { label: 'Pay Dues', href: '/portal/dues', icon: '💳' },
+  { label: 'Log Service Hours', href: '/portal/service-hours', icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
+  { label: 'View Events', href: '/portal/events', icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> },
+  { label: 'Member Directory', href: '/portal/directory', icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+  { label: 'Pay Dues', href: '/portal/dues', icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg> },
 ];
 
 export default function DashboardWidgets({
@@ -35,9 +35,9 @@ export default function DashboardWidgets({
             <Link
               key={action.href}
               href={action.href}
-              className="flex flex-col items-center gap-2 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-cranberry-50 dark:hover:bg-cranberry-900/10 hover:text-cranberry transition-colors text-center"
+              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-cranberry-50 dark:hover:bg-cranberry-900/10 hover:text-cranberry transition-colors text-center group"
             >
-              <span className="text-xl">{action.icon}</span>
+              <span className="text-gray-400 group-hover:text-cranberry transition-colors">{action.icon}</span>
               <span className="text-xs font-medium">{action.label}</span>
             </Link>
           ))}

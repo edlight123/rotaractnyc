@@ -59,10 +59,10 @@ function parseEndTimeTo24h(timeStr: string): string {
 }
 
 const EVENT_TYPES: { value: EventType; label: string }[] = [
-  { value: 'free', label: '✓ Free' },
-  { value: 'paid', label: '🎟️ Paid (Ticketed)' },
-  { value: 'service', label: '🤝 Service Project' },
-  { value: 'hybrid', label: '⭐ Hybrid (Free for members, paid for guests)' },
+  { value: 'free', label: 'Free' },
+  { value: 'paid', label: 'Paid (Ticketed)' },
+  { value: 'service', label: 'Service Project' },
+  { value: 'hybrid', label: 'Hybrid (Free for members, paid for guests)' },
 ];
 
 const EVENT_STATUSES = [
@@ -299,8 +299,8 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
     <Modal open={open} onClose={handleClose} title={isEdit ? 'Edit Event' : 'Create New Event'} size="xl">
       {success ? (
         <div className="flex flex-col items-center py-8 gap-3">
-          <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-2xl">
-            ✓
+          <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+            <svg className="w-7 h-7 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
           </div>
           <h3 className="text-lg font-bold text-gray-900 dark:text-white">
             {isEdit ? 'Event Updated!' : 'Event Created!'}
@@ -427,7 +427,7 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
           {showPricing && (
             <div>
               <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-                💰 Pricing
+                Pricing
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
                 Enter prices in dollars (e.g. 15.00). Set member price to 0 for free member admission.
@@ -485,7 +485,7 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
                     </span>
                     {earlyBirdPrice && (
                       <span className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 px-2 py-1 rounded-lg font-semibold">
-                        🐦 ${parseFloat(earlyBirdPrice).toFixed(2)} early bird
+                        Early bird ${parseFloat(earlyBirdPrice).toFixed(2)} early bird
                         {earlyBirdDeadline && ` (until ${new Date(earlyBirdDeadline).toLocaleDateString()})`}
                       </span>
                     )}

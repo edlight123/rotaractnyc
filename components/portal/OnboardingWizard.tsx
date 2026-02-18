@@ -89,7 +89,9 @@ export default function OnboardingWizard({ onComplete, onToast }: OnboardingWiza
       {/* Step 0: Welcome */}
       {step === 0 && (
         <Card padding="lg" className="text-center">
-          <span className="text-5xl">🎉</span>
+          <div className="w-16 h-16 rounded-full bg-cranberry-50 dark:bg-cranberry-900/20 flex items-center justify-center mx-auto">
+            <svg className="w-8 h-8 text-cranberry" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+          </div>
           <h2 className="text-2xl font-display font-bold text-gray-900 dark:text-white mt-4">
             Welcome to Rotaract NYC!
           </h2>
@@ -97,7 +99,7 @@ export default function OnboardingWizard({ onComplete, onToast }: OnboardingWiza
             Let&apos;s set up your member profile. This will help other members get to know you and find common interests.
           </p>
           <Button size="lg" className="mt-8" onClick={() => setStep(1)}>
-            Get Started →
+            Get Started
           </Button>
         </Card>
       )}
@@ -142,8 +144,8 @@ export default function OnboardingWizard({ onComplete, onToast }: OnboardingWiza
             </div>
           </div>
           <div className="flex justify-between mt-8">
-            <Button variant="secondary" onClick={() => setStep(0)}>← Back</Button>
-            <Button onClick={() => setStep(2)}>Next →</Button>
+            <Button variant="secondary" onClick={() => setStep(0)}>Back</Button>
+            <Button onClick={() => setStep(2)}>Next</Button>
           </div>
         </Card>
       )}
@@ -170,7 +172,7 @@ export default function OnboardingWizard({ onComplete, onToast }: OnboardingWiza
             ))}
           </div>
           <div className="flex justify-between mt-8">
-            <Button variant="secondary" onClick={() => setStep(1)}>← Back</Button>
+            <Button variant="secondary" onClick={() => setStep(1)}>Back</Button>
             <Button loading={saving} onClick={handleSaveProfile}>Complete Setup</Button>
           </div>
         </Card>
@@ -179,7 +181,9 @@ export default function OnboardingWizard({ onComplete, onToast }: OnboardingWiza
       {/* Step 3: Done */}
       {step === 3 && (
         <Card padding="lg" className="text-center">
-          <span className="text-5xl">🚀</span>
+          <div className="w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center mx-auto">
+            <svg className="w-8 h-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+          </div>
           <h2 className="text-2xl font-display font-bold text-gray-900 dark:text-white mt-4">
             You&apos;re All Set!
           </h2>
@@ -187,7 +191,7 @@ export default function OnboardingWizard({ onComplete, onToast }: OnboardingWiza
             Your profile is ready. Explore the portal, RSVP to events, and connect with fellow Rotaractors!
           </p>
           <Button size="lg" className="mt-8" onClick={onComplete}>
-            Go to Portal →
+            Go to Portal
           </Button>
         </Card>
       )}

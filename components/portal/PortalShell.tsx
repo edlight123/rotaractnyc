@@ -192,9 +192,9 @@ export default function PortalShell({ children }: { children: React.ReactNode })
               href={item.href}
               onClick={() => setSidebarOpen(false)}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
                 isActive(item.href)
-                  ? 'bg-cranberry-50 text-cranberry dark:bg-cranberry-900/20 dark:text-cranberry-400'
+                  ? 'bg-cranberry-50 text-cranberry dark:bg-cranberry-900/20 dark:text-cranberry-400 shadow-sm shadow-cranberry-100/50 dark:shadow-none'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800'
               )}
             >

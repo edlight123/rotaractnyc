@@ -94,20 +94,43 @@ export default function ServiceHoursPage() {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Service Hours</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Log and track your community service contributions.</p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)}>{showForm ? 'Cancel' : '+ Log Hours'}</Button>
+        <Button onClick={() => setShowForm(!showForm)}>
+          {showForm ? (
+            'Cancel'
+          ) : (
+            <>
+              <svg className="w-4 h-4 -ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Log Hours
+            </>
+          )}
+        </Button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <StatCard label="Total Hours" value={totalHours} />
-        <StatCard label="This Year" value={thisYearHours} />
-        <StatCard label="Events Served" value={approvedHours.length} />
+        <StatCard
+          label="Total Hours"
+          value={totalHours}
+          icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+        />
+        <StatCard
+          label="This Year"
+          value={thisYearHours}
+          icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
+        />
+        <StatCard
+          label="Events Served"
+          value={approvedHours.length}
+          icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+        />
       </div>
 
       {/* Log Form */}
@@ -127,7 +150,7 @@ export default function ServiceHoursPage() {
           {pendingLoading ? (
             <div className="flex justify-center py-8"><Spinner /></div>
           ) : pendingEntries.length === 0 ? (
-            <EmptyState icon="✅" title="All caught up" description="No pending service hours to review." />
+            <EmptyState icon={<svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} title="All caught up" description="No pending service hours to review." />
           ) : (
             <div className="space-y-3">
               {pendingEntries.map((entry) => (
@@ -171,7 +194,7 @@ export default function ServiceHoursPage() {
           {loading ? (
             <div className="flex justify-center py-8"><Spinner /></div>
           ) : serviceHours.length === 0 ? (
-            <EmptyState icon="⏱️" title="No service hours logged" description="Click 'Log Hours' to submit your first service contribution." />
+            <EmptyState icon={<svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} title="No service hours logged" description="Click 'Log Hours' to submit your first service contribution." />
           ) : (
             <div className="space-y-3">
               {serviceHours.map((entry) => (

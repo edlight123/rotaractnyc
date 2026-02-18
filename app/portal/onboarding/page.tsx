@@ -144,7 +144,7 @@ export default function OnboardingPage() {
         ...(photoURL && { photoURL }),
         onboardingComplete: true,
       });
-      toast('Welcome to Rotaract NYC! 🎉');
+      toast('Welcome to Rotaract NYC!');
       router.push('/portal/dues');
     } catch (err: any) {
       toast(err.message || 'Failed to save profile', 'error');
@@ -154,21 +154,24 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 py-4">
+    <div className="max-w-2xl mx-auto space-y-8 py-4">
       <div className="text-center">
-        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Welcome to Rotaract NYC! 🎉</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Let&apos;s get your profile set up in just a few steps.</p>
+        <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-cranberry-50 dark:bg-cranberry-900/20 flex items-center justify-center">
+          <svg className="w-6 h-6 text-cranberry" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+        </div>
+        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Welcome to Rotaract NYC</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1.5">Let&apos;s get your profile set up in just a few steps.</p>
       </div>
 
       {/* Progress */}
       <div className="flex items-center justify-center gap-2">
         {steps.map((s) => (
           <div key={s.id} className="flex items-center gap-2">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step >= s.id ? 'bg-cranberry text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'}`}>
-              {step > s.id ? '✓' : s.id}
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors duration-200 ${step > s.id ? 'bg-cranberry text-white' : step === s.id ? 'bg-cranberry text-white ring-4 ring-cranberry-100 dark:ring-cranberry-900/30' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'}`}>
+              {step > s.id ? <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg> : s.id}
             </div>
-            <span className={`text-sm font-medium hidden sm:inline ${step >= s.id ? 'text-cranberry' : 'text-gray-400'}`}>{s.title}</span>
-            {s.id < steps.length && <div className={`w-8 h-0.5 ${step > s.id ? 'bg-cranberry' : 'bg-gray-200 dark:bg-gray-700'}`} />}
+            <span className={`text-sm font-medium hidden sm:inline transition-colors ${step >= s.id ? 'text-cranberry' : 'text-gray-400'}`}>{s.title}</span>
+            {s.id < steps.length && <div className={`w-8 h-0.5 transition-colors duration-200 ${step > s.id ? 'bg-cranberry' : 'bg-gray-200 dark:bg-gray-700'}`} />}
           </div>
         ))}
       </div>

@@ -61,10 +61,11 @@ export default function PortalLoginPage() {
               alt="Rotaract NYC"
               width={200}
               height={50}
-              className="h-12 w-auto mx-auto mb-4"
+              className="h-12 w-auto mx-auto mb-5"
               priority
             />
             <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Member Portal</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5">Sign in to access your account</p>
           </div>
 
           {loading ? (

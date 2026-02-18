@@ -24,7 +24,7 @@ const typeGradients: Record<EventType, string> = {
   service: 'from-azure to-azure-800',
   hybrid: 'from-cranberry to-cranberry-800',
 };
-const typeIcons: Record<EventType, string> = { free: '✓', paid: '🎟️', service: '🤝', hybrid: '⭐' };
+const typeIcons: Record<EventType, string> = { free: '', paid: '', service: '', hybrid: '' };
 
 export default function PortalEventsPage() {
   const { user, member } = useAuth();
@@ -62,7 +62,7 @@ export default function PortalEventsPage() {
     setRsvpLoading(eventId);
     try {
       await apiPost('/api/portal/events/rsvp', { eventId, status });
-      toast(status === 'going' ? "You're going! 🎉" : 'RSVP updated');
+      toast(status === 'going' ? "You're going!" : 'RSVP updated');
     } catch (err: any) {
       toast(err.message || 'RSVP failed', 'error');
     } finally {
@@ -76,7 +76,7 @@ export default function PortalEventsPage() {
     try {
       const res = await apiPost('/api/portal/events/checkout', { eventId, ticketType });
       if (res.free) {
-        toast(res.message || "You're in! 🎉");
+        toast(res.message || "You're in!");
       } else if (res.url) {
         window.location.href = res.url;
       }
@@ -100,7 +100,7 @@ export default function PortalEventsPage() {
     e.capacity ? Math.max(0, e.capacity - (e.attendeeCount ?? 0)) : null;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-8">
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -109,7 +109,10 @@ export default function PortalEventsPage() {
         </div>
         {canManageEvents && (
           <Button onClick={() => setShowCreateModal(true)} className="shrink-0">
-            + Create Event
+            <svg className="w-4 h-4 -ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Create Event
           </Button>
         )}
       </div>
@@ -132,10 +135,10 @@ export default function PortalEventsPage() {
         {(
           [
             ['all', 'All'],
-            ['free', '✓ Free'],
-            ['paid', '🎟️ Ticketed'],
-            ['service', '🤝 Service'],
-            ['hybrid', '⭐ Hybrid'],
+            ['free', 'Free'],
+            ['paid', 'Ticketed'],
+            ['service', 'Service'],
+            ['hybrid', 'Hybrid'],
           ] as const
         ).map(([value, label]) => (
           <button
@@ -159,7 +162,7 @@ export default function PortalEventsPage() {
         </div>
       ) : events.length === 0 ? (
         <EmptyState
-          icon="📅"
+          icon={<svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
           title={activeTab === 'upcoming' ? 'No upcoming events' : 'No past events found'}
           description="Check back soon for new events."
         />
@@ -213,9 +216,9 @@ export default function PortalEventsPage() {
                         <p className="text-xs font-semibold uppercase tracking-wider opacity-90">{d.month}</p>
                       </div>
                     )}
-                    {/* Type icon chip */}
-                    <span className="absolute bottom-3 right-3 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm text-xs font-semibold rounded-full px-2 py-1 shadow-sm">
-                      {typeIcons[event.type]}
+                    {/* Type badge */}
+                    <span className="absolute bottom-3 right-3 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm text-xs font-semibold rounded-full px-2.5 py-1 shadow-sm capitalize text-gray-700 dark:text-gray-300">
+                      {event.type}
                     </span>
                   </Link>
 
@@ -265,20 +268,20 @@ export default function PortalEventsPage() {
                       {paid && event.pricing ? (
                         <div className="flex flex-wrap items-center gap-2">
                           <div className="inline-flex items-center gap-1.5 bg-cranberry-50 dark:bg-cranberry-900/30 text-cranberry-700 dark:text-cranberry-300 pl-1.5 pr-2.5 py-1 rounded-lg">
-                            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-cranberry-100 dark:bg-cranberry-800/50 text-[10px]">👤</span>
+                            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-cranberry-100 dark:bg-cranberry-800/50"><svg className="w-3 h-3 text-cranberry-600 dark:text-cranberry-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></span>
                             <span className="text-sm font-bold">
                               {event.pricing.memberPrice === 0 ? 'Free' : formatCurrency(event.pricing.memberPrice)}
                             </span>
                             <span className="text-[10px] uppercase font-semibold text-cranberry-500 dark:text-cranberry-400">Member</span>
                           </div>
                           <div className="inline-flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 pl-1.5 pr-2.5 py-1 rounded-lg">
-                            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 text-[10px]">🎫</span>
+                            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700"><svg className="w-3 h-3 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" /></svg></span>
                             <span className="text-sm font-bold">{formatCurrency(event.pricing.guestPrice)}</span>
                             <span className="text-[10px] uppercase font-semibold">Guest</span>
                           </div>
                           {hasEarlyBird && event.pricing.earlyBirdPrice != null && (
                             <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg animate-pulse">
-                              🐦 Early bird {formatCurrency(event.pricing.earlyBirdPrice)}
+                              Early bird {formatCurrency(event.pricing.earlyBirdPrice)}
                             </span>
                           )}
                         </div>
@@ -301,7 +304,7 @@ export default function PortalEventsPage() {
                                 onClick={() => handleTicketPurchase(event.id, 'member')}
                                 className="flex-1 sm:flex-initial"
                               >
-                                🎟️ Buy Ticket
+                                Buy Ticket
                               </Button>
                               <Button size="sm" variant="ghost" onClick={() => handleRSVP(event.id, 'maybe')}>
                                 Maybe
@@ -316,7 +319,7 @@ export default function PortalEventsPage() {
                                 onClick={() => handleTicketPurchase(event.id, 'member')}
                                 className="flex-1 sm:flex-initial"
                               >
-                                🎫 Free Ticket
+                                Get Free Ticket
                               </Button>
                               <Button size="sm" variant="ghost" onClick={() => handleRSVP(event.id, 'maybe')}>
                                 Maybe
@@ -361,7 +364,7 @@ export default function PortalEventsPage() {
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSaved={() => {
-          toast('Event saved! 🎉');
+          toast('Event saved!');
         }}
       />
     </div>

@@ -136,7 +136,9 @@ export default function NewArticlePage() {
   if (!canCreate) {
     return (
       <div className="max-w-3xl mx-auto py-16 text-center">
-        <div className="text-6xl mb-4">🔒</div>
+        <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+        </div>
         <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white mb-2">Access Restricted</h1>
         <p className="text-gray-500 dark:text-gray-400">Only board members can create articles.</p>
         <Button variant="ghost" className="mt-6" onClick={() => router.push('/portal/articles')}>
@@ -223,7 +225,7 @@ export default function NewArticlePage() {
               </div>
             ) : (
               <>
-                <span className="text-3xl mb-2">🖼️</span>
+                <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Add Cover Image</span>
                 <span className="text-xs text-gray-400 mt-1">Recommended: 1200×630px</span>
               </>
@@ -307,7 +309,7 @@ export default function NewArticlePage() {
             loading={saving}
             disabled={saving}
           >
-            ✨ Publish Article
+            Publish Article
           </Button>
         </div>
       </div>

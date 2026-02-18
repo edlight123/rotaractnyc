@@ -146,7 +146,7 @@ const suggestionItems = createSuggestionItems([
     title: 'Text',
     description: 'Plain text paragraph.',
     searchTerms: ['p', 'paragraph'],
-    icon: <span className="text-base">📝</span>,
+    icon: <span className="text-base font-medium">Aa</span>,
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).toggleNode('paragraph', 'paragraph').run();
     },
@@ -200,7 +200,7 @@ const suggestionItems = createSuggestionItems([
     title: 'To-do List',
     description: 'Task list with checkboxes.',
     searchTerms: ['todo', 'task', 'checkbox'],
-    icon: <span className="text-base">☑️</span>,
+    icon: <span className="text-base">&#9745;</span>,
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).toggleTaskList().run();
     },
@@ -209,7 +209,7 @@ const suggestionItems = createSuggestionItems([
     title: 'Quote',
     description: 'Block quote.',
     searchTerms: ['blockquote', 'cite'],
-    icon: <span className="text-base">❝</span>,
+    icon: <span className="text-base font-serif">&ldquo;</span>,
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).toggleBlockquote().run();
     },
@@ -236,7 +236,7 @@ const suggestionItems = createSuggestionItems([
     title: 'Image',
     description: 'Upload an image from your device.',
     searchTerms: ['photo', 'picture', 'media', 'img'],
-    icon: <span className="text-base">🖼️</span>,
+    icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).run();
       const input = document.createElement('input');

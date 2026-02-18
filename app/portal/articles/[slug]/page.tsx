@@ -102,8 +102,8 @@ export default function PortalArticleDetailPage() {
 
         {/* Stats */}
         <div className="mt-8 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center gap-4 text-sm text-gray-500">
-          {article.viewCount != null && <span>👁️ {article.viewCount} views</span>}
-          {article.likeCount != null && <span>❤️ {article.likeCount} likes</span>}
+          {article.viewCount != null && <span>{article.viewCount} views</span>}
+          {article.likeCount != null && <span>{article.likeCount} likes</span>}
         </div>
       </Card>
     </div>

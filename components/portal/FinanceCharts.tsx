@@ -42,7 +42,7 @@ export default function FinanceCharts({ summary }: FinanceChartsProps) {
         </div>
       ) : (
         <div className="h-48 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center">
-          <p className="text-sm text-gray-400">📊 Financial data will appear here as transactions are recorded</p>
+          <p className="text-sm text-gray-400">Financial data will appear here as transactions are recorded</p>
         </div>
       )}
 

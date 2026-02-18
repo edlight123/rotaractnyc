@@ -54,7 +54,7 @@ export default function PortalArticlesPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
@@ -65,7 +65,10 @@ export default function PortalArticlesPage() {
           <SearchInput value={search} onChange={setSearch} placeholder="Search articles..." className="sm:max-w-xs" />
           {canManage && (
             <Button size="sm" onClick={() => router.push('/portal/articles/new')}>
-              ✍️ New Article
+              <svg className="w-4 h-4 -ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              New Article
             </Button>
           )}
         </div>
