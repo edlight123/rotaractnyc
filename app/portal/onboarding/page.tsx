@@ -205,7 +205,7 @@ export default function OnboardingPage() {
               <Input label="First Name" required value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
               <Input label="Last Name" required value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
             </div>
-            <Input label="Phone Number" required type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+1 (555) 000-0000" />
+            <PhoneInput label="Phone Number" required value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
             <Input label="Mailing Address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="123 Main St, New York, NY 10001" />
             <Input label="Birthday" type="date" value={form.birthday} onChange={(e) => setForm({ ...form, birthday: e.target.value })} />
             {/* WhatsApp */}
@@ -221,7 +221,7 @@ export default function OnboardingPage() {
                 </label>
               </div>
               {!form.whatsAppSameAsPhone && (
-                <Input label="WhatsApp Phone" type="tel" value={form.whatsAppPhone} onChange={(e) => setForm({ ...form, whatsAppPhone: e.target.value })} placeholder="+1 (555) 000-0000" />
+                <PhoneInput label="WhatsApp Phone" value={form.whatsAppPhone} onChange={(v) => setForm({ ...form, whatsAppPhone: v })} />
               )}
             </div>
             <div>
