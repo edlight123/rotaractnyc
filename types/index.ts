@@ -187,13 +187,38 @@ export interface FinanceSummary {
 }
 
 // ----- Document -----
+export type DocumentCategory =
+  | 'Minutes'
+  | 'Policies'
+  | 'Bylaws'
+  | 'Handbook'
+  | 'Reports'
+  | 'Financial'
+  | 'Templates'
+  | 'Google Drive'
+  | 'Other';
+
+export const DOCUMENT_CATEGORIES: DocumentCategory[] = [
+  'Minutes',
+  'Policies',
+  'Bylaws',
+  'Handbook',
+  'Reports',
+  'Financial',
+  'Templates',
+  'Google Drive',
+  'Other',
+];
+
 export interface PortalDocument {
   id: string;
   title: string;
   description?: string;
-  category: string;
+  category: DocumentCategory;
   fileURL?: string;
   linkURL?: string;
+  storagePath?: string;
+  pinned?: boolean;
   uploadedBy: string;
   uploadedByName: string;
   createdAt: string;
