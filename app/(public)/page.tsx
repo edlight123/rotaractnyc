@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { SITE } from '@/lib/constants';
 import { generateMeta } from '@/lib/seo';
 import { getPublicEvents, getPublishedArticles } from '@/lib/firebase/queries';
 import { formatDate } from '@/lib/utils/format';
 import Badge from '@/components/ui/Badge';
+import HeroSlideshow from '@/components/public/HeroSlideshow';
 
 export const dynamic = 'force-dynamic';
 
@@ -106,16 +108,21 @@ export default async function HomePage() {
       />
 
       {/* Hero */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-cranberry-950 via-cranberry-900 to-cranberry-800">
-        {/* Background pattern */}
-        <div className="absolute inset-0 opacity-[0.05]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M50 50c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10s-10-4.477-10-10 4.477-10 10-10zM10 10c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10S0 25.523 0 20s4.477-10 10-10z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
-        {/* Gradient overlay orbs */}
-        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-gold/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-azure/10 rounded-full blur-3xl" />
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {/* Hero background slideshow */}
+        <HeroSlideshow />
 
         <div className="container-page relative z-10 text-center py-32">
+          {/* Logo */}
+          <Image
+            src="/rotaract-logo.png"
+            alt="Rotaract NYC at the United Nations"
+            width={280}
+            height={70}
+            className="h-16 sm:h-20 w-auto mx-auto mb-8 brightness-0 invert animate-fade-in"
+            priority
+          />
+
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 text-white/80 text-sm mb-8 animate-fade-in">
             <span className="w-2 h-2 bg-gold rounded-full animate-pulse" />
             {SITE.motto}

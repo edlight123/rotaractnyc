@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { SITE } from '@/lib/constants';
 
 const quickLinks = [
@@ -39,14 +40,14 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
           {/* Brand */}
           <div className="lg:col-span-1">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-9 h-9 bg-cranberry rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-sm">R</span>
-              </div>
-              <div>
-                <p className="font-display font-bold text-white text-sm">Rotaract NYC</p>
-                <p className="text-[10px] text-gray-500">at the United Nations</p>
-              </div>
+            <div className="mb-4">
+              <Image
+                src="/rotaract-logo.png"
+                alt="Rotaract NYC at the United Nations"
+                width={180}
+                height={45}
+                className="h-9 w-auto brightness-0 invert"
+              />
             </div>
             <p className="text-sm text-gray-400 leading-relaxed mb-4">
               A community of young professionals and students aged 18–30 dedicated to service, leadership, and global fellowship.

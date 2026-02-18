@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import SearchModal from '@/components/SearchModal';
@@ -87,24 +88,18 @@ export default function Navbar() {
 
       <nav className="container-page flex items-center justify-between h-[72px]" aria-label="Main navigation">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 bg-cranberry rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
-            <span className="text-white font-bold text-sm">R</span>
-          </div>
-          <div className="hidden sm:block">
-            <p className={cn(
-              'font-display font-bold text-sm leading-tight transition-colors',
-              scrolled ? 'text-gray-900 dark:text-white' : 'text-white'
-            )}>
-              Rotaract NYC
-            </p>
-            <p className={cn(
-              'text-[10px] font-medium leading-tight transition-colors',
-              scrolled ? 'text-gray-500 dark:text-gray-400' : 'text-white/70'
-            )}>
-              at the United Nations
-            </p>
-          </div>
+        <Link href="/" className="flex items-center group">
+          <Image
+            src="/rotaract-logo.png"
+            alt="Rotaract NYC at the United Nations"
+            width={180}
+            height={45}
+            className={cn(
+              'h-9 w-auto transition-all',
+              scrolled ? 'brightness-0 dark:brightness-0 dark:invert' : 'brightness-0 invert'
+            )}
+            priority
+          />
         </Link>
 
         {/* Desktop Nav */}

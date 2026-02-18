@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/auth';
 import { useDues } from '@/hooks/useDues';
@@ -171,14 +172,16 @@ export default function PortalShell({ children }: { children: React.ReactNode })
         )}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center gap-3 px-6 border-b border-gray-200 dark:border-gray-800">
-          <div className="w-8 h-8 bg-cranberry rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xs">R</span>
-          </div>
-          <div>
-            <p className="font-display font-bold text-sm text-gray-900 dark:text-white">Rotaract NYC</p>
-            <p className="text-[10px] text-gray-400">Member Portal</p>
-          </div>
+        <div className="h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-800">
+          <Link href="/portal" className="flex items-center">
+            <Image
+              src="/rotaract-logo.png"
+              alt="Rotaract NYC"
+              width={160}
+              height={40}
+              className="h-8 w-auto dark:brightness-0 dark:invert"
+            />
+          </Link>
         </div>
 
         {/* Nav */}

@@ -12,8 +12,8 @@ const baseStyle = `
 
 const headerHtml = `
   <div style="background-color: #9B1B30; padding: 32px 24px; text-align: center;">
-    <h1 style="color: #ffffff; font-size: 24px; margin: 0; font-weight: 700;">${SITE.shortName}</h1>
-    <p style="color: #EBC85B; font-size: 13px; margin: 8px 0 0; letter-spacing: 1px;">${SITE.motto}</p>
+    <img src="${SITE.url}/rotaract-logo.png" alt="${SITE.shortName}" width="200" height="50" style="height: 50px; width: auto; filter: brightness(0) invert(1);" />
+    <p style="color: #EBC85B; font-size: 13px; margin: 12px 0 0; letter-spacing: 1px;">${SITE.motto}</p>
   </div>
 `;
 

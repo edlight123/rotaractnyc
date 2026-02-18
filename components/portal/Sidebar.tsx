@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/auth';
 import Avatar from '@/components/ui/Avatar';
@@ -45,11 +46,14 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800">
-        <Link href="/portal" className="flex items-center gap-2" onClick={onClose}>
-          <div className="w-8 h-8 bg-cranberry rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">R</span>
-          </div>
-          <span className="font-display font-bold text-gray-900 dark:text-white">Rotaract NYC</span>
+        <Link href="/portal" className="flex items-center" onClick={onClose}>
+          <Image
+            src="/rotaract-logo.png"
+            alt="Rotaract NYC"
+            width={160}
+            height={40}
+            className="h-8 w-auto dark:brightness-0 dark:invert"
+          />
         </Link>
       </div>
 

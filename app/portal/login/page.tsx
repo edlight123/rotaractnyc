@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { useAuth } from '@/lib/firebase/auth';
 import Button from '@/components/ui/Button';
 import { SITE } from '@/lib/constants';
@@ -55,11 +56,15 @@ export default function PortalLoginPage() {
         <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl p-8 sm:p-10">
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="w-14 h-14 bg-cranberry rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <span className="text-white font-bold text-xl">R</span>
-            </div>
+            <Image
+              src="/rotaract-logo.png"
+              alt="Rotaract NYC"
+              width={200}
+              height={50}
+              className="h-12 w-auto mx-auto mb-4"
+              priority
+            />
             <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Member Portal</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{SITE.shortName}</p>
           </div>
 
           {loading ? (
