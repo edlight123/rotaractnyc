@@ -394,6 +394,7 @@ export default function PostComposerModal({ open, onClose, onSubmit }: PostCompo
             </h2>
             <div className="flex items-center gap-1.5 mt-0.5">
               <button
+                type="button"
                 onClick={() => setAudience(audience === 'all' ? 'board' : 'all')}
                 className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-cranberry dark:hover:text-cranberry-400 transition-colors rounded-lg px-1.5 py-0.5 -mx-1.5 hover:bg-gray-100 dark:hover:bg-gray-800"
               >
@@ -414,6 +415,7 @@ export default function PostComposerModal({ open, onClose, onSubmit }: PostCompo
           </div>
         </div>
         <button
+          type="button"
           onClick={handleClose}
           aria-label="Close"
           className="p-2 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-800 transition-colors"
@@ -428,6 +430,7 @@ export default function PostComposerModal({ open, onClose, onSubmit }: PostCompo
           {POST_TYPES.map((pt) => (
             <button
               key={pt.id}
+              type="button"
               onClick={() => setPostType(pt.id)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
                 postType === pt.id
@@ -462,6 +465,7 @@ export default function PostComposerModal({ open, onClose, onSubmit }: PostCompo
 
         <textarea
           ref={textareaRef}
+          autoFocus
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder={
@@ -514,6 +518,7 @@ export default function PostComposerModal({ open, onClose, onSubmit }: PostCompo
                   )}
                   {/* Remove button */}
                   <button
+                    type="button"
                     onClick={() => removeImage(img.id)}
                     className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 hover:bg-black/80 transition-all"
                     aria-label="Remove image"
@@ -538,6 +543,7 @@ export default function PostComposerModal({ open, onClose, onSubmit }: PostCompo
                 <p className="text-xs text-gray-400 truncate">{linkURL}</p>
               </div>
               <button
+                type="button"
                 onClick={removeLink}
                 className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
                 aria-label="Remove link"
@@ -568,8 +574,9 @@ export default function PostComposerModal({ open, onClose, onSubmit }: PostCompo
                 autoFocus
               />
             </div>
-            <Button size="sm" variant="secondary" onClick={handleLinkConfirm}>Add</Button>
+            <Button type="button" size="sm" variant="secondary" onClick={handleLinkConfirm}>Add</Button>
             <button
+              type="button"
               onClick={() => { setShowLinkInput(false); setLinkURL(''); }}
               className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
@@ -653,6 +660,7 @@ export default function PostComposerModal({ open, onClose, onSubmit }: PostCompo
                       {cat.emojis.map((emoji, i) => (
                         <button
                           key={`${cat.label}-${i}`}
+                          type="button"
                           onClick={() => insertEmoji(emoji)}
                           className="w-8 h-8 flex items-center justify-center rounded-lg text-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                         >
@@ -703,6 +711,7 @@ export default function PostComposerModal({ open, onClose, onSubmit }: PostCompo
 
         {/* Post button */}
         <Button
+          type="button"
           onClick={handleSubmit}
           disabled={!canSubmit}
           loading={posting}

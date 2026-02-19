@@ -41,18 +41,31 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { zellePhone, venmoHandle, instructions } = body;
 
-    await adminDb.collection('settings').doc('payment').set(
-      {
-        zellePhone: zellePhone || '',
-        venmoHandle: venmoHandle || '',
-        instructions: instructions || '',
-        updatedAt: new Date().toISOString(),
-        updatedBy: uid,
-      },
-      { merge: true },
-    );
+    // Accept both old and new field names for backwards compatibility
+    const data: Record<string, any> = {
+      updatedAt: new Date().toISOString(),
+      updatedBy: uid,
+    };
+
+    // Zelle
+    if ('zelleIdentifier' in body) data.zelleIdentifier = body.zelleIdentifier || '';
+    if ('zellePhone' in body) data.zellePhone = body.zellePhone || '';
+    if ('zelleEnabled' in body) data.zelleEnabled = !!body.zelleEnabled;
+
+    // Venmo
+    if ('venmoUsername' in body) data.venmoUsername = body.venmoUsername || '';
+    if ('venmoHandle' in body) data.venmoHandle = body.venmoHandle || '';
+    if ('venmoEnabled' in body) data.venmoEnabled = !!body.venmoEnabled;
+
+    // Cash App
+    if ('cashappUsername' in body) data.cashappUsername = body.cashappUsername || '';
+    if ('cashappEnabled' in body) data.cashappEnabled = !!body.cashappEnabled;
+
+    // Legacy instructions field
+    if ('instructions' in body) data.instructions = body.instructions || '';
+
+    await adminDb.collection('settings').doc('payment').set(data, { merge: true });
 
     return NextResponse.json({ success: true });
   } catch (error) {

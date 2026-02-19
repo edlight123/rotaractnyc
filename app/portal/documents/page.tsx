@@ -35,11 +35,11 @@ import {
   ExternalLink,
   ChevronRight,
   ChevronDown,
-  ArrowLeft,
   Plus,
   Pencil,
   MoreVertical,
   FolderInput,
+  ArrowUpDown,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -111,6 +111,7 @@ export default function DocumentsPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [expandedDrive, setExpandedDrive] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name-asc' | 'name-desc' | 'category'>('newest');
 
   // Folder management
   const [showCreateFolder, setShowCreateFolder] = useState(false);
@@ -139,10 +140,12 @@ export default function DocumentsPage() {
     [openFolderId, folders],
   );
 
-  // ── Filtering ──────────────────────────────────────────────────
+  // ── Filtering & Sorting ─────────────────────────────────────────
   const filtered = useMemo(() => {
     let list = docs;
-    if (openFolderId) {
+    if (openFolderId === '__unfiled__') {
+      list = list.filter((d) => !d.folderId);
+    } else if (openFolderId) {
       list = list.filter((d) => d.folderId === openFolderId);
     }
     if (search.trim()) {
@@ -155,8 +158,27 @@ export default function DocumentsPage() {
           d.uploadedByName?.toLowerCase().includes(q),
       );
     }
-    return list;
-  }, [docs, openFolderId, search]);
+    // Apply sort
+    const sorted = [...list];
+    switch (sortBy) {
+      case 'newest':
+        sorted.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+        break;
+      case 'oldest':
+        sorted.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+        break;
+      case 'name-asc':
+        sorted.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case 'name-desc':
+        sorted.sort((a, b) => b.title.localeCompare(a.title));
+        break;
+      case 'category':
+        sorted.sort((a, b) => (a.category || '').localeCompare(b.category || ''));
+        break;
+    }
+    return sorted;
+  }, [docs, openFolderId, search, sortBy]);
 
   const pinned = useMemo(() => docs.filter((d) => d.pinned), [docs]);
 
@@ -476,45 +498,19 @@ export default function DocumentsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          {openFolderId && currentFolder ? (
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => { setOpenFolderId(null); setSearch(''); }}
-                className="p-2 -ml-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
-                title="Back to folders"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <div>
-                <div className="flex items-center gap-2">
-                  <FolderOpen className={`w-5 h-5 ${(folderColorClasses[currentFolder.color] || folderColorClasses.gray).text}`} />
-                  <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">{currentFolder.name}</h1>
-                  {currentFolder.pinned && <Pin className="w-4 h-4 text-amber-500" />}
-                </div>
-                <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
-                  {folderDocCounts.get(currentFolder.id) || 0} documents
-                </p>
-              </div>
-            </div>
-          ) : (
-            <>
-              <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Documents</h1>
-              <p className="text-gray-500 dark:text-gray-400 mt-1">
-                Meeting minutes, bylaws, handbooks, reports &amp; shared folders.
-              </p>
-            </>
-          )}
+          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Documents</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Meeting minutes, bylaws, handbooks, reports &amp; shared folders.
+          </p>
         </div>
         {isBoardOrAbove && (
           <div className="flex items-center gap-2">
-            {!openFolderId && (
-              <Button variant="secondary" onClick={() => { setShowCreateFolder(true); setFolderForm({ name: '', color: 'azure' }); }}>
-                <FolderPlus className="w-4 h-4 mr-1.5 inline" />New Folder
-              </Button>
-            )}
+            <Button variant="secondary" onClick={() => { setShowCreateFolder(true); setFolderForm({ name: '', color: 'azure' }); }}>
+              <FolderPlus className="w-4 h-4 mr-1.5 inline" />New Folder
+            </Button>
             <Button onClick={() => {
               setShowUpload(!showUpload);
-              if (!showUpload) setUploadForm({ title: '', category: 'Other', description: '', linkURL: '', folderId: openFolderId || '' });
+              if (!showUpload) setUploadForm({ title: '', category: 'Other', description: '', linkURL: '', folderId: openFolderId && openFolderId !== '__unfiled__' ? openFolderId : '' });
             }}>
               {showUpload ? 'Cancel' : <><Plus className="w-4 h-4 mr-1.5 inline" />Upload</>}
             </Button>
@@ -613,92 +609,186 @@ export default function DocumentsPage() {
       {/* Content */}
       {loading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
-      ) : !openFolderId ? (
-        /* ── Root: Folder grid + pinned docs ─────────── */
-        <div className="space-y-8">
-          {/* Global search */}
-          {(docs.length > 0 || folders.length > 0) && (
-            <SearchInput value={search} onChange={setSearch} placeholder="Search all documents..." className="max-w-sm" />
+      ) : (
+        <div className="space-y-6">
+          {/* ── Folders strip — always visible at top ─────────── */}
+          {sortedFolders.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 px-1 mb-3">
+                <Folder className="w-4 h-4 text-gray-400" />
+                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Folders</h2>
+                <span className="text-xs text-gray-400">({sortedFolders.length})</span>
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700">
+                {/* "All Documents" chip */}
+                <button
+                  onClick={() => { setOpenFolderId(null); setSearch(''); }}
+                  className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
+                    !openFolderId
+                      ? 'border-cranberry bg-cranberry-50 dark:bg-cranberry-900/10 text-cranberry-700 dark:text-cranberry-300'
+                      : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  <File className="w-4 h-4" />
+                  All
+                  <span className="text-xs opacity-70">({docs.length})</span>
+                </button>
+
+                {sortedFolders.map((folder) => {
+                  const colors = folderColorClasses[folder.color] || folderColorClasses.gray;
+                  const count = folderDocCounts.get(folder.id) || 0;
+                  const isActive = openFolderId === folder.id;
+                  return (
+                    <button
+                      key={folder.id}
+                      onClick={() => { setOpenFolderId(isActive ? null : folder.id); setSearch(''); }}
+                      className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
+                        isActive
+                          ? `${colors.border} ${colors.bg} ${colors.text}`
+                          : `border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:${colors.bg}`
+                      }`}
+                    >
+                      {folder.pinned && <Pin className="w-3 h-3 text-amber-500" />}
+                      <Folder className={`w-4 h-4 ${isActive ? colors.text : 'text-gray-400'}`} />
+                      <span className="whitespace-nowrap">{folder.name}</span>
+                      <span className="text-xs opacity-70">({count})</span>
+                    </button>
+                  );
+                })}
+
+                {/* Unfiled chip */}
+                {unfiledCount > 0 && (
+                  <button
+                    onClick={() => { setOpenFolderId('__unfiled__'); setSearch(''); }}
+                    className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
+                      openFolderId === '__unfiled__'
+                        ? 'border-gray-400 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    <File className="w-4 h-4 text-gray-400" />
+                    Unfiled
+                    <span className="text-xs opacity-70">({unfiledCount})</span>
+                  </button>
+                )}
+              </div>
+            </div>
           )}
 
-          {/* If searching, show flat results */}
-          {search.trim() ? (
+          {/* ── Search + Sort bar ─────────────────────────────── */}
+          {(docs.length > 0 || folders.length > 0) && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <SearchInput
+                value={search}
+                onChange={setSearch}
+                placeholder={openFolderId && openFolderId !== '__unfiled__' ? `Search in ${currentFolder?.name || 'folder'}...` : 'Search all documents...'}
+                className="max-w-sm flex-1"
+              />
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  className="text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-gray-600 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cranberry-500/20"
+                >
+                  <option value="newest">Newest first</option>
+                  <option value="oldest">Oldest first</option>
+                  <option value="name-asc">Name A–Z</option>
+                  <option value="name-desc">Name Z–A</option>
+                  <option value="category">Category</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* ── Active folder header ──────────────────────────── */}
+          {openFolderId && openFolderId !== '__unfiled__' && currentFolder && (
+            <div className="flex items-center gap-3 px-1">
+              <FolderOpen className={`w-5 h-5 ${(folderColorClasses[currentFolder.color] || folderColorClasses.gray).text}`} />
+              <h2 className="text-lg font-display font-bold text-gray-900 dark:text-white">{currentFolder.name}</h2>
+              {currentFolder.pinned && <Pin className="w-4 h-4 text-amber-500" />}
+              <span className="text-sm text-gray-400">({folderDocCounts.get(currentFolder.id) || 0} documents)</span>
+            </div>
+          )}
+
+          {openFolderId === '__unfiled__' && (
+            <div className="flex items-center gap-3 px-1">
+              <File className="w-5 h-5 text-gray-400" />
+              <h2 className="text-lg font-display font-bold text-gray-900 dark:text-white">Unfiled Documents</h2>
+              <span className="text-sm text-gray-400">({unfiledCount})</span>
+            </div>
+          )}
+
+          {/* ── Pinned docs ───────────────────────────────────── */}
+          {!openFolderId && !search.trim() && pinned.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 px-1">
+                <Pin className="w-4 h-4 text-amber-500" />
+                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Pinned</h2>
+              </div>
+              <div className="space-y-2">{pinned.map(renderDocRow)}</div>
+            </div>
+          )}
+
+          {/* ── Folder grid (when not filtering by folder) ────── */}
+          {!openFolderId && !search.trim() && sortedFolders.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 px-1 mb-4">
+                <Folder className="w-4 h-4 text-gray-400" />
+                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Browse Folders</h2>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {sortedFolders.map(renderFolderCard)}
+              </div>
+            </div>
+          )}
+
+          {/* ── Document list ─────────────────────────────────── */}
+          {(search.trim() || openFolderId) ? (
             <div className="space-y-2">
-              <p className="text-sm text-gray-500 dark:text-gray-400 px-1">
-                {filtered.length} result{filtered.length !== 1 ? 's' : ''} for &ldquo;{search}&rdquo;
-              </p>
+              {search.trim() && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 px-1">
+                  {filtered.length} result{filtered.length !== 1 ? 's' : ''} for &ldquo;{search}&rdquo;
+                </p>
+              )}
               {filtered.length === 0 ? (
-                <EmptyState icon={<File className="w-12 h-12" />} title="No documents found" description="Try a different search term." />
+                <EmptyState
+                  icon={openFolderId ? <FolderOpen className="w-12 h-12" /> : <File className="w-12 h-12" />}
+                  title="No documents found"
+                  description={
+                    search
+                      ? 'Try a different search term.'
+                      : 'This folder is empty. Upload a document to get started.'
+                  }
+                />
               ) : (
                 filtered.map(renderDocRow)
               )}
             </div>
           ) : (
-            <>
-              {/* Pinned docs */}
-              {pinned.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 px-1">
-                    <Pin className="w-4 h-4 text-amber-500" />
-                    <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Pinned</h2>
-                  </div>
-                  <div className="space-y-2">{pinned.map(renderDocRow)}</div>
+            /* Show unfiled documents when at root */
+            unfiledCount > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 px-1">
+                  <File className="w-4 h-4 text-gray-400" />
+                  <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                    Unfiled ({unfiledCount})
+                  </h2>
                 </div>
-              )}
-
-              {/* Folders */}
-              {sortedFolders.length > 0 ? (
-                <div>
-                  <div className="flex items-center gap-2 px-1 mb-4">
-                    <Folder className="w-4 h-4 text-gray-400" />
-                    <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Folders</h2>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    {sortedFolders.map(renderFolderCard)}
-                  </div>
+                <div className="space-y-2">
+                  {docs.filter((d) => !d.folderId).map(renderDocRow)}
                 </div>
-              ) : docs.length === 0 ? (
-                <EmptyState
-                  icon={<File className="w-12 h-12" />}
-                  title="No documents yet"
-                  description={isBoardOrAbove ? 'Create a folder and start uploading documents.' : 'No documents have been uploaded yet.'}
-                />
-              ) : null}
-
-              {/* Unfiled documents */}
-              {unfiledCount > 0 && !search.trim() && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 px-1">
-                    <File className="w-4 h-4 text-gray-400" />
-                    <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                      Unfiled ({unfiledCount})
-                    </h2>
-                  </div>
-                  <div className="space-y-2">
-                    {docs.filter((d) => !d.folderId).map(renderDocRow)}
-                  </div>
-                </div>
-              )}
-            </>
+              </div>
+            )
           )}
-        </div>
-      ) : (
-        /* ── Inside a folder ─────────────────────────── */
-        <div className="space-y-4">
-          <SearchInput value={search} onChange={setSearch} placeholder={`Search in ${currentFolder?.name}...`} className="max-w-sm" />
 
-          {filtered.length === 0 ? (
+          {/* Empty state when no content at all */}
+          {!openFolderId && !search.trim() && sortedFolders.length === 0 && docs.length === 0 && (
             <EmptyState
-              icon={<FolderOpen className="w-12 h-12" />}
-              title="No documents found"
-              description={
-                search
-                  ? 'Try a different search term.'
-                  : 'This folder is empty. Upload a document to get started.'
-              }
+              icon={<File className="w-12 h-12" />}
+              title="No documents yet"
+              description={isBoardOrAbove ? 'Create a folder and start uploading documents.' : 'No documents have been uploaded yet.'}
             />
-          ) : (
-            <div className="space-y-2">{filtered.map(renderDocRow)}</div>
           )}
         </div>
       )}

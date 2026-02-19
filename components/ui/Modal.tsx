@@ -23,12 +23,24 @@ export default function Modal({ open, onClose, children, title, size = 'md', cla
   const overlayRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const titleId = title ? 'modal-title' : undefined;
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const hasInitialFocusRef = useRef(false);
 
-  // Focus trap
+  const focusElement = (el: HTMLElement) => {
+    try {
+      // Avoid scrolling the underlying page when focusing.
+      el.focus({ preventScroll: true });
+    } catch {
+      el.focus();
+    }
+  };
+
+  // Focus trap — stable callback that doesn't depend on onClose directly
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== 'Tab' || !modalRef.current) return;
@@ -53,7 +65,7 @@ export default function Modal({ open, onClose, children, title, size = 'md', cla
         }
       }
     },
-    [onClose]
+    []
   );
 
   useEffect(() => {
@@ -61,22 +73,29 @@ export default function Modal({ open, onClose, children, title, size = 'md', cla
       document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleKeyDown);
 
-      // Focus the modal or first focusable element
-      requestAnimationFrame(() => {
-        if (modalRef.current) {
-          const firstFocusable = modalRef.current.querySelector<HTMLElement>(
-            'a[href], button:not([disabled]), textarea, input:not([disabled]), select, [tabindex]:not([tabindex="-1"])'
-          );
-          if (firstFocusable) firstFocusable.focus();
-          else modalRef.current.focus();
-        }
-      });
+      // Focus the modal or first focusable element — only on initial open
+      if (!hasInitialFocusRef.current) {
+        hasInitialFocusRef.current = true;
+        requestAnimationFrame(() => {
+          if (modalRef.current) {
+            const autoFocusEl = modalRef.current.querySelector<HTMLElement>('[autofocus]');
+            const firstFocusable = modalRef.current.querySelector<HTMLElement>(
+              'a[href], button:not([disabled]), textarea, input:not([disabled]), select, [tabindex]:not([tabindex="-1"])'
+            );
+
+            if (autoFocusEl) focusElement(autoFocusEl);
+            else if (firstFocusable) focusElement(firstFocusable);
+            else focusElement(modalRef.current);
+          }
+        });
+      }
 
       return () => {
         document.body.style.overflow = '';
         window.removeEventListener('keydown', handleKeyDown);
       };
     }
+    hasInitialFocusRef.current = false;
     document.body.style.overflow = '';
   }, [open, handleKeyDown]);
 
@@ -88,7 +107,11 @@ export default function Modal({ open, onClose, children, title, size = 'md', cla
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={(e) => e.target === overlayRef.current && onClose()}
     >
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" aria-hidden="true" />
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
+        aria-hidden="true"
+        onClick={onClose}
+      />
       <div
         ref={modalRef}
         role="dialog"
@@ -106,6 +129,7 @@ export default function Modal({ open, onClose, children, title, size = 'md', cla
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
             <h2 id={titleId} className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
             <button
+              type="button"
               onClick={onClose}
               aria-label="Close dialog"
               className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-800 transition-colors"

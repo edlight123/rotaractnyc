@@ -195,7 +195,7 @@ export interface MemberDues {
 }
 
 // ----- Finance -----
-export type PaymentMethod = 'stripe' | 'zelle' | 'venmo' | 'cash' | 'check';
+export type PaymentMethod = 'stripe' | 'zelle' | 'venmo' | 'cashapp' | 'cash' | 'check';
 
 export interface Transaction {
   id: string;
@@ -327,7 +327,7 @@ export interface PaymentSettings {
 export type ActivityType = 'gala' | 'social' | 'volunteering' | 'conference' | 'excursion' | 'website' | 'maintenance' | 'other';
 export type ActivityStatus = 'draft' | 'pending_approval' | 'approved' | 'completed' | 'cancelled';
 export type ExpenseCategory = 'venue' | 'catering' | 'decorations' | 'supplies' | 'entertainment' | 'transportation' | 'marketing' | 'insurance' | 'permits' | 'other';
-export type OfflinePaymentMethod = 'zelle' | 'venmo' | 'cash' | 'check';
+export type OfflinePaymentMethod = 'zelle' | 'venmo' | 'cashapp' | 'cash' | 'check';
 export type OfflinePaymentStatus = 'pending' | 'approved' | 'rejected';
 
 export interface BudgetLineItem {

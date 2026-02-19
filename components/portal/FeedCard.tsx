@@ -16,6 +16,9 @@ interface FeedCardProps {
 export default function FeedCard({ post, onLike, onComment }: FeedCardProps) {
   const [liked, setLiked] = useState(false);
 
+  const likeDisplayCount = (post.likeCount || 0) + (liked ? 1 : 0);
+  const commentDisplayCount = post.commentCount || 0;
+
   const handleLike = () => {
     setLiked(!liked);
     onLike?.(post.id);
@@ -84,6 +87,7 @@ export default function FeedCard({ post, onLike, onComment }: FeedCardProps) {
             {/* Actions */}
             <div className="flex items-center gap-1 mt-4 pt-3.5 border-t border-gray-100 dark:border-gray-800/60">
               <button
+                type="button"
                 onClick={handleLike}
                 className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                   liked
@@ -92,16 +96,28 @@ export default function FeedCard({ post, onLike, onComment }: FeedCardProps) {
                 }`}
               >
                 <svg className="w-4.5 h-4.5" fill={liked ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={liked ? 0 : 2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-                <span className="tabular-nums">{(post.likeCount || 0) + (liked ? 1 : 0)}</span>
+                {likeDisplayCount > 0 ? (
+                  <span className="tabular-nums">{likeDisplayCount}</span>
+                ) : (
+                  <span>Like</span>
+                )}
               </button>
               <button
+                type="button"
                 onClick={() => onComment?.(post.id)}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium text-gray-500 hover:text-cranberry hover:bg-cranberry-50 dark:hover:bg-cranberry-900/10 transition-all duration-200"
               >
                 <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" /></svg>
-                <span className="tabular-nums">{post.commentCount || 0}</span>
+                {commentDisplayCount > 0 ? (
+                  <span className="tabular-nums">{commentDisplayCount}</span>
+                ) : (
+                  <span>Comment</span>
+                )}
               </button>
-              <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm text-gray-500 hover:text-azure hover:bg-azure-50 dark:hover:bg-azure-900/10 transition-all duration-200 ml-auto">
+              <button
+                type="button"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm text-gray-500 hover:text-azure hover:bg-azure-50 dark:hover:bg-azure-900/10 transition-all duration-200 ml-auto"
+              >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" /></svg>
               </button>
             </div>

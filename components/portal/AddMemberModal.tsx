@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState, useCallback, type FormEvent, type ChangeEvent } from 'react';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import Textarea from '@/components/ui/Textarea';
+import Select from '@/components/ui/Select';
+import SelectWithOther from '@/components/ui/SelectWithOther';
 import { apiPost } from '@/hooks/useFirestore';
+import { toSelectOptions, DEFAULT_COMMITTEES, DEFAULT_OCCUPATIONS } from '@/lib/profileOptions';
 import type { MemberRole, MemberStatus } from '@/types';
 
 interface AddMemberModalProps {
@@ -14,14 +17,14 @@ interface AddMemberModalProps {
   onCreated?: () => void;
 }
 
-const ROLES: { value: MemberRole; label: string }[] = [
+const ROLES: { value: string; label: string }[] = [
   { value: 'member', label: 'Member' },
   { value: 'board', label: 'Board' },
   { value: 'treasurer', label: 'Treasurer' },
   { value: 'president', label: 'President' },
 ];
 
-const STATUSES: { value: MemberStatus; label: string }[] = [
+const STATUSES: { value: string; label: string }[] = [
   { value: 'active', label: 'Active' },
   { value: 'pending', label: 'Pending' },
   { value: 'inactive', label: 'Inactive' },
@@ -33,45 +36,54 @@ const MEMBER_TYPES = [
   { value: 'student', label: 'Student' },
 ];
 
-const selectClass =
-  'w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm transition-colors duration-150 ' +
-  'focus:outline-none focus:ring-2 focus:ring-cranberry-500/20 focus:border-cranberry-500 ' +
-  'dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100';
+interface FormState {
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: MemberRole;
+  status: MemberStatus;
+  memberType: string;
+  committee: string;
+  phone: string;
+  birthday: string;
+  occupation: string;
+  employer: string;
+  linkedIn: string;
+  bio: string;
+}
+
+const INITIAL_FORM: FormState = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  role: 'member',
+  status: 'active',
+  memberType: 'professional',
+  committee: '',
+  phone: '',
+  birthday: '',
+  occupation: '',
+  employer: '',
+  linkedIn: '',
+  bio: '',
+};
 
 export default function AddMemberModal({ open, onClose, onCreated }: AddMemberModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [form, setForm] = useState<FormState>(INITIAL_FORM);
 
-  // Form state
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState<MemberRole>('member');
-  const [status, setStatus] = useState<MemberStatus>('active');
-  const [memberType, setMemberType] = useState('professional');
-  const [committee, setCommittee] = useState('');
-  const [phone, setPhone] = useState('');
-  const [birthday, setBirthday] = useState('');
-  const [occupation, setOccupation] = useState('');
-  const [employer, setEmployer] = useState('');
-  const [linkedIn, setLinkedIn] = useState('');
-  const [bio, setBio] = useState('');
+  const updateField = useCallback(<K extends keyof FormState>(field: K, value: FormState[K]) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
+  const handleInputChange = useCallback((field: keyof FormState) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  }, []);
 
   function resetForm() {
-    setFirstName('');
-    setLastName('');
-    setEmail('');
-    setRole('member');
-    setStatus('active');
-    setMemberType('professional');
-    setCommittee('');
-    setPhone('');
-    setBirthday('');
-    setOccupation('');
-    setEmployer('');
-    setLinkedIn('');
-    setBio('');
+    setForm(INITIAL_FORM);
     setError('');
     setSuccess(false);
   }
@@ -88,19 +100,19 @@ export default function AddMemberModal({ open, onClose, onCreated }: AddMemberMo
 
     try {
       await apiPost('/api/portal/members', {
-        firstName,
-        lastName,
-        email,
-        role,
-        status,
-        memberType,
-        committee: committee || undefined,
-        phone: phone || undefined,
-        birthday: birthday || undefined,
-        occupation: occupation || undefined,
-        employer: employer || undefined,
-        linkedIn: linkedIn || undefined,
-        bio: bio || undefined,
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        role: form.role,
+        status: form.status,
+        memberType: form.memberType,
+        committee: form.committee || undefined,
+        phone: form.phone || undefined,
+        birthday: form.birthday || undefined,
+        occupation: form.occupation || undefined,
+        employer: form.employer || undefined,
+        linkedIn: form.linkedIn || undefined,
+        bio: form.bio || undefined,
       });
       setSuccess(true);
       onCreated?.();
@@ -124,7 +136,7 @@ export default function AddMemberModal({ open, onClose, onCreated }: AddMemberMo
           </div>
           <h3 className="text-lg font-bold text-gray-900 dark:text-white">Invitation Sent!</h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 text-center max-w-xs">
-            {firstName} will receive an email at <strong>{email}</strong> with instructions to sign in and complete their profile.
+            {form.firstName} will receive an email at <strong>{form.email}</strong> with instructions to sign in and complete their profile.
           </p>
         </div>
       ) : (
@@ -140,16 +152,18 @@ export default function AddMemberModal({ open, onClose, onCreated }: AddMemberMo
             <Input
               label="First Name"
               placeholder="Jane"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              value={form.firstName}
+              onChange={handleInputChange('firstName')}
               required
+              autoComplete="off"
             />
             <Input
               label="Last Name"
               placeholder="Doe"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              value={form.lastName}
+              onChange={handleInputChange('lastName')}
               required
+              autoComplete="off"
             />
           </div>
 
@@ -158,93 +172,68 @@ export default function AddMemberModal({ open, onClose, onCreated }: AddMemberMo
             label="Email"
             type="email"
             placeholder="jane@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={form.email}
+            onChange={handleInputChange('email')}
             required
+            autoComplete="off"
           />
 
           {/* ── Role / Status / Type row ── */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Role
-              </label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as MemberRole)}
-                className={selectClass}
-              >
-                {ROLES.map((r) => (
-                  <option key={r.value} value={r.value}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Status
-              </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as MemberStatus)}
-                className={selectClass}
-              >
-                {STATUSES.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Member Type
-              </label>
-              <select
-                value={memberType}
-                onChange={(e) => setMemberType(e.target.value)}
-                className={selectClass}
-              >
-                {MEMBER_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Role"
+              value={form.role}
+              onChange={(e) => updateField('role', e.target.value as MemberRole)}
+              options={ROLES}
+            />
+            <Select
+              label="Status"
+              value={form.status}
+              onChange={(e) => updateField('status', e.target.value as MemberStatus)}
+              options={STATUSES}
+            />
+            <Select
+              label="Member Type"
+              value={form.memberType}
+              onChange={handleInputChange('memberType')}
+              options={MEMBER_TYPES}
+            />
           </div>
 
           {/* ── Committee / Phone ── */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
+            <SelectWithOther
               label="Committee"
-              placeholder="Community Service"
-              value={committee}
-              onChange={(e) => setCommittee(e.target.value)}
+              value={form.committee}
+              onChange={(v) => updateField('committee', v)}
+              options={toSelectOptions(DEFAULT_COMMITTEES)}
+              placeholder="Select a committee"
             />
             <Input
               label="Phone"
               type="tel"
               placeholder="+1 (555) 123-4567"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              value={form.phone}
+              onChange={handleInputChange('phone')}
+              autoComplete="off"
             />
           </div>
 
           {/* ── Occupation / Employer ── */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
+            <SelectWithOther
               label="Occupation"
-              placeholder="Software Engineer"
-              value={occupation}
-              onChange={(e) => setOccupation(e.target.value)}
+              value={form.occupation}
+              onChange={(v) => updateField('occupation', v)}
+              options={toSelectOptions(DEFAULT_OCCUPATIONS)}
+              placeholder="Select an occupation"
             />
             <Input
               label="Employer"
               placeholder="Acme Corp"
-              value={employer}
-              onChange={(e) => setEmployer(e.target.value)}
+              value={form.employer}
+              onChange={handleInputChange('employer')}
+              autoComplete="off"
             />
           </div>
 
@@ -253,15 +242,16 @@ export default function AddMemberModal({ open, onClose, onCreated }: AddMemberMo
             <Input
               label="Birthday"
               type="date"
-              value={birthday}
-              onChange={(e) => setBirthday(e.target.value)}
+              value={form.birthday}
+              onChange={handleInputChange('birthday')}
             />
             <Input
               label="LinkedIn"
               type="url"
               placeholder="https://linkedin.com/in/janedoe"
-              value={linkedIn}
-              onChange={(e) => setLinkedIn(e.target.value)}
+              value={form.linkedIn}
+              onChange={handleInputChange('linkedIn')}
+              autoComplete="off"
             />
           </div>
 
@@ -269,8 +259,9 @@ export default function AddMemberModal({ open, onClose, onCreated }: AddMemberMo
           <Textarea
             label="Bio"
             placeholder="Short bio or intro..."
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
+            value={form.bio}
+            onChange={(e) => updateField('bio', e.target.value)}
+            autoComplete="off"
           />
 
           {/* ── Actions ── */}
