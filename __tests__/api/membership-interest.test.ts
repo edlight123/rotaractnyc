@@ -2,11 +2,17 @@
  * Tests for POST /api/membership-interest
  */
 
-const mockSend = jest.fn().mockResolvedValue({ id: 'test-id' });
-jest.mock('resend', () => ({
-  Resend: jest.fn().mockImplementation(() => ({
-    emails: { send: mockSend },
-  })),
+const mockSendEmail = jest.fn();
+
+jest.mock('@/lib/email/send', () => ({
+  sendEmail: (...args: any[]) => mockSendEmail(...args),
+}));
+
+jest.mock('@/lib/rateLimit', () => ({
+  rateLimit: () => ({ allowed: true, remaining: 10, resetAt: Date.now() + 60_000 }),
+  getRateLimitKey: () => 'test-key',
+  rateLimitResponse: () =>
+    new Response(JSON.stringify({ error: 'Too many requests' }), { status: 429 }),
 }));
 
 import { POST } from '@/app/api/membership-interest/route';
@@ -22,6 +28,7 @@ function makeRequest(body: Record<string, any>) {
 describe('POST /api/membership-interest', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSendEmail.mockResolvedValue({ success: true, id: 'test-id' });
   });
 
   it('returns 400 when firstName is missing', async () => {
@@ -38,8 +45,7 @@ describe('POST /api/membership-interest', () => {
     expect(data.error).toMatch(/email/i);
   });
 
-  it('sends email via Resend when configured', async () => {
-    process.env.RESEND_API_KEY = 'test-key';
+  it('sends email via sendEmail when called', async () => {
     const res = await POST(
       makeRequest({
         firstName: 'Jane',
@@ -53,18 +59,16 @@ describe('POST /api/membership-interest', () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.success).toBe(true);
-    expect(mockSend).toHaveBeenCalledTimes(1);
-    expect(mockSend).toHaveBeenCalledWith(
+    expect(mockSendEmail).toHaveBeenCalledTimes(1);
+    expect(mockSendEmail).toHaveBeenCalledWith(
       expect.objectContaining({
         replyTo: 'jane@test.com',
         subject: expect.stringContaining('Jane Doe'),
       }),
     );
-    delete process.env.RESEND_API_KEY;
   });
 
   it('succeeds with only required fields', async () => {
-    delete process.env.RESEND_API_KEY;
     const spy = jest.spyOn(console, 'log').mockImplementation();
     const res = await POST(makeRequest({ firstName: 'Test', email: 'a@b.com' }));
     expect(res.status).toBe(200);

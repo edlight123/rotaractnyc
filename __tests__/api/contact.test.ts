@@ -1,18 +1,21 @@
 /**
  * Tests for POST /api/contact
  *
- * We mock the Resend SDK and test:
- * - validation (missing fields)
- * - success with Resend configured
- * - fallback when Resend not configured
+ * We mock sendEmail (the app's email abstraction) and the rate limiter
+ * so tests are fast and deterministic.
  */
 
-// Mock Resend
-const mockSend = jest.fn().mockResolvedValue({ id: 'test-id' });
-jest.mock('resend', () => ({
-  Resend: jest.fn().mockImplementation(() => ({
-    emails: { send: mockSend },
-  })),
+const mockSendEmail = jest.fn();
+
+jest.mock('@/lib/email/send', () => ({
+  sendEmail: (...args: any[]) => mockSendEmail(...args),
+}));
+
+jest.mock('@/lib/rateLimit', () => ({
+  rateLimit: () => ({ allowed: true, remaining: 10, resetAt: Date.now() + 60_000 }),
+  getRateLimitKey: () => 'test-key',
+  rateLimitResponse: () =>
+    new Response(JSON.stringify({ error: 'Too many requests' }), { status: 429 }),
 }));
 
 import { POST } from '@/app/api/contact/route';
@@ -28,6 +31,7 @@ function makeRequest(body: Record<string, any>) {
 describe('POST /api/contact', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSendEmail.mockResolvedValue({ success: true, id: 'test-id' });
   });
 
   it('returns 400 when name is missing', async () => {
@@ -51,34 +55,33 @@ describe('POST /api/contact', () => {
     expect(data.error).toMatch(/message/i);
   });
 
-  it('sends email via Resend when API key is configured', async () => {
-    process.env.RESEND_API_KEY = 'test-key';
+  it('sends email via sendEmail and returns 200', async () => {
     const res = await POST(
       makeRequest({ name: 'Test User', email: 'test@test.com', message: 'Hello!' }),
     );
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.success).toBe(true);
-    expect(mockSend).toHaveBeenCalledTimes(1);
-    expect(mockSend).toHaveBeenCalledWith(
+    expect(mockSendEmail).toHaveBeenCalledTimes(1);
+    expect(mockSendEmail).toHaveBeenCalledWith(
       expect.objectContaining({
         replyTo: 'test@test.com',
         subject: expect.stringContaining('Test User'),
       }),
     );
-    delete process.env.RESEND_API_KEY;
   });
 
-  it('logs to console when Resend is not configured', async () => {
-    delete process.env.RESEND_API_KEY;
+  it('still returns 200 when email send fails (graceful fallback)', async () => {
+    mockSendEmail.mockResolvedValue({ success: false, error: 'Email not configured' });
     const spy = jest.spyOn(console, 'log').mockImplementation();
     const res = await POST(
       makeRequest({ name: 'Test', email: 'a@b.com', message: 'hi' }),
     );
     expect(res.status).toBe(200);
     expect(spy).toHaveBeenCalledWith(
-      expect.stringContaining('Resend not configured'),
-      expect.any(Object),
+      expect.stringContaining('email not sent'),
+      expect.any(String),
+      expect.any(String),
     );
     spy.mockRestore();
   });
