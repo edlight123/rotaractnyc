@@ -2,7 +2,7 @@
  * Server-side Firestore query helpers.
  * Used by public pages to fetch data with fallback to defaults.
  */
-import { adminDb } from './admin';
+import { adminDb, serializeDoc } from './admin';
 import {
   defaultEvents,
   defaultArticles,
@@ -28,7 +28,7 @@ export async function getPublicEvents(): Promise<RotaractEvent[]> {
       .get();
 
     if (snap.empty) return defaultEvents;
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as RotaractEvent));
+    return snap.docs.map((d) => serializeDoc({ id: d.id, ...d.data() }) as RotaractEvent);
   } catch (e) {
     console.error('getPublicEvents error:', e);
     return defaultEvents;
@@ -45,7 +45,7 @@ export async function getEventBySlug(slug: string): Promise<RotaractEvent | null
       .get();
 
     if (!snap.empty) {
-      return { id: snap.docs[0].id, ...snap.docs[0].data() } as RotaractEvent;
+      return serializeDoc({ id: snap.docs[0].id, ...snap.docs[0].data() }) as RotaractEvent;
     }
     // fallback
     return defaultEvents.find((e) => e.slug === slug) ?? null;
@@ -65,7 +65,7 @@ export async function getPublishedArticles(): Promise<Article[]> {
       .get();
 
     if (snap.empty) return defaultArticles;
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Article));
+    return snap.docs.map((d) => serializeDoc({ id: d.id, ...d.data() }) as Article);
   } catch (e) {
     console.error('getPublishedArticles error:', e);
     return defaultArticles;
@@ -82,7 +82,7 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
       .get();
 
     if (!snap.empty) {
-      return { id: snap.docs[0].id, ...snap.docs[0].data() } as Article;
+      return serializeDoc({ id: snap.docs[0].id, ...snap.docs[0].data() }) as Article;
     }
     return defaultArticles.find((a) => a.slug === slug) ?? null;
   } catch {
@@ -102,7 +102,7 @@ export async function getBoardMembers(): Promise<BoardMember[]> {
     if (snap.exists) {
       const data = snap.data();
       if (data?.members && Array.isArray(data.members) && data.members.length > 0) {
-        return data.members as BoardMember[];
+        return (data.members as BoardMember[]).map((m) => serializeDoc(m) as BoardMember);
       }
     }
 
@@ -146,7 +146,7 @@ export async function getGalleryImages(): Promise<GalleryImage[]> {
       .get();
 
     if (snap.empty) return defaultGallery;
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as GalleryImage));
+    return snap.docs.map((d) => serializeDoc({ id: d.id, ...d.data() }) as GalleryImage);
   } catch (e) {
     console.error('getGalleryImages error:', e);
     return defaultGallery;
