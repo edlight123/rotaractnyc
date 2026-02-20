@@ -15,7 +15,7 @@ const sizes = {
 };
 
 export default function Avatar({ src, alt, size = 'md', className }: AvatarProps) {
-  const initials = (alt || '')
+  const initials = String(alt ?? '')
     .split(' ')
     .map((w) => w[0])
     .filter(Boolean)

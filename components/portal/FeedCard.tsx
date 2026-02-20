@@ -32,7 +32,7 @@ export default function FeedCard({ post, onLike, onComment }: FeedCardProps) {
 
   /* ── Truncation logic ── */
   const { needsTruncation, visibleContent } = useMemo(() => {
-    const text = post.content || '';
+    const text = String(post.content ?? '');
     const lines = text.split('\n');
     const tooLong = text.length > COLLAPSE_CHARS;
     const tooManyLines = lines.length > COLLAPSE_LINES;
