@@ -4,12 +4,9 @@ import { useState, useCallback, type FormEvent, type ChangeEvent } from 'react';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
-import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
-import SelectWithOther from '@/components/ui/SelectWithOther';
 import { apiPost } from '@/hooks/useFirestore';
-import { toSelectOptions, DEFAULT_COMMITTEES, DEFAULT_OCCUPATIONS } from '@/lib/profileOptions';
-import type { MemberRole, MemberStatus } from '@/types';
+import type { MemberRole } from '@/types';
 
 interface AddMemberModalProps {
   open: boolean;
@@ -24,32 +21,11 @@ const ROLES: { value: string; label: string }[] = [
   { value: 'president', label: 'President' },
 ];
 
-const STATUSES: { value: string; label: string }[] = [
-  { value: 'active', label: 'Active' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'inactive', label: 'Inactive' },
-  { value: 'alumni', label: 'Alumni' },
-];
-
-const MEMBER_TYPES = [
-  { value: 'professional', label: 'Professional' },
-  { value: 'student', label: 'Student' },
-];
-
 interface FormState {
   firstName: string;
   lastName: string;
   email: string;
   role: MemberRole;
-  status: MemberStatus;
-  memberType: string;
-  committee: string;
-  phone: string;
-  birthday: string;
-  occupation: string;
-  employer: string;
-  linkedIn: string;
-  bio: string;
 }
 
 const INITIAL_FORM: FormState = {
@@ -57,15 +33,6 @@ const INITIAL_FORM: FormState = {
   lastName: '',
   email: '',
   role: 'member',
-  status: 'active',
-  memberType: 'professional',
-  committee: '',
-  phone: '',
-  birthday: '',
-  occupation: '',
-  employer: '',
-  linkedIn: '',
-  bio: '',
 };
 
 export default function AddMemberModal({ open, onClose, onCreated }: AddMemberModalProps) {
@@ -74,11 +41,7 @@ export default function AddMemberModal({ open, onClose, onCreated }: AddMemberMo
   const [success, setSuccess] = useState(false);
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
 
-  const updateField = useCallback(<K extends keyof FormState>(field: K, value: FormState[K]) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  }, []);
-
-  const handleInputChange = useCallback((field: keyof FormState) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = useCallback((field: keyof FormState) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
   }, []);
 
@@ -104,15 +67,7 @@ export default function AddMemberModal({ open, onClose, onCreated }: AddMemberMo
         lastName: form.lastName,
         email: form.email,
         role: form.role,
-        status: form.status,
-        memberType: form.memberType,
-        committee: form.committee || undefined,
-        phone: form.phone || undefined,
-        birthday: form.birthday || undefined,
-        occupation: form.occupation || undefined,
-        employer: form.employer || undefined,
-        linkedIn: form.linkedIn || undefined,
-        bio: form.bio || undefined,
+        status: 'pending',
       });
       setSuccess(true);
       onCreated?.();
@@ -128,7 +83,7 @@ export default function AddMemberModal({ open, onClose, onCreated }: AddMemberMo
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title="Add New Member" size="lg" noPadding>
+    <Modal open={open} onClose={handleClose} title="Add New Member" size="sm" noPadding>
       {success ? (
         <div className="flex flex-col items-center py-12 gap-3 px-6">
           <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
@@ -140,61 +95,30 @@ export default function AddMemberModal({ open, onClose, onCreated }: AddMemberMo
           </p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="flex flex-col min-h-0">
-          {/* ── Scrollable body ── */}
-          <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 space-y-6">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 px-6 py-5 space-y-4">
             {error && (
               <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-300">
                 {error}
               </div>
             )}
 
-            {/* ── Section: Identity ── */}
-            <div className="space-y-4">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Required info</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input label="First Name" placeholder="Jane" value={form.firstName} onChange={handleInputChange('firstName')} required autoComplete="off" />
-                <Input label="Last Name" placeholder="Doe" value={form.lastName} onChange={handleInputChange('lastName')} required autoComplete="off" />
-              </div>
-              <Input label="Email" type="email" placeholder="jane@example.com" value={form.email} onChange={handleInputChange('email')} required autoComplete="off" />
-            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Enter the new member's basic info. They'll receive an invite email and complete the rest of their profile during onboarding.
+            </p>
 
-            {/* ── Section: Role & Status ── */}
-            <div className="space-y-4">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Role &amp; membership</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Select label="Role" value={form.role} onChange={(e) => updateField('role', e.target.value as MemberRole)} options={ROLES} />
-                <Select label="Status" value={form.status} onChange={(e) => updateField('status', e.target.value as MemberStatus)} options={STATUSES} />
-                <Select label="Member Type" value={form.memberType} onChange={handleInputChange('memberType')} options={MEMBER_TYPES} />
-              </div>
-              <SelectWithOther label="Committee" value={form.committee} onChange={(v) => updateField('committee', v)} options={toSelectOptions(DEFAULT_COMMITTEES)} placeholder="Select a committee" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input label="First Name" placeholder="Jane" value={form.firstName} onChange={handleInputChange('firstName')} required autoComplete="off" />
+              <Input label="Last Name" placeholder="Doe" value={form.lastName} onChange={handleInputChange('lastName')} required autoComplete="off" />
             </div>
-
-            {/* ── Section: Professional ── */}
-            <div className="space-y-4">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Professional</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <SelectWithOther label="Occupation" value={form.occupation} onChange={(v) => updateField('occupation', v)} options={toSelectOptions(DEFAULT_OCCUPATIONS)} placeholder="Select an occupation" />
-                <Input label="Employer" placeholder="Acme Corp" value={form.employer} onChange={handleInputChange('employer')} autoComplete="off" />
-              </div>
-            </div>
-
-            {/* ── Section: Contact ── */}
-            <div className="space-y-4">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Contact &amp; personal</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input label="Phone" type="tel" placeholder="+1 (555) 123-4567" value={form.phone} onChange={handleInputChange('phone')} autoComplete="off" />
-                <Input label="Birthday" type="date" value={form.birthday} onChange={handleInputChange('birthday')} />
-              </div>
-              <Input label="LinkedIn" type="url" placeholder="https://linkedin.com/in/janedoe" value={form.linkedIn} onChange={handleInputChange('linkedIn')} autoComplete="off" />
-              <Textarea label="Bio" placeholder="Short bio or intro..." value={form.bio} onChange={(e) => updateField('bio', e.target.value)} autoComplete="off" />
-            </div>
+            <Input label="Email" type="email" placeholder="jane@example.com" value={form.email} onChange={handleInputChange('email')} required autoComplete="off" />
+            <Select label="Role" value={form.role} onChange={(e) => setForm((p) => ({ ...p, role: e.target.value as MemberRole }))} options={ROLES} />
           </div>
 
           {/* ── Sticky footer ── */}
           <div className="shrink-0 flex justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
             <Button type="button" variant="ghost" onClick={handleClose}>Cancel</Button>
-            <Button type="submit" loading={loading}>Add Member</Button>
+            <Button type="submit" loading={loading}>Send Invite</Button>
           </div>
         </form>
       )}

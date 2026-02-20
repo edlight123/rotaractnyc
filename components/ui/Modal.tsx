@@ -173,7 +173,7 @@ export default function Modal({ open, onClose, children, title, size = 'md', cla
           </div>
         )}
         {noPadding
-          ? <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">{children}</div>
+          ? <div className="flex-1 min-h-0 flex flex-col overflow-hidden">{children}</div>
           : <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 p-6">{children}</div>
         }
       </div>

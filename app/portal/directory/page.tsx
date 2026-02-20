@@ -58,6 +58,7 @@ export default function DirectoryPage() {
   ];
 
   return (
+    <>
     <div className="max-w-6xl mx-auto space-y-8 page-enter">
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -222,14 +223,17 @@ export default function DirectoryPage() {
         </div>
       )}
 
-      {/* ── Add Member Modal ── */}
-      {isAdmin && (
-        <AddMemberModal
-          open={showAddModal}
-          onClose={() => setShowAddModal(false)}
-          onCreated={() => setRefreshKey((k) => k + 1)}
-        />
-      )}
     </div>
+
+    {/* AddMemberModal must live outside page-enter: that div retains transform:translateY(0)
+        via fill-mode:both which creates a CSS containing block that traps position:fixed. */}
+    {isAdmin && (
+      <AddMemberModal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onCreated={() => setRefreshKey((k) => k + 1)}
+      />
+    )}
+    </>
   );
 }

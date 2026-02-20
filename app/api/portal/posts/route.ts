@@ -49,12 +49,27 @@ export async function POST(request: NextRequest) {
     const memberDoc = await adminDb.collection('members').doc(uid).get();
     const memberData = memberDoc.data();
 
+    const resolvedName =
+      memberData?.displayName ||
+      [memberData?.firstName, memberData?.lastName].filter(Boolean).join(' ') ||
+      body.authorName ||
+      'Member';
+
+    const resolvedRole = (() => {
+      const r = memberData?.role as string | undefined;
+      if (r === 'president') return 'President';
+      if (r === 'treasurer') return 'Treasurer';
+      if (r === 'board') return 'Board Member';
+      return undefined;
+    })();
+
     const post: Record<string, unknown> = {
       type: body.type || 'text',
       content: body.content,
       authorId: uid,
-      authorName: memberData?.displayName || body.authorName || '',
+      authorName: resolvedName,
       authorPhoto: memberData?.photoURL || body.authorPhotoURL || '',
+      ...(resolvedRole ? { authorRole: resolvedRole } : {}),
       imageURLs: body.imageURLs || [],
       likeCount: 0,
       commentCount: 0,

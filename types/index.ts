@@ -128,6 +128,7 @@ export interface CommunityPost {
   authorId: string;
   authorName: string;
   authorPhoto?: string;
+  authorRole?: string;
   type: PostType;
   content: string;
   imageURLs?: string[];
