@@ -152,13 +152,13 @@ export default function Modal({ open, onClose, children, title, size = 'md', cla
         tabIndex={-1}
         className={cn(
           'relative z-10 w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl animate-scale-in',
-          'max-h-[90vh] overflow-y-auto overscroll-contain',
+          'max-h-[90vh] flex flex-col overflow-hidden',
           modalSizes[size],
           className
         )}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+          <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
             <h2 id={titleId} className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
             <button
               type="button"
@@ -167,12 +167,15 @@ export default function Modal({ open, onClose, children, title, size = 'md', cla
               className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-800 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
         )}
-        {noPadding ? children : <div className="p-6">{children}</div>}
+        {noPadding
+          ? <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">{children}</div>
+          : <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 p-6">{children}</div>
+        }
       </div>
     </div>
   );

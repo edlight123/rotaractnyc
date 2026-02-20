@@ -128,9 +128,9 @@ export default function AddMemberModal({ open, onClose, onCreated }: AddMemberMo
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title="Add New Member" size="lg">
+    <Modal open={open} onClose={handleClose} title="Add New Member" size="lg" noPadding>
       {success ? (
-        <div className="flex flex-col items-center py-8 gap-3">
+        <div className="flex flex-col items-center py-12 gap-3 px-6">
           <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
             <svg className="w-7 h-7 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
           </div>
@@ -140,138 +140,61 @@ export default function AddMemberModal({ open, onClose, onCreated }: AddMemberMo
           </p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {error && (
-            <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-300">
-              {error}
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0">
+          {/* ── Scrollable body ── */}
+          <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 space-y-6">
+            {error && (
+              <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+                {error}
+              </div>
+            )}
+
+            {/* ── Section: Identity ── */}
+            <div className="space-y-4">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Required info</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input label="First Name" placeholder="Jane" value={form.firstName} onChange={handleInputChange('firstName')} required autoComplete="off" />
+                <Input label="Last Name" placeholder="Doe" value={form.lastName} onChange={handleInputChange('lastName')} required autoComplete="off" />
+              </div>
+              <Input label="Email" type="email" placeholder="jane@example.com" value={form.email} onChange={handleInputChange('email')} required autoComplete="off" />
             </div>
-          )}
 
-          {/* ── Name row ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="First Name"
-              placeholder="Jane"
-              value={form.firstName}
-              onChange={handleInputChange('firstName')}
-              required
-              autoComplete="off"
-            />
-            <Input
-              label="Last Name"
-              placeholder="Doe"
-              value={form.lastName}
-              onChange={handleInputChange('lastName')}
-              required
-              autoComplete="off"
-            />
+            {/* ── Section: Role & Status ── */}
+            <div className="space-y-4">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Role &amp; membership</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Select label="Role" value={form.role} onChange={(e) => updateField('role', e.target.value as MemberRole)} options={ROLES} />
+                <Select label="Status" value={form.status} onChange={(e) => updateField('status', e.target.value as MemberStatus)} options={STATUSES} />
+                <Select label="Member Type" value={form.memberType} onChange={handleInputChange('memberType')} options={MEMBER_TYPES} />
+              </div>
+              <SelectWithOther label="Committee" value={form.committee} onChange={(v) => updateField('committee', v)} options={toSelectOptions(DEFAULT_COMMITTEES)} placeholder="Select a committee" />
+            </div>
+
+            {/* ── Section: Professional ── */}
+            <div className="space-y-4">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Professional</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <SelectWithOther label="Occupation" value={form.occupation} onChange={(v) => updateField('occupation', v)} options={toSelectOptions(DEFAULT_OCCUPATIONS)} placeholder="Select an occupation" />
+                <Input label="Employer" placeholder="Acme Corp" value={form.employer} onChange={handleInputChange('employer')} autoComplete="off" />
+              </div>
+            </div>
+
+            {/* ── Section: Contact ── */}
+            <div className="space-y-4">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Contact &amp; personal</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input label="Phone" type="tel" placeholder="+1 (555) 123-4567" value={form.phone} onChange={handleInputChange('phone')} autoComplete="off" />
+                <Input label="Birthday" type="date" value={form.birthday} onChange={handleInputChange('birthday')} />
+              </div>
+              <Input label="LinkedIn" type="url" placeholder="https://linkedin.com/in/janedoe" value={form.linkedIn} onChange={handleInputChange('linkedIn')} autoComplete="off" />
+              <Textarea label="Bio" placeholder="Short bio or intro..." value={form.bio} onChange={(e) => updateField('bio', e.target.value)} autoComplete="off" />
+            </div>
           </div>
 
-          {/* ── Email ── */}
-          <Input
-            label="Email"
-            type="email"
-            placeholder="jane@example.com"
-            value={form.email}
-            onChange={handleInputChange('email')}
-            required
-            autoComplete="off"
-          />
-
-          {/* ── Role / Status / Type row ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Select
-              label="Role"
-              value={form.role}
-              onChange={(e) => updateField('role', e.target.value as MemberRole)}
-              options={ROLES}
-            />
-            <Select
-              label="Status"
-              value={form.status}
-              onChange={(e) => updateField('status', e.target.value as MemberStatus)}
-              options={STATUSES}
-            />
-            <Select
-              label="Member Type"
-              value={form.memberType}
-              onChange={handleInputChange('memberType')}
-              options={MEMBER_TYPES}
-            />
-          </div>
-
-          {/* ── Committee / Phone ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <SelectWithOther
-              label="Committee"
-              value={form.committee}
-              onChange={(v) => updateField('committee', v)}
-              options={toSelectOptions(DEFAULT_COMMITTEES)}
-              placeholder="Select a committee"
-            />
-            <Input
-              label="Phone"
-              type="tel"
-              placeholder="+1 (555) 123-4567"
-              value={form.phone}
-              onChange={handleInputChange('phone')}
-              autoComplete="off"
-            />
-          </div>
-
-          {/* ── Occupation / Employer ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <SelectWithOther
-              label="Occupation"
-              value={form.occupation}
-              onChange={(v) => updateField('occupation', v)}
-              options={toSelectOptions(DEFAULT_OCCUPATIONS)}
-              placeholder="Select an occupation"
-            />
-            <Input
-              label="Employer"
-              placeholder="Acme Corp"
-              value={form.employer}
-              onChange={handleInputChange('employer')}
-              autoComplete="off"
-            />
-          </div>
-
-          {/* ── Birthday / LinkedIn ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Birthday"
-              type="date"
-              value={form.birthday}
-              onChange={handleInputChange('birthday')}
-            />
-            <Input
-              label="LinkedIn"
-              type="url"
-              placeholder="https://linkedin.com/in/janedoe"
-              value={form.linkedIn}
-              onChange={handleInputChange('linkedIn')}
-              autoComplete="off"
-            />
-          </div>
-
-          {/* ── Bio ── */}
-          <Textarea
-            label="Bio"
-            placeholder="Short bio or intro..."
-            value={form.bio}
-            onChange={(e) => updateField('bio', e.target.value)}
-            autoComplete="off"
-          />
-
-          {/* ── Actions ── */}
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="ghost" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={loading}>
-              Add Member
-            </Button>
+          {/* ── Sticky footer ── */}
+          <div className="shrink-0 flex justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+            <Button type="button" variant="ghost" onClick={handleClose}>Cancel</Button>
+            <Button type="submit" loading={loading}>Add Member</Button>
           </div>
         </form>
       )}
