@@ -173,45 +173,67 @@ export default function FeedCard({ post, onLike, onComment }: FeedCardProps) {
           </a>
         )}
 
-        {/* ── Actions + counts (single compact row) ── */}
-        <div className="flex items-center gap-1 mt-3 pt-2.5 border-t border-gray-100 dark:border-gray-800/50">
+        {/* ── Engagement tally ── */}
+        {(likeDisplayCount > 0 || commentDisplayCount > 0) && (
+          <div className="flex items-center gap-3 mt-4 px-0.5 text-xs text-gray-400 dark:text-gray-500">
+            {likeDisplayCount > 0 && (
+              <span className="flex items-center gap-1.5">
+                <span className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full bg-gradient-to-br from-red-400 to-rose-500 text-white shadow-sm">
+                  <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </span>
+                <span className="tabular-nums font-medium">{likeDisplayCount}</span>
+              </span>
+            )}
+            {likeDisplayCount > 0 && commentDisplayCount > 0 && (
+              <span className="w-1 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
+            )}
+            {commentDisplayCount > 0 && (
+              <span className="tabular-nums">
+                {commentDisplayCount} {commentDisplayCount === 1 ? 'comment' : 'comments'}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* ── Action bar ── */}
+        <div className="flex items-center mt-3 pt-3 border-t border-gray-100 dark:border-gray-800/60 -mx-1 gap-0.5">
           <button
             type="button"
             onClick={handleLike}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 ${
               liked
                 ? 'text-rose-500 bg-rose-50 dark:bg-rose-900/20'
                 : 'text-gray-400 hover:text-rose-500 hover:bg-rose-50/70 dark:hover:bg-rose-900/10 dark:text-gray-500'
             }`}
           >
-            <svg className="w-3.5 h-3.5 shrink-0" fill={liked ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-[17px] h-[17px]" fill={liked ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={liked ? 0 : 1.75} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
             <span>Like</span>
-            {likeDisplayCount > 0 && (
-              <span className="tabular-nums opacity-70">{likeDisplayCount}</span>
-            )}
           </button>
+
+          <div className="w-px h-4 bg-gray-100 dark:bg-gray-800 mx-0.5" />
 
           <button
             type="button"
             onClick={() => onComment?.(post.id)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-cranberry hover:bg-cranberry-50/70 dark:hover:bg-cranberry-900/10 transition-all duration-200"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[13px] font-medium text-gray-400 dark:text-gray-500 hover:text-cranberry hover:bg-cranberry-50/70 dark:hover:bg-cranberry-900/10 transition-all duration-200"
           >
-            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-[17px] h-[17px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" />
             </svg>
             <span>Comment</span>
-            {commentDisplayCount > 0 && (
-              <span className="tabular-nums opacity-70">{commentDisplayCount}</span>
-            )}
           </button>
+
+          <div className="w-px h-4 bg-gray-100 dark:bg-gray-800 mx-0.5" />
 
           <button
             type="button"
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-azure hover:bg-azure-50/70 dark:hover:bg-azure-900/10 transition-all duration-200"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[13px] font-medium text-gray-400 dark:text-gray-500 hover:text-azure hover:bg-azure-50/70 dark:hover:bg-azure-900/10 transition-all duration-200"
           >
-            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-[17px] h-[17px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0-12.814a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0 12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
             </svg>
             <span>Share</span>

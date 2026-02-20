@@ -516,6 +516,7 @@ export default function DocumentsPage() {
   }, [folderMenuOpen]);
 
   return (
+    <>
     <div
       className="max-w-5xl mx-auto space-y-6 page-enter"
       onClick={handlePageClick}
@@ -568,140 +569,14 @@ export default function DocumentsPage() {
               <FolderPlus className="w-4 h-4 mr-1.5 inline" />New Folder
             </Button>
             <Button onClick={() => {
-              setShowUpload(!showUpload);
-              if (!showUpload) setUploadForm({ title: '', category: 'Other', description: '', linkURL: '', folderId: openFolderId && openFolderId !== '__unfiled__' ? openFolderId : '' });
+              setShowUpload(true);
+              setUploadForm({ title: '', category: 'Other', description: '', linkURL: '', folderId: openFolderId && openFolderId !== '__unfiled__' ? openFolderId : '' });
             }}>
-              {showUpload ? 'Cancel' : <><Plus className="w-4 h-4 mr-1.5 inline" />Upload</>}
+              <Plus className="w-4 h-4 mr-1.5 inline" />Upload
             </Button>
           </div>
         )}
       </div>
-
-      {/* Upload form */}
-      {showUpload && (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6">
-          <h3 className="font-display font-bold text-gray-900 dark:text-white mb-4">Upload Document</h3>
-          <div className="space-y-4">
-            <Input
-              label="Title"
-              required
-              value={uploadForm.title}
-              onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
-              placeholder="e.g., Board Meeting Minutes — Feb 2026"
-            />
-
-            <Input
-              label="Description (optional)"
-              value={uploadForm.description}
-              onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
-              placeholder="Brief description of the document"
-            />
-
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Category</label>
-                <select
-                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cranberry-500/20 focus:border-cranberry-500 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
-                  value={uploadForm.category}
-                  onChange={(e) => setUploadForm({ ...uploadForm, category: e.target.value as DocumentCategory })}
-                >
-                  {DOCUMENT_CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Folder</label>
-                <select
-                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cranberry-500/20 focus:border-cranberry-500 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
-                  value={uploadForm.folderId}
-                  onChange={(e) => setUploadForm({ ...uploadForm, folderId: e.target.value })}
-                >
-                  <option value="">— No Folder (Unfiled) —</option>
-                  {folders.map((f) => (
-                    <option key={f.id} value={f.id}>{f.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {uploadForm.category === 'Google Drive' ? (
-              <Input
-                label="Google Drive URL"
-                required
-                value={uploadForm.linkURL}
-                onChange={(e) => setUploadForm({ ...uploadForm, linkURL: e.target.value })}
-                placeholder="https://drive.google.com/drive/folders/..."
-              />
-            ) : (
-              <>
-                <Input
-                  label="Link URL (optional — use instead of file)"
-                  value={uploadForm.linkURL}
-                  onChange={(e) => setUploadForm({ ...uploadForm, linkURL: e.target.value })}
-                  placeholder="https://docs.google.com/document/d/..."
-                />
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">File</label>
-                  <div
-                    className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
-                      isDragOverUpload
-                        ? 'border-cranberry bg-cranberry-50 dark:bg-cranberry-900/10'
-                        : 'border-gray-300 dark:border-gray-600 hover:border-cranberry-400 dark:hover:border-cranberry-600 hover:bg-gray-50 dark:hover:bg-gray-800/50'
-                    }`}
-                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragOverUpload(true); }}
-                    onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsDragOverUpload(false); }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setIsDragOverUpload(false);
-                      const f = e.dataTransfer.files[0];
-                      if (f) setDroppedFile(f);
-                    }}
-                    onClick={() => fileRef.current?.click()}
-                  >
-                    {droppedFile ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <File className="w-5 h-5 text-cranberry shrink-0" />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate max-w-xs">{droppedFile.name}</span>
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setDroppedFile(null); if (fileRef.current) fileRef.current.value = ''; }}
-                          className="w-5 h-5 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors ml-1 text-xs font-bold shrink-0"
-                        >✕</button>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <Upload className={`w-8 h-8 mx-auto transition-colors ${isDragOverUpload ? 'text-cranberry' : 'text-gray-400'}`} />
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          <span className="font-semibold text-cranberry">Click to browse</span> or drag &amp; drop a file here
-                        </p>
-                        <p className="text-xs text-gray-400">PDF, Word, Excel, PowerPoint, TXT, CSV, Images · Max 25 MB</p>
-                      </div>
-                    )}
-                    <input
-                      type="file"
-                      ref={fileRef}
-                      accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg,.jpeg"
-                      className="hidden"
-                      onChange={(e) => { const f = e.target.files?.[0]; if (f) setDroppedFile(f); }}
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-
-            {uploading && (
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div className="bg-cranberry h-2 rounded-full transition-all" style={{ width: `${uploadProgress}%` }} />
-              </div>
-            )}
-            <Button onClick={handleUpload} loading={uploading}>
-              {uploadForm.category === 'Google Drive' ? 'Add Drive Link' : 'Upload'}
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* Content */}
       {loading ? (
@@ -905,132 +780,282 @@ export default function DocumentsPage() {
         </div>
       )}
 
-      {/* ── Create Folder Modal ───────────────────────── */}
-      {showCreateFolder && (
-        <Modal open title="Create Folder" onClose={() => setShowCreateFolder(false)}>
-          <div className="space-y-4">
-            <Input
-              label="Folder Name"
-              required
-              value={folderForm.name}
-              onChange={(e) => setFolderForm({ ...folderForm, name: e.target.value })}
-              placeholder="e.g., Board Meetings 2026"
-              autoFocus
-            />
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Color</label>
-              <div className="flex flex-wrap gap-2">
-                {FOLDER_COLORS.map((c) => {
-                  const cls = folderColorClasses[c.value] || folderColorClasses.gray;
-                  return (
-                    <button
-                      key={c.value}
-                      onClick={() => setFolderForm({ ...folderForm, color: c.value })}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 text-sm transition-all ${
-                        folderForm.color === c.value
-                          ? `${cls.border} ${cls.bg} font-semibold`
-                          : 'border-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
-                      }`}
-                    >
-                      <span className={`w-3 h-3 rounded-full ${cls.dot}`} />
-                      {c.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <Button variant="secondary" onClick={() => setShowCreateFolder(false)}>Cancel</Button>
-              <Button onClick={handleCreateFolder} loading={savingFolder} disabled={!folderForm.name.trim()}>
-                Create Folder
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      )}
+    </div>
+    {/* Modals must live outside the page-enter div — its translateY animation
+        creates a new containing block that confines position:fixed children
+        (the backdrop) to the div, so the sidebar and topbar are left
+        unblurred. Same pattern used in portal/page.tsx for PostComposerModal. */}
 
-      {/* ── Edit Folder Modal ─────────────────────────── */}
-      {editingFolder && (
-        <Modal open title="Edit Folder" onClose={() => setEditingFolder(null)}>
-          <div className="space-y-4">
-            <Input
-              label="Folder Name"
-              required
-              value={folderForm.name}
-              onChange={(e) => setFolderForm({ ...folderForm, name: e.target.value })}
-              autoFocus
-            />
+    {/* ── Upload Document Modal ─────────────────────── */}
+    {showUpload && (
+      <Modal
+        open
+        title="Upload Document"
+        onClose={() => {
+          setShowUpload(false);
+          setUploadForm({ title: '', category: 'Other', description: '', linkURL: '', folderId: '' });
+          setDroppedFile(null);
+          if (fileRef.current) fileRef.current.value = '';
+        }}
+      >
+        <div className="space-y-4">
+          <Input
+            label="Title"
+            required
+            value={uploadForm.title}
+            onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
+            placeholder="e.g., Board Meeting Minutes — Feb 2026"
+            autoFocus
+          />
+          <Input
+            label="Description (optional)"
+            value={uploadForm.description}
+            onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
+            placeholder="Brief description of the document"
+          />
+          <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Color</label>
-              <div className="flex flex-wrap gap-2">
-                {FOLDER_COLORS.map((c) => {
-                  const cls = folderColorClasses[c.value] || folderColorClasses.gray;
-                  return (
-                    <button
-                      key={c.value}
-                      onClick={() => setFolderForm({ ...folderForm, color: c.value })}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 text-sm transition-all ${
-                        folderForm.color === c.value
-                          ? `${cls.border} ${cls.bg} font-semibold`
-                          : 'border-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
-                      }`}
-                    >
-                      <span className={`w-3 h-3 rounded-full ${cls.dot}`} />
-                      {c.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <Button variant="secondary" onClick={() => setEditingFolder(null)}>Cancel</Button>
-              <Button onClick={handleUpdateFolder} loading={savingFolder} disabled={!folderForm.name.trim()}>
-                Save Changes
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {/* ── Move to Folder Modal ──────────────────────── */}
-      {movingDoc && (
-        <Modal open title="Move Document" onClose={() => setMovingDoc(null)}>
-          <div className="space-y-3">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Move <span className="font-semibold text-gray-900 dark:text-white">{movingDoc.title}</span> to:
-            </p>
-            <div className="space-y-1.5 max-h-64 overflow-y-auto">
-              <button
-                onClick={() => handleMoveDoc(movingDoc.id, null)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
-                  !movingDoc.folderId ? 'bg-cranberry-50 dark:bg-cranberry-900/10 border-2 border-cranberry-200 dark:border-cranberry-800' : 'hover:bg-gray-50 dark:hover:bg-gray-800 border-2 border-transparent'
-                }`}
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Category</label>
+              <select
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cranberry-500/20 focus:border-cranberry-500 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
+                value={uploadForm.category}
+                onChange={(e) => setUploadForm({ ...uploadForm, category: e.target.value as DocumentCategory })}
               >
-                <File className="w-5 h-5 text-gray-400" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Unfiled</span>
-                {!movingDoc.folderId && <Badge variant="cranberry" className="ml-auto text-[10px]">Current</Badge>}
-              </button>
-              {sortedFolders.map((f) => {
-                const cls = folderColorClasses[f.color] || folderColorClasses.gray;
-                const isCurrent = movingDoc.folderId === f.id;
+                {DOCUMENT_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Folder</label>
+              <select
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cranberry-500/20 focus:border-cranberry-500 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
+                value={uploadForm.folderId}
+                onChange={(e) => setUploadForm({ ...uploadForm, folderId: e.target.value })}
+              >
+                <option value="">— No Folder (Unfiled) —</option>
+                {folders.map((f) => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {uploadForm.category === 'Google Drive' ? (
+            <Input
+              label="Google Drive URL"
+              required
+              value={uploadForm.linkURL}
+              onChange={(e) => setUploadForm({ ...uploadForm, linkURL: e.target.value })}
+              placeholder="https://drive.google.com/drive/folders/..."
+            />
+          ) : (
+            <>
+              <Input
+                label="Link URL (optional — use instead of file)"
+                value={uploadForm.linkURL}
+                onChange={(e) => setUploadForm({ ...uploadForm, linkURL: e.target.value })}
+                placeholder="https://docs.google.com/document/d/..."
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">File</label>
+                <div
+                  className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
+                    isDragOverUpload
+                      ? 'border-cranberry bg-cranberry-50 dark:bg-cranberry-900/10'
+                      : 'border-gray-300 dark:border-gray-600 hover:border-cranberry-400 dark:hover:border-cranberry-600 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                  }`}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragOverUpload(true); }}
+                  onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsDragOverUpload(false); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragOverUpload(false);
+                    const f = e.dataTransfer.files[0];
+                    if (f) setDroppedFile(f);
+                  }}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  {droppedFile ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <File className="w-5 h-5 text-cranberry shrink-0" />
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate max-w-xs">{droppedFile.name}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setDroppedFile(null); if (fileRef.current) fileRef.current.value = ''; }}
+                        className="w-5 h-5 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors ml-1 text-xs font-bold shrink-0"
+                      >✕</button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Upload className={`w-8 h-8 mx-auto transition-colors ${isDragOverUpload ? 'text-cranberry' : 'text-gray-400'}`} />
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <span className="font-semibold text-cranberry">Click to browse</span> or drag &amp; drop a file here
+                      </p>
+                      <p className="text-xs text-gray-400">PDF, Word, Excel, PowerPoint, TXT, CSV, Images · Max 25 MB</p>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    ref={fileRef}
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg,.jpeg"
+                    className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) setDroppedFile(f); }}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+          {uploading && (
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="bg-cranberry h-2 rounded-full transition-all" style={{ width: `${uploadProgress}%` }} />
+            </div>
+          )}
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowUpload(false);
+                setUploadForm({ title: '', category: 'Other', description: '', linkURL: '', folderId: '' });
+                setDroppedFile(null);
+                if (fileRef.current) fileRef.current.value = '';
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleUpload} loading={uploading}>
+              {uploadForm.category === 'Google Drive' ? 'Add Drive Link' : 'Upload'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    )}
+
+    {/* ── Create Folder Modal ───────────────────────── */}
+    {showCreateFolder && (
+      <Modal open title="Create Folder" onClose={() => setShowCreateFolder(false)}>
+        <div className="space-y-4">
+          <Input
+            label="Folder Name"
+            required
+            value={folderForm.name}
+            onChange={(e) => setFolderForm({ ...folderForm, name: e.target.value })}
+            placeholder="e.g., Board Meetings 2026"
+            autoFocus
+          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Color</label>
+            <div className="flex flex-wrap gap-2">
+              {FOLDER_COLORS.map((c) => {
+                const cls = folderColorClasses[c.value] || folderColorClasses.gray;
                 return (
                   <button
-                    key={f.id}
-                    onClick={() => handleMoveDoc(movingDoc.id, f.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
-                      isCurrent ? `${cls.bg} border-2 ${cls.border}` : 'hover:bg-gray-50 dark:hover:bg-gray-800 border-2 border-transparent'
+                    key={c.value}
+                    onClick={() => setFolderForm({ ...folderForm, color: c.value })}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 text-sm transition-all ${
+                      folderForm.color === c.value
+                        ? `${cls.border} ${cls.bg} font-semibold`
+                        : 'border-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
                     }`}
                   >
-                    <Folder className={`w-5 h-5 ${cls.text}`} />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{f.name}</span>
-                    {isCurrent && <Badge variant={f.color as any} className="ml-auto text-[10px]">Current</Badge>}
+                    <span className={`w-3 h-3 rounded-full ${cls.dot}`} />
+                    {c.label}
                   </button>
                 );
               })}
             </div>
           </div>
-        </Modal>
-      )}
-    </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" onClick={() => setShowCreateFolder(false)}>Cancel</Button>
+            <Button onClick={handleCreateFolder} loading={savingFolder} disabled={!folderForm.name.trim()}>
+              Create Folder
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    )}
+
+    {/* ── Edit Folder Modal ─────────────────────────── */}
+    {editingFolder && (
+      <Modal open title="Edit Folder" onClose={() => setEditingFolder(null)}>
+        <div className="space-y-4">
+          <Input
+            label="Folder Name"
+            required
+            value={folderForm.name}
+            onChange={(e) => setFolderForm({ ...folderForm, name: e.target.value })}
+            autoFocus
+          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Color</label>
+            <div className="flex flex-wrap gap-2">
+              {FOLDER_COLORS.map((c) => {
+                const cls = folderColorClasses[c.value] || folderColorClasses.gray;
+                return (
+                  <button
+                    key={c.value}
+                    onClick={() => setFolderForm({ ...folderForm, color: c.value })}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 text-sm transition-all ${
+                      folderForm.color === c.value
+                        ? `${cls.border} ${cls.bg} font-semibold`
+                        : 'border-transparent hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    <span className={`w-3 h-3 rounded-full ${cls.dot}`} />
+                    {c.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" onClick={() => setEditingFolder(null)}>Cancel</Button>
+            <Button onClick={handleUpdateFolder} loading={savingFolder} disabled={!folderForm.name.trim()}>
+              Save Changes
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    )}
+
+    {/* ── Move to Folder Modal ──────────────────────── */}
+    {movingDoc && (
+      <Modal open title="Move Document" onClose={() => setMovingDoc(null)}>
+        <div className="space-y-3">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Move <span className="font-semibold text-gray-900 dark:text-white">{movingDoc.title}</span> to:
+          </p>
+          <div className="space-y-1.5 max-h-64 overflow-y-auto">
+            <button
+              onClick={() => handleMoveDoc(movingDoc.id, null)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
+                !movingDoc.folderId ? 'bg-cranberry-50 dark:bg-cranberry-900/10 border-2 border-cranberry-200 dark:border-cranberry-800' : 'hover:bg-gray-50 dark:hover:bg-gray-800 border-2 border-transparent'
+              }`}
+            >
+              <File className="w-5 h-5 text-gray-400" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Unfiled</span>
+              {!movingDoc.folderId && <Badge variant="cranberry" className="ml-auto text-[10px]">Current</Badge>}
+            </button>
+            {sortedFolders.map((f) => {
+              const cls = folderColorClasses[f.color] || folderColorClasses.gray;
+              const isCurrent = movingDoc.folderId === f.id;
+              return (
+                <button
+                  key={f.id}
+                  onClick={() => handleMoveDoc(movingDoc.id, f.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
+                    isCurrent ? `${cls.bg} border-2 ${cls.border}` : 'hover:bg-gray-50 dark:hover:bg-gray-800 border-2 border-transparent'
+                  }`}
+                >
+                  <Folder className={`w-5 h-5 ${cls.text}`} />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{f.name}</span>
+                  {isCurrent && <Badge variant={f.color as any} className="ml-auto text-[10px]">Current</Badge>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </Modal>
+    )}
+    </>
   );
 }
