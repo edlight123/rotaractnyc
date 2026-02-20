@@ -21,7 +21,7 @@ export default function FinanceCharts({ summary }: FinanceChartsProps) {
           {summary.monthlyBreakdown.map((m) => (
             <div key={m.month} className="space-y-1">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-500 font-medium w-20">{m.month}</span>
+                <span className="text-gray-500 font-medium w-16 sm:w-20">{m.month}</span>
                 <div className="flex gap-4">
                   <span className="text-emerald-600">+${m.income.toLocaleString()}</span>
                   <span className="text-red-500">-${m.expenses.toLocaleString()}</span>

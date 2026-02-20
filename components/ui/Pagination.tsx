@@ -27,7 +27,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange, clas
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage <= 1}
         className={cn(
-          'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+          'px-3 py-2 min-h-[40px] rounded-lg text-sm font-medium transition-colors',
           currentPage <= 1
             ? 'text-gray-300 cursor-not-allowed dark:text-gray-600'
             : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800',
@@ -46,7 +46,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange, clas
             key={page}
             onClick={() => onPageChange(page)}
             className={cn(
-              'w-9 h-9 rounded-lg text-sm font-medium transition-colors',
+              'w-10 h-10 rounded-lg text-sm font-medium transition-colors',
               page === currentPage
                 ? 'bg-cranberry text-white'
                 : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800',
@@ -61,7 +61,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange, clas
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage >= totalPages}
         className={cn(
-          'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+          'px-3 py-2 min-h-[40px] rounded-lg text-sm font-medium transition-colors',
           currentPage >= totalPages
             ? 'text-gray-300 cursor-not-allowed dark:text-gray-600'
             : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800',

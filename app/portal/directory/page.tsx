@@ -80,15 +80,16 @@ export default function DirectoryPage() {
       </div>
 
       {/* ── Toolbar: search, tabs, view toggle ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+      <div className="space-y-3 sm:space-y-0 sm:flex sm:flex-row sm:items-center sm:gap-4">
         <SearchInput
           value={search}
           onChange={setSearch}
           placeholder="Search by name, committee, or occupation..."
-          className="sm:max-w-xs"
+          className="w-full sm:max-w-xs"
         />
-        <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
-        <div className="ml-auto flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
+        <div className="flex items-center gap-3 overflow-x-auto">
+          <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+          <div className="ml-auto flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl shrink-0">
           <button
             onClick={() => setViewMode('grid')}
             className={`p-2 rounded-lg transition-colors ${
@@ -115,6 +116,7 @@ export default function DirectoryPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
+          </div>
         </div>
       </div>
 

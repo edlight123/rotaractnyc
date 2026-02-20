@@ -204,6 +204,10 @@
 }
 
 @layer utilities {
+  /* Safe area padding for iOS notch / home indicator */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
   .animation-delay-200 {
     animation-delay: 200ms;
   }

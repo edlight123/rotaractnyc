@@ -411,7 +411,7 @@ export default function DuesPage() {
           ) : (
             <>
               {/* Stats Strip */}
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                 {[
                   { label: 'Total Members', value: stats.total + membersWithoutDues.length, color: 'text-gray-900 dark:text-white' },
                   { label: 'Paid', value: stats.paid, color: 'text-emerald-600' },
@@ -444,8 +444,8 @@ export default function DuesPage() {
                 ))}
               </div>
 
-              {/* Members Dues Table */}
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 overflow-hidden">
+              {/* Members Dues Table — Desktop */}
+              <div className="hidden sm:block bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -520,6 +520,71 @@ export default function DuesPage() {
                     </tbody>
                   </table>
                 </div>
+              </div>
+
+              {/* Members Dues Cards — Mobile */}
+              <div className="sm:hidden space-y-3">
+                {filteredMembers.length === 0 ? (
+                  <p className="text-center text-gray-400 py-8">No members match the selected filter.</p>
+                ) : (
+                  filteredMembers.map((m, idx) => {
+                    const badge = STATUS_BADGES[m.status];
+                    const displayAmount = m.amount || (m.memberType === 'student' ? cycleAmounts.student : cycleAmounts.professional);
+                    return (
+                      <div key={m.memberId + idx} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200/60 dark:border-gray-800 p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 dark:text-white truncate">{m.memberName}</p>
+                            <p className="text-xs text-gray-400 truncate">{m.memberEmail}</p>
+                          </div>
+                          <Badge variant={badge.variant}>{badge.label}</Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm">
+                          <span className="text-gray-500 capitalize">{m.memberType}</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(displayAmount)}</span>
+                          {(m as any).paidAt && (
+                            <span className="text-xs text-gray-400 ml-auto">{new Date((m as any).paidAt).toLocaleDateString()}</span>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          {m.status === 'UNPAID' && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setApproveTarget({
+                                    memberId: m.memberId,
+                                    memberName: m.memberName,
+                                    memberType: m.memberType,
+                                    amount: displayAmount,
+                                    duesId: m.id || undefined,
+                                  });
+                                  setApproveModal(true);
+                                }}
+                                className="flex-1 text-xs py-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 font-medium transition-colors"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleWaive(m.memberId, m.id || undefined, m.memberType)}
+                                className="flex-1 text-xs py-2 rounded-lg bg-azure-50 text-azure-700 hover:bg-azure-100 dark:bg-azure-900/20 dark:text-azure-400 font-medium transition-colors"
+                              >
+                                Waive
+                              </button>
+                            </>
+                          )}
+                          {(m.status === 'PAID' || m.status === 'PAID_OFFLINE' || m.status === 'WAIVED') && m.id && (
+                            <button
+                              onClick={() => handleMarkUnpaid(m.id)}
+                              className="text-xs px-3 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 font-medium transition-colors"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
 
               {/* Cycle Settings & Payment Methods — side by side */}

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/lib/firebase/auth';
 import { useMembers, apiPost, apiGet, apiPatch } from '@/hooks/useFirestore';
 import { useToast } from '@/components/ui/Toast';
+import { useSwipeAction } from '@/hooks/useSwipeAction';
 import Button from '@/components/ui/Button';
 import Avatar from '@/components/ui/Avatar';
 import Input from '@/components/ui/Input';
@@ -15,6 +16,35 @@ import EmptyState from '@/components/ui/EmptyState';
 import { formatRelativeTime } from '@/lib/utils/format';
 import { useSearchParams } from 'next/navigation';
 import type { MemberMessage, Member } from '@/types';
+
+/* ── Swipeable wrapper for message cards ── */
+function SwipeableMessageCard({
+  children,
+  onArchive,
+}: {
+  children: React.ReactNode;
+  onArchive: () => void;
+}) {
+  const { bind, style, isRevealed, reset } = useSwipeAction({
+    threshold: 80,
+    onAction: onArchive,
+  });
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl">
+      {/* Action strip behind the card */}
+      <div className="absolute inset-y-0 right-0 w-24 flex items-center justify-center bg-red-500 text-white">
+        <div className="flex flex-col items-center gap-1">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+          <span className="text-[10px] font-semibold">Archive</span>
+        </div>
+      </div>
+      <div {...bind()} style={{ ...style, touchAction: 'pan-y' }} className="relative">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function MessagesPage() {
   const { member } = useAuth();
@@ -89,6 +119,16 @@ export default function MessagesPage() {
   const currentMessages = activeTab === 'sent' ? sent : inbox;
   const unreadCount = inbox.filter((m) => !m.read).length;
 
+  const handleArchive = useCallback((msgId: string) => {
+    // Optimistically remove from list
+    if (activeTab === 'sent') {
+      setSent((prev) => prev.filter((m) => m.id !== msgId));
+    } else {
+      setInbox((prev) => prev.filter((m) => m.id !== msgId));
+    }
+    toast('Message archived');
+  }, [activeTab, toast]);
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 page-enter">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -127,7 +167,7 @@ export default function MessagesPage() {
             />
             <Input ref={subjectRef} label="Subject" required value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} placeholder="Message subject" />
             <Textarea label="Message" required value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} placeholder="Write your message..." rows={5} />
-            <Button type="submit" loading={sending}>Send Message</Button>
+            <Button type="submit" loading={sending} className="w-full sm:w-auto">Send Message</Button>
           </form>
         </div>
       )}
@@ -158,8 +198,8 @@ export default function MessagesPage() {
             const isExpanded = expandedId === msg.id;
             const isUnread = !isFromMe && !msg.read;
             return (
+              <SwipeableMessageCard key={msg.id} onArchive={() => handleArchive(msg.id)}>
               <div
-                key={msg.id}
                 className={`bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-4 sm:p-5 transition-all hover:border-gray-300 dark:hover:border-gray-700 ${isUnread ? 'border-l-4 !border-l-cranberry' : ''}`}
               >
                 <button
@@ -213,6 +253,7 @@ export default function MessagesPage() {
                   </div>
                 )}
               </div>
+              </SwipeableMessageCard>
             );
           })}
         </div>

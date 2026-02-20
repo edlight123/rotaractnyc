@@ -47,6 +47,7 @@ export default function PortalDashboard() {
   const { data: serviceHours } = useServiceHours(member?.id ?? null);
   const { status: duesStatus } = useDues();
   const [activeTab, setActiveTab] = useState('all');
+  const [mobileView, setMobileView] = useState<'overview' | 'feed' | 'widgets'>('overview');
   const [showComposer, setShowComposer] = useState(false);
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
@@ -107,8 +108,30 @@ export default function PortalDashboard() {
   return (
     <div className="max-w-[1400px] mx-auto space-y-6 page-enter">
 
+      {/* ═══════ MOBILE VIEW TABS (sm:hidden) ═══════ */}
+      <div className="sm:hidden">
+        <div role="tablist" aria-orientation="horizontal" className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
+          {(['overview', 'feed', 'widgets'] as const).map((view) => (
+            <button
+              key={view}
+              role="tab"
+              aria-selected={mobileView === view}
+              onClick={() => setMobileView(view)}
+              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 capitalize ${
+                mobileView === view
+                  ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white'
+                  : 'text-gray-600 dark:text-gray-400'
+              }`}
+            >
+              {view}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* ═══════ HERO SECTION ═══════ */}
-      <section className="relative overflow-hidden rounded-2xl lg:rounded-3xl">
+      {/* On mobile: only show in overview tab. On sm+: always show */}
+      <section className={`relative overflow-hidden rounded-2xl lg:rounded-3xl ${mobileView !== 'overview' ? 'hidden sm:block' : ''}`}>
         {/* Gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-cranberry-700 via-cranberry-800 to-cranberry-950" />
         {/* Mesh pattern overlay */}
@@ -170,7 +193,8 @@ export default function PortalDashboard() {
       </section>
 
       {/* ═══════ QUICK ACTIONS STRIP ═══════ */}
-      <section className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+      {/* On mobile: only show in overview tab. On sm+: always show */}
+      <section className={`grid grid-cols-3 sm:grid-cols-6 gap-3 ${mobileView !== 'overview' ? 'hidden sm:block' : ''}`}>
         {quickActions.map((action) => (
           <Link
             key={action.href}
@@ -192,7 +216,8 @@ export default function PortalDashboard() {
       <div className="grid lg:grid-cols-12 gap-6">
 
         {/* ── LEFT: Feed ── */}
-        <div className="lg:col-span-7 xl:col-span-8 space-y-5">
+        {/* On mobile: only show in feed tab. On lg+: always show */}
+        <div className={`lg:col-span-7 xl:col-span-8 space-y-5 ${mobileView !== 'feed' ? 'hidden sm:block' : ''}`}>
           {/* Composer trigger card */}
           <div
             onClick={() => setShowComposer(true)}
@@ -263,7 +288,8 @@ export default function PortalDashboard() {
         </div>
 
         {/* ── RIGHT: Sidebar Widgets ── */}
-        <aside className="lg:col-span-5 xl:col-span-4 space-y-5">
+        {/* On mobile: only show in widgets tab. On lg+: always show */}
+        <aside className={`lg:col-span-5 xl:col-span-4 space-y-5 ${mobileView !== 'widgets' ? 'hidden sm:block' : ''}`}>
 
           {/* Service Hours Progress */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 hover:shadow-md transition-shadow duration-300">

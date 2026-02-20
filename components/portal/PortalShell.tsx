@@ -6,9 +6,11 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/auth';
 import { useDues } from '@/hooks/useDues';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import Avatar from '@/components/ui/Avatar';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import DuesBanner from '@/components/portal/DuesBanner';
+import Spinner from '@/components/ui/Spinner';
 import { cn } from '@/lib/utils/cn';
 
 /* ── Nav structure with grouped sections ── */
@@ -88,6 +90,14 @@ export default function PortalShell({ children }: { children: React.ReactNode })
   const router = useRouter();
   const { member, signOut, loading } = useAuth();
   const { status: duesStatus } = useDues();
+
+  /* Pull-to-refresh on mobile: reloads the current page data */
+  const { bind: pullBind, isRefreshing: isPullRefreshing, pullDistance, indicatorStyle } = usePullToRefresh({
+    onRefresh: async () => {
+      router.refresh();          // Next.js soft-refresh for server components
+      await new Promise((r) => setTimeout(r, 600)); // brief delay for visual feedback
+    },
+  });
 
   const isActive = (href: string) => href === '/portal' ? pathname === '/portal' : pathname.startsWith(href);
 
@@ -253,7 +263,11 @@ export default function PortalShell({ children }: { children: React.ReactNode })
         </nav>
 
         {/* Sidebar footer — user card */}
-        <div className="shrink-0 border-t border-gray-100 dark:border-gray-800/60 p-3">
+        <div className="shrink-0 border-t border-gray-100 dark:border-gray-800/60 p-3 space-y-1">
+          <div className="flex items-center justify-between px-3 py-1">
+            <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">Appearance</span>
+            <DarkModeToggle />
+          </div>
           <Link
             href="/"
             className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] text-gray-500 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800/60 transition-colors font-medium"
@@ -278,6 +292,10 @@ export default function PortalShell({ children }: { children: React.ReactNode })
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
             </button>
+            {/* Mobile page title */}
+            <span className="sm:hidden text-sm font-semibold text-gray-900 dark:text-white capitalize">
+              {pathname === '/portal' ? 'Dashboard' : pathname.split('/').pop()?.replace(/-/g, ' ')}
+            </span>
             {/* Breadcrumb / page title */}
             <div className="hidden sm:flex items-center gap-1.5 text-sm">
               <Link href="/portal" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Portal</Link>
@@ -294,7 +312,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
 
           {/* Right */}
           <div className="flex items-center gap-1 sm:gap-2">
-            <span className="hidden sm:inline-flex"><DarkModeToggle /></span>
+            <DarkModeToggle />
 
             {/* Notification bell placeholder */}
             <button className="relative p-2 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-800 transition-colors">
@@ -350,7 +368,13 @@ export default function PortalShell({ children }: { children: React.ReactNode })
         </header>
 
         {/* Page content */}
-        <main className="p-4 lg:p-8">
+        <main {...pullBind()} className="p-4 lg:p-8 pb-safe" style={{ touchAction: 'pan-x' }}>
+          {/* Pull-to-refresh indicator */}
+          <div style={indicatorStyle} className="lg:hidden">
+            {(pullDistance > 0 || isPullRefreshing) && (
+              <Spinner className="w-5 h-5 text-cranberry" />
+            )}
+          </div>
           {duesStatus === 'UNPAID' && <div className="mb-6"><DuesBanner status={duesStatus} memberType={member?.memberType} /></div>}
           {children}
         </main>

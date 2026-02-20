@@ -232,7 +232,7 @@ export default function FinancePage() {
           <FinanceCharts summary={summary} />
 
           {/* Quick Actions */}
-          <div className="flex gap-3">
+          <div className="grid grid-cols-2 sm:flex sm:gap-3 gap-2">
             <Button
               variant="primary"
               onClick={() => { setRecordType('expense'); resetRecordForm(); setRecordForm((f) => ({ ...f, category: 'venue' })); setShowRecordModal(true); }}
@@ -307,7 +307,8 @@ export default function FinancePage() {
               description={typeFilter !== 'all' ? 'No matching transactions found.' : 'Transactions will appear here as dues are paid and expenses are recorded.'}
             />
           ) : (
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 overflow-hidden">
+            <>
+            <div className="hidden sm:block bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -371,6 +372,55 @@ export default function FinancePage() {
                 </div>
               </div>
             </div>
+
+            {/* Transaction Cards — Mobile */}
+            <div className="sm:hidden space-y-3">
+              {filtered.map((tx) => (
+                <div key={tx.id} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200/60 dark:border-gray-800 p-4 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${tx.type === 'income' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400' : 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400'}`}>
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          {tx.type === 'income'
+                            ? <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                            : <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />}
+                        </svg>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{tx.description}</p>
+                        <p className="text-xs text-gray-400">{tx.date} · <span className="capitalize">{tx.category}</span></p>
+                      </div>
+                    </div>
+                    <p className={`text-sm font-bold whitespace-nowrap ${tx.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}>
+                      {tx.type === 'income' ? '+' : '-'}${(tx.amount / 100).toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400 capitalize">{(tx as any).paymentMethod || ''}</span>
+                    <button
+                      onClick={() => setDeleteId(tx.id)}
+                      className="text-xs text-gray-400 hover:text-red-500 transition-colors p-1"
+                      title="Delete transaction"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {/* Mobile summary */}
+              <div className="flex justify-between text-sm px-1 pt-2">
+                <span className="text-gray-500">{filtered.length} transaction{filtered.length !== 1 ? 's' : ''}</span>
+                <div className="flex gap-3">
+                  <span className="text-emerald-600 font-medium">
+                    +${(filtered.filter((t) => t.type === 'income').reduce((sum, t) => sum + t.amount, 0) / 100).toFixed(2)}
+                  </span>
+                  <span className="text-red-600 font-medium">
+                    -${(filtered.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0) / 100).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            </>
           )}
         </div>
       )}

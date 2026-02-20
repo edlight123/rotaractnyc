@@ -722,7 +722,7 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
                         setImagePreview(null);
                         setImageURL('');
                       }}
-                      className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
+                      className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/50 text-white opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-black/70"
                       aria-label="Remove image"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

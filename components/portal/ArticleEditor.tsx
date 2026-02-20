@@ -300,7 +300,7 @@ export default function ArticleEditor({ initialContent, onUpdate }: ArticleEdito
             handleDrop: (view, event, _slice, moved) => handleImageDrop(view, event, moved, uploadFn),
             attributes: {
               class:
-                'prose prose-lg dark:prose-invert prose-headings:font-display prose-a:text-cranberry max-w-full focus:outline-none px-8 py-6',
+                'prose prose-lg dark:prose-invert prose-headings:font-display prose-a:text-cranberry max-w-full focus:outline-none px-4 sm:px-8 py-6',
             },
           }}
           onUpdate={({ editor }) => {

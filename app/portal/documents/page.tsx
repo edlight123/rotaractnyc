@@ -412,7 +412,7 @@ export default function DocumentsPage() {
 
         {embedUrl && expandedDrive === doc.id && (
           <div className="mt-1 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
-            <iframe src={embedUrl} className="w-full h-[500px] bg-white" title={doc.title} allow="autoplay" />
+            <iframe src={embedUrl} className="w-full h-[300px] sm:h-[500px] bg-white" title={doc.title} allow="autoplay" />
           </div>
         )}
       </div>
@@ -448,7 +448,7 @@ export default function DocumentsPage() {
           <div className="absolute top-2 right-2 z-10">
             <button
               onClick={(e) => { e.stopPropagation(); setFolderMenuOpen(folderMenuOpen === folder.id ? null : folder.id); }}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-white/80 dark:hover:bg-gray-800/80 opacity-0 group-hover:opacity-100 transition-all"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-white/80 dark:hover:bg-gray-800/80 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
             >
               <MoreVertical className="w-4 h-4" />
             </button>

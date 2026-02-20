@@ -165,7 +165,7 @@ export default function ServiceHoursPage() {
             <div className="space-y-3">
               {pendingEntries.map((entry) => (
                 <div key={entry.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-4 sm:p-5">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
                         {entry.memberName || 'Member'} — {entry.eventTitle || 'Service Hours'}
@@ -173,12 +173,13 @@ export default function ServiceHoursPage() {
                       <p className="text-xs text-gray-500 mt-1">{entry.hours} hours · {entry.date || ''}</p>
                       {entry.notes && <p className="text-xs text-gray-400 mt-1">{entry.notes}</p>}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
                       <Button
                         size="sm"
                         variant="primary"
                         loading={reviewing === entry.id}
                         onClick={() => handleReview(entry.id, 'approved')}
+                        className="flex-1 sm:flex-initial"
                       >
                         Approve
                       </Button>
@@ -187,6 +188,7 @@ export default function ServiceHoursPage() {
                         variant="ghost"
                         loading={reviewing === entry.id}
                         onClick={() => handleReview(entry.id, 'rejected')}
+                        className="flex-1 sm:flex-initial"
                       >
                         Reject
                       </Button>

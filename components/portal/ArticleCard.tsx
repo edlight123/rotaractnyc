@@ -57,7 +57,7 @@ export default function ArticleCard({ article, onDelete, canManage }: ArticleCar
       </Link>
 
       {canManage && onDelete && (
-        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-200">
+        <div className="absolute top-3 right-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(article.id); }}
             className="p-2 rounded-xl bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm text-red-600 hover:bg-red-600 hover:text-white shadow-sm transition-all duration-150"
