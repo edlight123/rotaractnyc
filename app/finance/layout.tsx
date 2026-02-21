@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/lib/firebase/auth';
+import { useAuth, AuthProvider } from '@/lib/firebase/auth';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Spinner from '@/components/ui/Spinner';
@@ -14,7 +14,7 @@ const navItems = [
   { label: 'Reports', href: '/finance/reports', icon: '📈' },
 ];
 
-export default function FinanceLayout({ children }: { children: React.ReactNode }) {
+function FinanceLayoutInner({ children }: { children: React.ReactNode }) {
   const { member, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -98,5 +98,13 @@ export default function FinanceLayout({ children }: { children: React.ReactNode 
       {/* Content */}
       <div className="container-page py-8">{children}</div>
     </div>
+  );
+}
+
+export default function FinanceLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthProvider>
+      <FinanceLayoutInner>{children}</FinanceLayoutInner>
+    </AuthProvider>
   );
 }
