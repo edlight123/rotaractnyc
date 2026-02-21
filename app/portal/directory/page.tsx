@@ -11,6 +11,7 @@ import Tabs from '@/components/ui/Tabs';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
 import AddMemberModal from '@/components/portal/AddMemberModal';
+import ImportMembersModal from '@/components/portal/ImportMembersModal';
 import MemberCard from '@/components/portal/MemberCard';
 import type { Member } from '@/types';
 
@@ -28,6 +29,7 @@ export default function DirectoryPage() {
   const [activeTab, setActiveTab] = useState('active');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const { member: currentMember } = useAuth();
@@ -71,12 +73,20 @@ export default function DirectoryPage() {
           </p>
         </div>
         {isAdmin && (
-          <Button onClick={() => setShowAddModal(true)} className="shrink-0">
-            <svg className="w-4 h-4 -ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            Add Member
-          </Button>
+          <div className="flex gap-2 shrink-0">
+            <Button variant="outline" onClick={() => setShowImportModal(true)}>
+              <svg className="w-4 h-4 -ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12" />
+              </svg>
+              Import CSV
+            </Button>
+            <Button onClick={() => setShowAddModal(true)}>
+              <svg className="w-4 h-4 -ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Add Member
+            </Button>
+          </div>
         )}
       </div>
 
@@ -232,6 +242,13 @@ export default function DirectoryPage() {
         open={showAddModal}
         onClose={() => setShowAddModal(false)}
         onCreated={() => setRefreshKey((k) => k + 1)}
+      />
+    )}
+    {isAdmin && (
+      <ImportMembersModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImported={() => setRefreshKey((k) => k + 1)}
       />
     )}
     </>
