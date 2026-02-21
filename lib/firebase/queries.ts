@@ -132,6 +132,7 @@ export async function getBoardMembers(): Promise<BoardMember[]> {
             name: m.displayName || `${m.firstName || ''} ${m.lastName || ''}`.trim(),
             title,
             photoURL: m.photoURL || '',
+            bio: m.bio || '',
             linkedIn: m.linkedIn || '',
             order: typeof m.boardOrder === 'number' ? m.boardOrder : 999,
           } as BoardMember;

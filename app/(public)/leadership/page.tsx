@@ -48,6 +48,9 @@ export default async function LeadershipPage() {
                   {member.name}
                 </h3>
                 <p className="text-sm text-cranberry font-medium mt-1">{member.title}</p>
+                {member.bio && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 line-clamp-2">{member.bio}</p>
+                )}
                 {member.linkedIn && member.linkedIn !== '#' && (
                   <a
                     href={member.linkedIn}
