@@ -303,7 +303,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
             </span>
             {/* Breadcrumb / page title */}
             <div className="hidden sm:flex items-center gap-1.5 text-sm">
-              <Link href="/portal" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Portal</Link>
+              <Link href="/portal" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Member Portal</Link>
               {pathname !== '/portal' && (
                 <>
                   <svg className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
