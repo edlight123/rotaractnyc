@@ -267,77 +267,33 @@ export default function PortalShell({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        {/* Sidebar footer — user card */}
+        {/* Sidebar footer — user card + actions */}
         <div className="shrink-0 border-t border-gray-100 dark:border-gray-800/60 p-3 space-y-1">
-          <div className="flex items-center justify-between px-3 py-1">
-            <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">Appearance</span>
-            <DarkModeToggle />
-          </div>
+          {/* User profile card */}
           <Link
-            href="/"
-            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] text-gray-500 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800/60 transition-colors font-medium"
+            href="/portal/profile"
+            onClick={() => setSidebarOpen(false)}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors group"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-            Back to Website
-          </Link>
-        </div>
-      </aside>
-
-      {/* ═══ Main content area ═══ */}
-      <div className="lg:ml-[272px]">
-        {/* Topbar */}
-        <header className="sticky top-0 z-30 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/60 dark:border-gray-800/60 flex items-center justify-between px-4 lg:px-6">
-          {/* Left */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 -ml-1 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
-              aria-label="Open navigation menu"
-              aria-expanded={sidebarOpen}
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
-            </button>
-            {/* Mobile page title */}
-            <span className="sm:hidden text-sm font-semibold text-gray-900 dark:text-white capitalize">
-              {pathname === '/portal' ? 'Dashboard' : pathname.split('/').pop()?.replace(/-/g, ' ')}
-            </span>
-            {/* Breadcrumb / page title */}
-            <div className="hidden sm:flex items-center gap-1.5 text-sm">
-              <Link href="/portal" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Member Portal</Link>
-              {pathname !== '/portal' && (
-                <>
-                  <svg className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                  <span className="text-gray-700 dark:text-gray-200 font-medium capitalize">
-                    {pathname.split('/').pop()?.replace(/-/g, ' ')}
-                  </span>
-                </>
-              )}
+            <Avatar src={member.photoURL} alt={member.displayName} size="sm" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-cranberry dark:group-hover:text-cranberry-400 transition-colors leading-tight truncate">
+                {member.firstName || member.displayName?.split(' ')[0]}
+              </p>
+              <p className="text-[11px] text-gray-400 capitalize leading-tight">{member.role}</p>
             </div>
-          </div>
+          </Link>
 
-          {/* Right */}
-          <div className="flex items-center gap-1 sm:gap-2">
+          {/* Bottom actions row */}
+          <div className="flex items-center gap-1 px-1 pt-0.5">
             <DarkModeToggle />
-
-            {/* Notification bell placeholder */}
-            <button className="relative p-2 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-800 transition-colors">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
-            </button>
-
-            {/* User menu */}
             <Link
-              href="/portal/profile"
-              className="flex items-center gap-2 p-1.5 pr-2 sm:pr-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+              href="/"
+              className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] text-gray-500 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800/60 transition-colors font-medium"
             >
-              <Avatar src={member.photoURL} alt={member.displayName} size="sm" />
-              <div className="hidden sm:block">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-cranberry dark:group-hover:text-cranberry-400 transition-colors leading-tight">
-                  {member.firstName || member.displayName?.split(' ')[0]}
-                </p>
-                <p className="text-[11px] text-gray-400 capitalize leading-tight">{member.role}</p>
-              </div>
+              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+              Website
             </Link>
-
             <div className="relative">
               <button
                 onClick={handleSignOut}
@@ -345,12 +301,10 @@ export default function PortalShell({ children }: { children: React.ReactNode })
                 title="Sign out"
                 aria-label="Sign out"
               >
-                <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>
               </button>
-
-              {/* Sign-out confirmation popover */}
               {showSignOutConfirm && (
-                <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-gray-200 bg-white shadow-xl dark:bg-gray-900 dark:border-gray-700 p-4 animate-scale-in origin-top-right z-50">
+                <div className="absolute left-0 bottom-full mb-2 w-56 rounded-xl border border-gray-200 bg-white shadow-xl dark:bg-gray-900 dark:border-gray-700 p-4 animate-scale-in origin-bottom-left z-50">
                   <p className="text-sm font-medium text-gray-900 dark:text-white mb-3">Sign out of the portal?</p>
                   <div className="flex gap-2">
                     <button
@@ -370,10 +324,23 @@ export default function PortalShell({ children }: { children: React.ReactNode })
               )}
             </div>
           </div>
-        </header>
+        </div>
+      </aside>
+
+      {/* ═══ Main content area ═══ */}
+      <div className="lg:ml-[272px]">
+        {/* Mobile hamburger — floating top-left, only when sidebar closed */}
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="lg:hidden fixed top-4 left-4 z-30 p-2.5 rounded-xl bg-white dark:bg-gray-900 shadow-md border border-gray-200/80 dark:border-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors"
+          aria-label="Open navigation menu"
+          aria-expanded={sidebarOpen}
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+        </button>
 
         {/* Page content */}
-        <main {...pullBind()} className="p-4 lg:p-8 pb-safe" style={{ touchAction: 'pan-x' }}>
+        <main {...pullBind()} className="p-4 pt-16 lg:pt-8 lg:p-8 pb-safe" style={{ touchAction: 'pan-x' }}>
           {/* Pull-to-refresh indicator */}
           <div style={indicatorStyle} className="lg:hidden">
             {(pullDistance > 0 || isPullRefreshing) && (
