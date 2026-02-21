@@ -8,6 +8,7 @@ import Badge from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
 import { formatCurrency } from '@/lib/utils/format';
 import Link from 'next/link';
+import { Target, Wallet, TrendingUp, CreditCard } from 'lucide-react';
 
 export default function FinanceDashboard() {
   const { member } = useAuth();
@@ -156,28 +157,28 @@ export default function FinanceDashboard() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link href="/finance/activities" className="block">
           <Card padding="md" className="hover:shadow-lg transition-shadow">
-            <div className="text-3xl mb-2">🎯</div>
+            <Target className="w-7 h-7 text-cranberry mb-2" />
             <h3 className="font-semibold text-gray-900 dark:text-white">Activities</h3>
             <p className="text-xs text-gray-500 mt-1">Manage budgets & events</p>
           </Card>
         </Link>
         <Link href="/finance/expenses" className="block">
           <Card padding="md" className="hover:shadow-lg transition-shadow">
-            <div className="text-3xl mb-2">💰</div>
+            <Wallet className="w-7 h-7 text-cranberry mb-2" />
             <h3 className="font-semibold text-gray-900 dark:text-white">Expenses</h3>
             <p className="text-xs text-gray-500 mt-1">Log receipts & costs</p>
           </Card>
         </Link>
         <Link href="/finance/reports" className="block">
           <Card padding="md" className="hover:shadow-lg transition-shadow">
-            <div className="text-3xl mb-2">📈</div>
+            <TrendingUp className="w-7 h-7 text-cranberry mb-2" />
             <h3 className="font-semibold text-gray-900 dark:text-white">Reports</h3>
             <p className="text-xs text-gray-500 mt-1">Budget vs actual</p>
           </Card>
         </Link>
         <Link href="/portal/dues" className="block">
           <Card padding="md" className="hover:shadow-lg transition-shadow">
-            <div className="text-3xl mb-2">💳</div>
+            <CreditCard className="w-7 h-7 text-cranberry mb-2" />
             <h3 className="font-semibold text-gray-900 dark:text-white">Dues</h3>
             <p className="text-xs text-gray-500 mt-1">Manage membership dues</p>
           </Card>

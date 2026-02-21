@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { CheckCircle2, Calendar, MapPin, DollarSign, Ticket, Paperclip, Target, Store, FileText, User, Check, X } from 'lucide-react';
 import { useAuth } from '@/lib/firebase/auth';
 import { apiGet, apiPatch } from '@/hooks/useFirestore';
 import { useToast } from '@/components/ui/Toast';
@@ -117,7 +118,7 @@ export default function ApprovalsPage() {
           {!pending.budgets || pending.budgets.length === 0 ? (
             <Card padding="lg">
               <div className="text-center py-12">
-                <div className="text-5xl mb-4">✅</div>
+                <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
                 <h3 className="font-display font-bold text-gray-900 dark:text-white mb-2">
                   No pending budgets
                 </h3>
@@ -138,9 +139,9 @@ export default function ApprovalsPage() {
                       <Badge variant="gold">Pending Approval</Badge>
                     </div>
                     <div className="text-sm text-gray-500 space-y-1 mb-4">
-                      <div>📅 {new Date(activity.date).toLocaleDateString()}</div>
-                      {activity.location && <div>📍 {activity.location}</div>}
-                      <div>💰 Budget: {formatCurrency(activity.budget.totalEstimate)}</div>
+                      <div className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> {new Date(activity.date).toLocaleDateString()}</div>
+                      {activity.location && <div className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> {activity.location}</div>}
+                      <div className="flex items-center gap-1.5"><DollarSign className="w-3.5 h-3.5" /> Budget: {formatCurrency(activity.budget.totalEstimate)}</div>
                     </div>
 
                     <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 mb-4">
@@ -158,18 +159,11 @@ export default function ApprovalsPage() {
                     </div>
                   </div>
                   <div className="flex gap-2 ml-4">
-                    <Button
-                      size="sm"
-                      onClick={() => openApprovalModal(activity, 'budget', 'approve')}
-                    >
-                      ✓ Approve
+                    <Button size="sm" onClick={() => openApprovalModal(activity, 'budget', 'approve')}>
+                      <Check className="w-3.5 h-3.5 mr-1" /> Approve
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => openApprovalModal(activity, 'budget', 'reject')}
-                    >
-                      ✗ Reject
+                    <Button size="sm" variant="secondary" onClick={() => openApprovalModal(activity, 'budget', 'reject')}>
+                      <X className="w-3.5 h-3.5 mr-1" /> Reject
                     </Button>
                   </div>
                 </div>
@@ -185,7 +179,7 @@ export default function ApprovalsPage() {
           {!pending.payments || pending.payments.length === 0 ? (
             <Card padding="lg">
               <div className="text-center py-12">
-                <div className="text-5xl mb-4">✅</div>
+                <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
                 <h3 className="font-display font-bold text-gray-900 dark:text-white mb-2">
                   No pending payments
                 </h3>
@@ -207,36 +201,29 @@ export default function ApprovalsPage() {
                       <Badge variant="gray">{payment.method.toUpperCase()}</Badge>
                     </div>
                     <div className="text-sm text-gray-500 space-y-1 mb-4">
-                      <div>
-                        💰 {formatCurrency(payment.amount)} for {payment.type === 'dues' ? 'Dues' : 'Event Ticket'}
+                      <div className="flex items-center gap-1.5">
+                        <DollarSign className="w-3.5 h-3.5" /> {formatCurrency(payment.amount)} for {payment.type === 'dues' ? 'Dues' : 'Event Ticket'}
                       </div>
-                      {payment.eventName && <div>🎟️ {payment.eventName}</div>}
-                      <div>📅 Submitted {new Date(payment.submittedAt).toLocaleDateString()}</div>
+                      {payment.eventName && <div className="flex items-center gap-1.5"><Ticket className="w-3.5 h-3.5" /> {payment.eventName}</div>}
+                      <div className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> Submitted {new Date(payment.submittedAt).toLocaleDateString()}</div>
                     </div>
                     {payment.proofUrl && (
                       <a
                         href={payment.proofUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-azure-600 hover:underline"
+                        className="text-sm text-azure-600 hover:underline flex items-center gap-1"
                       >
-                        📎 View Payment Proof
+                        <Paperclip className="w-3.5 h-3.5" /> View Payment Proof
                       </a>
                     )}
                   </div>
                   <div className="flex gap-2 ml-4">
-                    <Button
-                      size="sm"
-                      onClick={() => openApprovalModal(payment, 'payment', 'approve')}
-                    >
-                      ✓ Confirm Payment
+                    <Button size="sm" onClick={() => openApprovalModal(payment, 'payment', 'approve')}>
+                      <Check className="w-3.5 h-3.5 mr-1" /> Confirm Payment
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => openApprovalModal(payment, 'payment', 'reject')}
-                    >
-                      ✗ Reject
+                    <Button size="sm" variant="secondary" onClick={() => openApprovalModal(payment, 'payment', 'reject')}>
+                      <X className="w-3.5 h-3.5 mr-1" /> Reject
                     </Button>
                   </div>
                 </div>
@@ -252,7 +239,7 @@ export default function ApprovalsPage() {
           {!pending.expenses || pending.expenses.length === 0 ? (
             <Card padding="lg">
               <div className="text-center py-12">
-                <div className="text-5xl mb-4">✅</div>
+                <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
                 <h3 className="font-display font-bold text-gray-900 dark:text-white mb-2">
                   No pending expenses
                 </h3>
@@ -273,12 +260,12 @@ export default function ApprovalsPage() {
                       <Badge variant="gold">Pending</Badge>
                     </div>
                     <div className="text-sm text-gray-500 space-y-1 mb-4">
-                      <div>🎯 {expense.activityName}</div>
-                      <div>💰 {formatCurrency(expense.amount)}</div>
-                      {expense.vendor && <div>🏪 {expense.vendor}</div>}
-                      {expense.description && <div>📝 {expense.description}</div>}
-                      <div>
-                        👤 Submitted by {expense.submittedByName} on{' '}
+                      <div className="flex items-center gap-1.5"><Target className="w-3.5 h-3.5" /> {expense.activityName}</div>
+                      <div className="flex items-center gap-1.5"><DollarSign className="w-3.5 h-3.5" /> {formatCurrency(expense.amount)}</div>
+                      {expense.vendor && <div className="flex items-center gap-1.5"><Store className="w-3.5 h-3.5" /> {expense.vendor}</div>}
+                      {expense.description && <div className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> {expense.description}</div>}
+                      <div className="flex items-center gap-1.5">
+                        <User className="w-3.5 h-3.5" /> Submitted by {expense.submittedByName} on{' '}
                         {new Date(expense.submittedAt).toLocaleDateString()}
                       </div>
                     </div>
@@ -287,25 +274,18 @@ export default function ApprovalsPage() {
                         href={expense.receiptUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-azure-600 hover:underline"
+                        className="text-sm text-azure-600 hover:underline flex items-center gap-1"
                       >
-                        📎 View Receipt
+                        <Paperclip className="w-3.5 h-3.5" /> View Receipt
                       </a>
                     )}
                   </div>
                   <div className="flex gap-2 ml-4">
-                    <Button
-                      size="sm"
-                      onClick={() => openApprovalModal(expense, 'expense', 'approve')}
-                    >
-                      ✓ Approve
+                    <Button size="sm" onClick={() => openApprovalModal(expense, 'expense', 'approve')}>
+                      <Check className="w-3.5 h-3.5 mr-1" /> Approve
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => openApprovalModal(expense, 'expense', 'reject')}
-                    >
-                      ✗ Reject
+                    <Button size="sm" variant="secondary" onClick={() => openApprovalModal(expense, 'expense', 'reject')}>
+                      <X className="w-3.5 h-3.5 mr-1" /> Reject
                     </Button>
                   </div>
                 </div>

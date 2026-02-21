@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Receipt, Target, FileText, Store, Paperclip, CheckCircle2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/auth';
 import { apiGet, apiPost } from '@/hooks/useFirestore';
@@ -211,7 +212,7 @@ export default function ExpensesPage() {
       {expenses.length === 0 ? (
         <Card padding="lg">
           <div className="text-center py-12">
-            <div className="text-5xl mb-4">💸</div>
+            <Receipt className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <h3 className="font-display font-bold text-gray-900 dark:text-white mb-2">No expenses yet</h3>
             <p className="text-gray-500 dark:text-gray-400 mb-6">
               Log your first expense to start tracking spending.
@@ -239,9 +240,9 @@ export default function ExpensesPage() {
                       <Badge variant={badge.variant}>{badge.label}</Badge>
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                      <div>🎯 {expense.activityName || activity?.name || 'Unknown Activity'}</div>
-                      {expense.description && <div>📝 {expense.description}</div>}
-                      {expense.vendor && <div>🏪 {expense.vendor}</div>}
+                      <div className="flex items-center gap-1.5"><Target className="w-3.5 h-3.5" /> {expense.activityName || activity?.name || 'Unknown Activity'}</div>
+                      {expense.description && <div className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> {expense.description}</div>}
+                      {expense.vendor && <div className="flex items-center gap-1.5"><Store className="w-3.5 h-3.5" /> {expense.vendor}</div>}
                       <div className="text-xs text-gray-400">
                         Submitted by {expense.submittedByName} on{' '}
                         {new Date(expense.submittedAt).toLocaleDateString()}
@@ -252,9 +253,9 @@ export default function ExpensesPage() {
                         href={expense.receiptUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-azure-600 hover:underline mt-2 inline-block"
+                        className="text-sm text-azure-600 hover:underline mt-2 inline-flex items-center gap-1"
                       >
-                        📎 View Receipt
+                        <Paperclip className="w-3.5 h-3.5" /> View Receipt
                       </a>
                     )}
                   </div>
@@ -364,8 +365,8 @@ export default function ExpensesPage() {
           />
 
           {form.receiptName && (
-            <div className="text-sm text-gray-600">
-              ✓ {form.receiptName}
+            <div className="text-sm text-gray-600 flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" /> {form.receiptName}
             </div>
           )}
 

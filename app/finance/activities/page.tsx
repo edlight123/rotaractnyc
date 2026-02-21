@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Target, MapPin } from 'lucide-react';
 import { useAuth } from '@/lib/firebase/auth';
 import { apiGet, apiPost, apiPatch } from '@/hooks/useFirestore';
 import { useToast } from '@/components/ui/Toast';
@@ -188,7 +189,7 @@ export default function ActivitiesPage() {
       {activities.length === 0 ? (
         <Card padding="lg">
           <div className="text-center py-12">
-            <div className="text-5xl mb-4">🎯</div>
+            <Target className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <h3 className="font-display font-bold text-gray-900 dark:text-white mb-2">No activities yet</h3>
             <p className="text-gray-500 dark:text-gray-400 mb-6">
               Create your first activity to start tracking budgets and expenses.
@@ -220,8 +221,8 @@ export default function ActivitiesPage() {
                         </span>
                       </div>
                       {activity.location && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                          📍 {activity.location}
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5 flex-shrink-0" /> {activity.location}
                         </p>
                       )}
                       <div className="flex items-center gap-6 text-sm">

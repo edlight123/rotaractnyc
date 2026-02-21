@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Calendar, MapPin, Wallet, AlertCircle, Check, X, Trash2, Paperclip } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/auth';
 import { apiGet, apiPatch, apiDelete } from '@/hooks/useFirestore';
@@ -109,7 +110,7 @@ export default function ActivityDetailPage() {
     return (
       <Card padding="lg">
         <div className="text-center py-12">
-          <div className="text-5xl mb-4">❌</div>
+          <AlertCircle className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
           <h3 className="font-display font-bold text-gray-900 dark:text-white mb-2">Activity not found</h3>
           <Link href="/finance/activities">
             <Button variant="secondary">Back to Activities</Button>
@@ -157,8 +158,8 @@ export default function ActivityDetailPage() {
             <Badge variant={badge.variant}>{badge.label}</Badge>
           </div>
           <div className="flex items-center gap-4 text-sm text-gray-500">
-            <span>📅 {new Date(activity.date).toLocaleDateString()}</span>
-            {activity.location && <span>📍 {activity.location}</span>}
+            <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(activity.date).toLocaleDateString()}</span>
+            {activity.location && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {activity.location}</span>}
           </div>
         </div>
         <div className="flex gap-2">
@@ -171,7 +172,7 @@ export default function ActivityDetailPage() {
                   setShowApprovalModal(true);
                 }}
               >
-                ✓ Approve Budget
+                <Check className="w-4 h-4 mr-1" /> Approve Budget
               </Button>
               <Button
                 variant="secondary"
@@ -180,13 +181,13 @@ export default function ActivityDetailPage() {
                   setShowApprovalModal(true);
                 }}
               >
-                ✗ Reject
+                <X className="w-4 h-4 mr-1" /> Reject
               </Button>
             </>
           )}
           {canDelete && (
             <Button variant="secondary" onClick={handleDelete}>
-              🗑 Delete
+              <Trash2 className="w-4 h-4 mr-1" /> Delete
             </Button>
           )}
         </div>
@@ -258,7 +259,7 @@ export default function ActivityDetailPage() {
 
         {expenses.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <div className="text-4xl mb-2">💰</div>
+            <Wallet className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
             <p>No expenses logged yet</p>
           </div>
         ) : (

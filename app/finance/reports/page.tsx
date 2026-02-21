@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { BarChart2 } from 'lucide-react';
 import { apiGet } from '@/hooks/useFirestore';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
@@ -119,7 +120,7 @@ export default function ReportsPage() {
           </p>
         </div>
         <Button onClick={exportToCSV}>
-          📊 Export CSV
+          <BarChart2 className="w-4 h-4 mr-1" /> Export CSV
         </Button>
       </div>
 

@@ -5,13 +5,14 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Spinner from '@/components/ui/Spinner';
 import { useEffect } from 'react';
+import { LayoutDashboard, Target, Wallet, ClipboardCheck, TrendingUp } from 'lucide-react';
 
 const navItems = [
-  { label: 'Dashboard', href: '/finance', icon: '📊' },
-  { label: 'Activities', href: '/finance/activities', icon: '🎯' },
-  { label: 'Expenses', href: '/finance/expenses', icon: '💰' },
-  { label: 'Approvals', href: '/finance/approvals', icon: '✓' },
-  { label: 'Reports', href: '/finance/reports', icon: '📈' },
+  { label: 'Dashboard', href: '/finance', icon: <LayoutDashboard className="w-4 h-4" /> },
+  { label: 'Activities', href: '/finance/activities', icon: <Target className="w-4 h-4" /> },
+  { label: 'Expenses', href: '/finance/expenses', icon: <Wallet className="w-4 h-4" /> },
+  { label: 'Approvals', href: '/finance/approvals', icon: <ClipboardCheck className="w-4 h-4" /> },
+  { label: 'Reports', href: '/finance/reports', icon: <TrendingUp className="w-4 h-4" /> },
 ];
 
 function FinanceLayoutInner({ children }: { children: React.ReactNode }) {
@@ -86,7 +87,7 @@ function FinanceLayoutInner({ children }: { children: React.ReactNode }) {
                       : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
                 >
-                  <span>{item.icon}</span>
+                  {item.icon}
                   {item.label}
                 </Link>
               );
