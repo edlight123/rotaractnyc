@@ -202,20 +202,20 @@ export default function PortalShell({ children }: { children: React.ReactNode })
         )}
       >
         {/* Logo header */}
-        <div className="h-16 flex items-center justify-between px-5 border-b border-gray-100 dark:border-gray-800/60 shrink-0">
-          <Link href="/portal" className="flex items-center" onClick={() => setSidebarOpen(false)}>
+        <div className="h-20 flex items-center justify-between pl-10 pr-4 border-b border-gray-100 dark:border-gray-800/60 shrink-0">
+          <Link href="/portal" className="flex items-center ml-auto" onClick={() => setSidebarOpen(false)}>
             <Image
               src="/rotaract-logo.png"
               alt="Rotaract NYC"
-              width={160}
-              height={40}
-              className="h-7 w-auto dark:brightness-0 dark:invert"
+              width={320}
+              height={80}
+              className="h-14 w-auto dark:brightness-0 dark:invert"
             />
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
             aria-label="Close navigation menu"
-            className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="lg:hidden ml-2 p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
