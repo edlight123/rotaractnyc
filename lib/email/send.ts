@@ -3,6 +3,12 @@
  */
 import { Resend } from 'resend';
 
+if (!process.env.RESEND_API_KEY) {
+  console.warn(
+    '⚠️  RESEND_API_KEY is not set. All email sends will be skipped.',
+  );
+}
+
 const resend = new Resend(process.env.RESEND_API_KEY || 'placeholder');
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Rotaract NYC <noreply@rotaractnyc.org>';
@@ -43,17 +49,44 @@ export async function sendEmail({ to, subject, html, replyTo, text }: SendEmailO
   }
 }
 
+const BULK_CHUNK_SIZE = 10;
+const BULK_CHUNK_DELAY_MS = 100;
+
 export async function sendBulkEmail(
   recipients: string[],
   subject: string,
   html: string,
+  text?: string,
 ) {
-  const results = await Promise.allSettled(
-    recipients.map((to) => sendEmail({ to, subject, html })),
-  );
+  if (!process.env.RESEND_API_KEY) {
+    console.warn('RESEND_API_KEY not set — bulk email not sent:', subject);
+    return { sent: 0, failed: recipients.length, total: recipients.length };
+  }
 
-  const sent = results.filter((r) => r.status === 'fulfilled').length;
-  const failed = results.filter((r) => r.status === 'rejected').length;
+  let sent = 0;
+  let failed = 0;
+
+  // Process recipients in chunks to avoid Resend rate limits
+  for (let i = 0; i < recipients.length; i += BULK_CHUNK_SIZE) {
+    const chunk = recipients.slice(i, i + BULK_CHUNK_SIZE);
+
+    const results = await Promise.allSettled(
+      chunk.map((to) => sendEmail({ to, subject, html, text })),
+    );
+
+    for (const result of results) {
+      if (result.status === 'fulfilled' && result.value.success) {
+        sent++;
+      } else {
+        failed++;
+      }
+    }
+
+    // Small delay between chunks to stay within rate limits
+    if (i + BULK_CHUNK_SIZE < recipients.length) {
+      await new Promise((resolve) => setTimeout(resolve, BULK_CHUNK_DELAY_MS));
+    }
+  }
 
   return { sent, failed, total: recipients.length };
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/firebase/auth';
 import { apiGet } from '@/hooks/useFirestore';
+import { getCurrentRotaryYear } from '@/lib/utils/rotaryYear';
 import type { DuesPaymentStatus } from '@/types';
 
 interface DuesInfo {
@@ -18,7 +19,7 @@ interface DuesInfo {
 export function useDues(): DuesInfo {
   const { member } = useAuth();
   const [status, setStatus] = useState<DuesPaymentStatus>('UNPAID');
-  const [cycleName, setCycleName] = useState('2025-2026');
+  const [cycleName, setCycleName] = useState(getCurrentRotaryYear());
   const [amount, setAmount] = useState(0);
   const [loading, setLoading] = useState(true);
 

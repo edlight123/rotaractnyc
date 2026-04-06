@@ -49,7 +49,8 @@ service firebase.storage {
     // ── Community Post Attachments ──
     match /post-attachments/{userId}/{fileName} {
       allow read: if isMember();
-      allow write: if isOwner(userId) && isValidSize();
+      allow write: if isOwner(userId) && isValidSize()
+                   && (isImage() || request.resource.contentType.matches('application/pdf'));
       allow delete: if isOwner(userId) || isBoard();
     }
 
@@ -90,7 +91,8 @@ service firebase.storage {
     // ── Expense Receipts ──
     match /receipts/{fileName} {
       allow read: if isBoard();
-      allow write: if isBoard() && isValidSize();
+      allow write: if isBoard() && isValidSize()
+                   && (isImage() || request.resource.contentType.matches('application/pdf'));
       allow delete: if isBoard();
     }
 

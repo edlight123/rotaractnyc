@@ -3,6 +3,23 @@ import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
+// Validate required Firebase config at initialization time
+const requiredEnvVars = [
+  'NEXT_PUBLIC_FIREBASE_API_KEY',
+  'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
+  'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
+  'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
+  'NEXT_PUBLIC_FIREBASE_APP_ID',
+] as const;
+
+const missingVars = requiredEnvVars.filter((key) => !process.env[key]);
+if (missingVars.length > 0) {
+  console.error(
+    `[Firebase] Missing required environment variables: ${missingVars.join(', ')}. ` +
+    'Ensure all NEXT_PUBLIC_FIREBASE_* vars are set in your .env file or hosting provider.',
+  );
+}
+
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,

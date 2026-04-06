@@ -74,6 +74,7 @@ export async function POST(req: Request) {
             to: member.email,
             subject: email.subject,
             html: email.html,
+            text: email.text,
           });
 
           if (result.success) sent++;

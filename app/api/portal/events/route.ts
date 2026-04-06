@@ -52,7 +52,7 @@ function generateRecurrenceDates(
       weekStart = addDays(weekStart, 7 * weekStep);
     }
   } else if (freq === 'monthly') {
-    let current = new Date(startDate);
+    const current = new Date(startDate);
     const dayOfMonth = rule.dayOfMonth || startDate.getDate();
     while (dates.length < maxOccurrences) {
       // Set to the right day of month (handle months with fewer days)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
+import type Stripe from 'stripe';
+import { getStripe } from '@/lib/stripe/client';
 import { handleWebhookEvent } from '@/lib/stripe/webhooks';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +12,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 });
   }
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const stripe = getStripe();
 
   const body = await request.text();
   const sig = request.headers.get('stripe-signature');

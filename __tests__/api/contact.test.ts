@@ -71,18 +71,15 @@ describe('POST /api/contact', () => {
     );
   });
 
-  it('still returns 200 when email send fails (graceful fallback)', async () => {
+  it('returns 500 when email send fails', async () => {
     mockSendEmail.mockResolvedValue({ success: false, error: 'Email not configured' });
-    const spy = jest.spyOn(console, 'log').mockImplementation();
+    const spy = jest.spyOn(console, 'error').mockImplementation();
     const res = await POST(
       makeRequest({ name: 'Test', email: 'a@b.com', message: 'hi' }),
     );
-    expect(res.status).toBe(200);
-    expect(spy).toHaveBeenCalledWith(
-      expect.stringContaining('email not sent'),
-      expect.any(String),
-      expect.any(String),
-    );
+    expect(res.status).toBe(500);
+    const data = await res.json();
+    expect(data.error).toMatch(/failed/i);
     spy.mockRestore();
   });
 });

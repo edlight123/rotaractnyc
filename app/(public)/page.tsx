@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import { SITE } from '@/lib/constants';
+import { SITE, IMPACT_STATS } from '@/lib/constants';
 import { generateMeta } from '@/lib/seo';
 import { getPublicEvents, getPublishedArticles, getHeroSlides } from '@/lib/firebase/queries';
 import { formatDate } from '@/lib/utils/format';
@@ -109,7 +109,7 @@ export default async function HomePage() {
       />
 
       {/* Hero */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section aria-label="Hero" className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Hero background slideshow */}
         <HeroSlideshow slides={heroSlides} />
 
@@ -161,15 +161,10 @@ export default async function HomePage() {
       </section>
 
       {/* Stats Strip */}
-      <section className="relative -mt-16 z-20">
+      <section aria-label="Impact statistics" className="relative -mt-16 z-20">
         <div className="container-page">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { value: '5,000+', label: 'Service Hours' },
-              { value: '120+', label: 'Active Members' },
-              { value: '$50K+', label: 'Raised for Charity' },
-              { value: '15+', label: 'Global Partners' },
-            ].map((stat) => (
+            {IMPACT_STATS.map((stat) => (
               <div
                 key={stat.label}
                 className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-6 text-center hover:shadow-xl transition-shadow"
@@ -184,12 +179,12 @@ export default async function HomePage() {
 
       {/* Upcoming Events */}
       {upcomingEvents.length > 0 && (
-        <section className="section-padding bg-white dark:bg-gray-950">
+        <section aria-labelledby="upcoming-events-heading" className="section-padding bg-white dark:bg-gray-950">
           <div className="container-page">
             <div className="flex items-center justify-between mb-10">
               <div>
                 <p className="text-sm font-semibold text-cranberry uppercase tracking-wider mb-2">What&apos;s Coming Up</p>
-                <h2 className="text-3xl sm:text-4xl font-display font-bold text-gray-900 dark:text-white">Upcoming Events</h2>
+                <h2 id="upcoming-events-heading" className="text-3xl sm:text-4xl font-display font-bold text-gray-900 dark:text-white">Upcoming Events</h2>
               </div>
               <Link href="/events" className="hidden sm:inline-flex btn-sm btn-outline">
                 View All Events →
@@ -233,11 +228,11 @@ export default async function HomePage() {
       )}
 
       {/* Three Pillars */}
-      <section className="section-padding bg-white dark:bg-gray-950">
+      <section aria-labelledby="pillars-heading" className="section-padding bg-white dark:bg-gray-950">
         <div className="container-page">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <p className="text-sm font-semibold text-gold uppercase tracking-wider mb-3">What We Do</p>
-            <h2 className="text-3xl sm:text-4xl font-display font-bold text-gray-900 dark:text-white">
+            <h2 id="pillars-heading" className="text-3xl sm:text-4xl font-display font-bold text-gray-900 dark:text-white">
               Three Pillars of Rotaract
             </h2>
             <p className="mt-4 text-gray-600 dark:text-gray-400">
@@ -267,7 +262,7 @@ export default async function HomePage() {
       </section>
 
       {/* Testimonial */}
-      <section className="section-padding bg-gray-50 dark:bg-gray-900/50">
+      <section aria-label="Member testimonial" className="section-padding bg-gray-50 dark:bg-gray-900/50">
         <div className="container-page">
           <div className="max-w-3xl mx-auto text-center">
             <svg className="w-12 h-12 text-cranberry-200 dark:text-cranberry-800 mx-auto mb-6" fill="currentColor" viewBox="0 0 24 24">
@@ -290,12 +285,12 @@ export default async function HomePage() {
 
       {/* Recent News */}
       {recentArticles.length > 0 && (
-        <section className="section-padding bg-white dark:bg-gray-950">
+        <section aria-labelledby="news-heading" className="section-padding bg-white dark:bg-gray-950">
           <div className="container-page">
             <div className="flex items-center justify-between mb-10">
               <div>
                 <p className="text-sm font-semibold text-azure uppercase tracking-wider mb-2">Latest Updates</p>
-                <h2 className="text-3xl sm:text-4xl font-display font-bold text-gray-900 dark:text-white">News & Stories</h2>
+                <h2 id="news-heading" className="text-3xl sm:text-4xl font-display font-bold text-gray-900 dark:text-white">News & Stories</h2>
               </div>
               <Link href="/news" className="hidden sm:inline-flex btn-sm btn-outline">
                 All News →
@@ -334,7 +329,7 @@ export default async function HomePage() {
       )}
 
       {/* CTA */}
-      <section className="section-padding bg-gradient-to-br from-cranberry-900 via-cranberry to-cranberry-800 text-white">
+      <section aria-label="Call to action" className="section-padding bg-gradient-to-br from-cranberry-900 via-cranberry to-cranberry-800 text-white">
         <div className="container-page text-center">
           <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">
             Ready to join our community?

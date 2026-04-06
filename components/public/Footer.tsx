@@ -15,7 +15,7 @@ const quickLinks = [
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-950 text-gray-300">
+    <footer className="bg-gray-950 text-gray-300" role="contentinfo">
       {/* CTA band */}
       <div className="bg-cranberry">
         <div className="container-page py-10 flex flex-col sm:flex-row items-center justify-between gap-6 text-white">
@@ -28,7 +28,7 @@ export default function Footer() {
             className="btn-md bg-white text-cranberry hover:bg-gray-100 font-bold rounded-xl shadow-sm hover:shadow-md transition-all inline-flex items-center gap-2"
           >
             Join Rotaract NYC
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
           </Link>
@@ -56,7 +56,7 @@ export default function Footer() {
           </div>
 
           {/* Quick Links */}
-          <div>
+          <nav aria-label="Quick links">
             <h4 className="text-white font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2.5">
               {quickLinks.map((link) => (
@@ -67,27 +67,27 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
 
           {/* Contact */}
           <div>
             <h4 className="text-white font-semibold mb-4">Contact</h4>
             <ul className="space-y-3 text-sm text-gray-400">
               <li className="flex items-start gap-2">
-                <svg className="w-4 h-4 mt-0.5 text-cranberry-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 mt-0.5 text-cranberry-400 shrink-0" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 {SITE.address}
               </li>
               <li className="flex items-start gap-2">
-                <svg className="w-4 h-4 mt-0.5 text-cranberry-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 mt-0.5 text-cranberry-400 shrink-0" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
                 <a href={`mailto:${SITE.email}`} className="hover:text-white transition-colors">{SITE.email}</a>
               </li>
               <li className="flex items-start gap-2">
-                <svg className="w-4 h-4 mt-0.5 text-cranberry-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 mt-0.5 text-cranberry-400 shrink-0" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 {SITE.meetingSchedule}

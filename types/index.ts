@@ -217,6 +217,9 @@ export interface Transaction {
   approvedBy?: string;
   approvedAt?: string;
   relatedMemberId?: string;
+  stripeSessionId?: string;
+  email?: string;
+  status?: string;
 }
 
 export interface FinanceSummary {

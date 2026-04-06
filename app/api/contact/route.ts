@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { rateLimit, getRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 import { sendEmail } from '@/lib/email/send';
 import { contactFormEmail } from '@/lib/email/templates';
-import { escapeHtml, isValidEmail } from '@/lib/utils/sanitize';
+import { isValidEmail } from '@/lib/utils/sanitize';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,25 +32,28 @@ export async function POST(request: Request) {
       );
     }
 
-    // Sanitize inputs before rendering in HTML email
-    const safe = {
-      name: escapeHtml(name),
-      email: escapeHtml(email),
-      subject: escapeHtml(subject || `Contact from ${name}`),
-      message: escapeHtml(message),
-    };
-
-    const template = contactFormEmail(safe);
+    // Templates handle HTML escaping internally (defense-in-depth)
+    const template = contactFormEmail({
+      name,
+      email,
+      subject: subject || `Contact from ${name}`,
+      message,
+    });
 
     const result = await sendEmail({
       to: TO_EMAIL,
       subject: template.subject,
       html: template.html,
+      text: template.text,
       replyTo: email,
     });
 
     if (!result.success) {
-      console.log('Contact form (email not sent):', safe.name, safe.email);
+      console.error('Contact form email failed:', name, email);
+      return NextResponse.json(
+        { error: 'Failed to send message. Please try again later.' },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({ success: true, message: 'Message sent successfully.' });

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
+import Link from 'next/link';
 import HeroSection from '@/components/public/HeroSection';
 import { generateMeta } from '@/lib/seo';
 import { getGalleryImages } from '@/lib/firebase/queries';
@@ -41,7 +42,7 @@ export default async function GalleryPage() {
                   {hasRealImage ? (
                     <Image
                       src={img.url}
-                      alt={img.caption || img.event || 'Gallery photo'}
+                      alt={img.caption || (img.event ? `Photo from ${img.event}` : `Rotaract NYC gallery photo ${i + 1}`)}
                       fill
                       className="object-cover"
                       sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -63,9 +64,9 @@ export default async function GalleryPage() {
             <p className="text-gray-500 dark:text-gray-400 mb-4">
               Members can view the full gallery with high-resolution photos in the member portal.
             </p>
-            <a href="/portal/login" className="btn-sm btn-outline">
+            <Link href="/portal/login" className="btn-sm btn-outline">
               Member Login
-            </a>
+            </Link>
           </div>
         </div>
       </section>

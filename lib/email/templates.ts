@@ -3,6 +3,17 @@
  */
 import { SITE } from '@/lib/constants';
 
+// ── HTML-escape helper (defense-in-depth against XSS in emails) ──
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const baseStyle = `
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   max-width: 600px;
@@ -52,17 +63,23 @@ export function contactFormEmail(data: {
   email: string;
   subject: string;
   message: string;
-}): { subject: string; html: string } {
+}): { subject: string; html: string; text: string } {
+  const name = escapeHtml(data.name);
+  const email = escapeHtml(data.email);
+  const subject = escapeHtml(data.subject);
+  const message = escapeHtml(data.message);
+
   return {
     subject: `[Contact] ${data.subject}`,
     html: wrapTemplate(`
       <h2 style="color: #111827; font-size: 20px; margin: 0 0 16px;">New Contact Form Submission</h2>
-      <p style="color: #374151; margin: 0 0 8px;"><strong>From:</strong> ${data.name} (${data.email})</p>
-      <p style="color: #374151; margin: 0 0 8px;"><strong>Subject:</strong> ${data.subject}</p>
+      <p style="color: #374151; margin: 0 0 8px;"><strong>From:</strong> ${name} (${email})</p>
+      <p style="color: #374151; margin: 0 0 8px;"><strong>Subject:</strong> ${subject}</p>
       <div style="background-color: #f9fafb; border-radius: 8px; padding: 16px; margin-top: 16px;">
-        <p style="color: #374151; margin: 0; white-space: pre-wrap;">${data.message}</p>
+        <p style="color: #374151; margin: 0; white-space: pre-wrap;">${message}</p>
       </div>
     `),
+    text: `New Contact Form Submission\n\nFrom: ${data.name} (${data.email})\nSubject: ${data.subject}\n\n${data.message}\n\n--\n${SITE.name}\n${SITE.address}`,
   };
 }
 
@@ -71,24 +88,32 @@ export function membershipInterestEmail(data: {
   email: string;
   phone?: string;
   message?: string;
-}): { subject: string; html: string } {
+}): { subject: string; html: string; text: string } {
+  const name = escapeHtml(data.name);
+  const email = escapeHtml(data.email);
+  const phone = data.phone ? escapeHtml(data.phone) : '';
+  const message = data.message ? escapeHtml(data.message) : '';
+
   return {
     subject: `[Membership Interest] ${data.name}`,
     html: wrapTemplate(`
       <h2 style="color: #111827; font-size: 20px; margin: 0 0 16px;">New Membership Interest</h2>
-      <p style="color: #374151; margin: 0 0 8px;"><strong>Name:</strong> ${data.name}</p>
-      <p style="color: #374151; margin: 0 0 8px;"><strong>Email:</strong> ${data.email}</p>
-      ${data.phone ? `<p style="color: #374151; margin: 0 0 8px;"><strong>Phone:</strong> ${data.phone}</p>` : ''}
-      ${data.message ? `<div style="background-color: #f9fafb; border-radius: 8px; padding: 16px; margin-top: 16px;"><p style="color: #374151; margin: 0;">${data.message}</p></div>` : ''}
+      <p style="color: #374151; margin: 0 0 8px;"><strong>Name:</strong> ${name}</p>
+      <p style="color: #374151; margin: 0 0 8px;"><strong>Email:</strong> ${email}</p>
+      ${phone ? `<p style="color: #374151; margin: 0 0 8px;"><strong>Phone:</strong> ${phone}</p>` : ''}
+      ${message ? `<div style="background-color: #f9fafb; border-radius: 8px; padding: 16px; margin-top: 16px;"><p style="color: #374151; margin: 0;">${message}</p></div>` : ''}
     `),
+    text: `New Membership Interest\n\nName: ${data.name}\nEmail: ${data.email}${data.phone ? `\nPhone: ${data.phone}` : ''}${data.message ? `\n\n${data.message}` : ''}\n\n--\n${SITE.name}\n${SITE.address}`,
   };
 }
 
-export function welcomeEmail(name: string): { subject: string; html: string } {
+export function welcomeEmail(name: string): { subject: string; html: string; text: string } {
+  const safeName = escapeHtml(name);
+
   return {
     subject: `Welcome to ${SITE.shortName}! 🎉`,
     html: wrapTemplate(`
-      <h2 style="color: #111827; font-size: 20px; margin: 0 0 16px;">Welcome, ${name}!</h2>
+      <h2 style="color: #111827; font-size: 20px; margin: 0 0 16px;">Welcome, ${safeName}!</h2>
       <p style="color: #374151; margin: 0 0 12px;">You are now a member of the ${SITE.name}. We're thrilled to have you join our community!</p>
       <p style="color: #374151; margin: 0 0 12px;">Here's what you can do next:</p>
       <ul style="color: #374151; padding-left: 20px;">
@@ -99,14 +124,17 @@ export function welcomeEmail(name: string): { subject: string; html: string } {
       </ul>
       <p style="color: #374151; margin: 16px 0 0;">We meet ${SITE.meetingSchedule} at ${SITE.address}. See you there!</p>
     `),
+    text: `Welcome, ${name}!\n\nYou are now a member of the ${SITE.name}. We're thrilled to have you join our community!\n\nHere's what you can do next:\n- Complete your member profile: ${SITE.url}/portal/profile\n- Check out upcoming events: ${SITE.url}/portal/events\n- Pay your annual dues: ${SITE.url}/portal/dues\n- Connect with other members: ${SITE.url}/portal/directory\n\nWe meet ${SITE.meetingSchedule} at ${SITE.address}. See you there!\n\n--\n${SITE.name}\n${SITE.address}`,
   };
 }
 
-export function inviteEmail(name: string): { subject: string; html: string } {
+export function inviteEmail(name: string): { subject: string; html: string; text: string } {
+  const safeName = escapeHtml(name);
+
   return {
     subject: `You're invited to join ${SITE.shortName}! 🎉`,
     html: wrapTemplate(`
-      <h2 style="color: #111827; font-size: 20px; margin: 0 0 16px;">You're Invited, ${name}!</h2>
+      <h2 style="color: #111827; font-size: 20px; margin: 0 0 16px;">You're Invited, ${safeName}!</h2>
       <p style="color: #374151; margin: 0 0 12px;">You've been invited to join the ${SITE.name} member portal. Sign in to complete your profile and become an active member.</p>
       <p style="color: #374151; margin: 0 0 12px;">Here's what to expect:</p>
       <ol style="color: #374151; padding-left: 20px;">
@@ -118,22 +146,28 @@ export function inviteEmail(name: string): { subject: string; html: string } {
       <div style="text-align: center; margin: 24px 0;">
         <a href="${SITE.url}/portal/login" style="display: inline-block; background-color: #9B1B30; color: #ffffff; padding: 14px 36px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">Sign In & Get Started</a>
       </div>
-      <p style="color: #6b7280; font-size: 13px; margin: 16px 0 0;">Please sign in using the same email address this invitation was sent to (<strong>${name}</strong>'s email on file). This ensures your profile is linked correctly.</p>
+      <p style="color: #6b7280; font-size: 13px; margin: 16px 0 0;">Please sign in using the same email address this invitation was sent to (<strong>${safeName}</strong>'s email on file). This ensures your profile is linked correctly.</p>
     `),
+    text: `You're Invited, ${name}!\n\nYou've been invited to join the ${SITE.name} member portal. Sign in to complete your profile and become an active member.\n\nHere's what to expect:\n1. Sign in with your Google account at ${SITE.url}/portal/login\n2. Complete a short profile setup (name, phone, photo, etc.)\n3. Choose your membership type and pay your annual dues\n4. Start exploring events, connecting with members, and more!\n\nPlease sign in using the same email address this invitation was sent to (${name}'s email on file).\n\n--\n${SITE.name}\n${SITE.address}`,
   };
 }
 
-export function duesReminderEmail(name: string, amount: string, cycleName: string): { subject: string; html: string } {
+export function duesReminderEmail(name: string, amount: string, cycleName: string): { subject: string; html: string; text: string } {
+  const safeName = escapeHtml(name);
+  const safeAmount = escapeHtml(amount);
+  const safeCycle = escapeHtml(cycleName);
+
   return {
     subject: `Dues Reminder — ${cycleName}`,
     html: wrapTemplate(`
       <h2 style="color: #111827; font-size: 20px; margin: 0 0 16px;">Dues Reminder</h2>
-      <p style="color: #374151; margin: 0 0 12px;">Hi ${name},</p>
-      <p style="color: #374151; margin: 0 0 12px;">Your annual dues of <strong>${amount}</strong> for the ${cycleName} Rotary year are due. Please pay at your earliest convenience to maintain your active membership.</p>
+      <p style="color: #374151; margin: 0 0 12px;">Hi ${safeName},</p>
+      <p style="color: #374151; margin: 0 0 12px;">Your annual dues of <strong>${safeAmount}</strong> for the ${safeCycle} Rotary year are due. Please pay at your earliest convenience to maintain your active membership.</p>
       <div style="text-align: center; margin: 24px 0;">
         <a href="${SITE.url}/portal/dues" style="display: inline-block; background-color: #9B1B30; color: #ffffff; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">Pay Dues Now</a>
       </div>
     `),
+    text: `Dues Reminder\n\nHi ${name},\n\nYour annual dues of ${amount} for the ${cycleName} Rotary year are due. Please pay at your earliest convenience to maintain your active membership.\n\nPay now: ${SITE.url}/portal/dues\n\n--\n${SITE.name}\n${SITE.address}`,
   };
 }
 
@@ -142,21 +176,28 @@ export function eventReminderEmail(name: string, event: {
   date: string;
   time: string;
   location: string;
-}): { subject: string; html: string } {
+}): { subject: string; html: string; text: string } {
+  const safeName = escapeHtml(name);
+  const safeTitle = escapeHtml(event.title);
+  const safeDate = escapeHtml(event.date);
+  const safeTime = escapeHtml(event.time);
+  const safeLocation = escapeHtml(event.location);
+
   return {
     subject: `Reminder: ${event.title}`,
     html: wrapTemplate(`
       <h2 style="color: #111827; font-size: 20px; margin: 0 0 16px;">Event Reminder</h2>
-      <p style="color: #374151; margin: 0 0 12px;">Hi ${name},</p>
+      <p style="color: #374151; margin: 0 0 12px;">Hi ${safeName},</p>
       <p style="color: #374151; margin: 0 0 12px;">This is a reminder about an upcoming event:</p>
       <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 16px 0; border-left: 4px solid #9B1B30;">
-        <h3 style="color: #111827; margin: 0 0 8px;">${event.title}</h3>
-        <p style="color: #6b7280; margin: 0 0 4px;">📅 ${event.date} at ${event.time}</p>
-        <p style="color: #6b7280; margin: 0;">📍 ${event.location}</p>
+        <h3 style="color: #111827; margin: 0 0 8px;">${safeTitle}</h3>
+        <p style="color: #6b7280; margin: 0 0 4px;">📅 ${safeDate} at ${safeTime}</p>
+        <p style="color: #6b7280; margin: 0;">📍 ${safeLocation}</p>
       </div>
       <div style="text-align: center; margin: 24px 0;">
         <a href="${SITE.url}/portal/events" style="display: inline-block; background-color: #9B1B30; color: #ffffff; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">View Event</a>
       </div>
     `),
+    text: `Event Reminder\n\nHi ${name},\n\nThis is a reminder about an upcoming event:\n\n${event.title}\n📅 ${event.date} at ${event.time}\n📍 ${event.location}\n\nView event: ${SITE.url}/portal/events\n\n--\n${SITE.name}\n${SITE.address}`,
   };
 }

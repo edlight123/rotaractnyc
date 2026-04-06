@@ -72,8 +72,8 @@ service cloud.firestore {
     // Events (public + portal)
     // ───────────────────────────────────────
     match /events/{eventId} {
-      // Public events readable by anyone; portal-only events by active members
-      allow read: if resource.data.isPublic == true || isMember();
+      // Public events readable by anyone (must be published); portal members see all
+      allow read: if (resource.data.isPublic == true && resource.data.status == 'published') || isMember();
 
       // Board+ can manage events
       allow create, update, delete: if isBoard();
@@ -129,9 +129,14 @@ service cloud.firestore {
                     && request.resource.data.authorId == request.auth.uid;
 
       // Author can update their own post; any member can toggle likes
+      // Likes update must only change the likes field AND the new array must contain all old values
+      // (prevents a member from wiping other members' likes)
       allow update: if isMember() && (
         resource.data.authorId == request.auth.uid
-        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
+        || (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
+          && request.resource.data.likes.hasAll(resource.data.likes)
+        )
       );
 
       // Board+ can update/delete any post
@@ -246,8 +251,8 @@ service cloud.firestore {
       // Anyone can read site settings (used on public site)
       allow read: if true;
 
-      // Treasurer+ can update settings (payment methods, site config)
-      allow write: if isTreasurer();
+      // Board+ can update settings (payment methods, site config)
+      allow write: if isBoard();
     }
 
     // ───────────────────────────────────────

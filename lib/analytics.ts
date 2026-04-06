@@ -1,70 +1,41 @@
 /**
- * Google Analytics helper.
+ * Analytics stubs for Rotaract NYC.
+ *
+ * Primary analytics are provided by Vercel Analytics (<Analytics /> in root layout).
+ * Google Analytics (gtag) was never fully integrated — no <Script> tag loads the
+ * GA library — so the previous GA implementation was dead code.
+ *
+ * These no-op exports are kept so any future consumer can import them without
+ * breaking. To re-enable GA, add the gtag <Script> to app/layout.tsx, set
+ * NEXT_PUBLIC_GA_MEASUREMENT_ID, and restore the gtag calls below.
  */
 
-declare global {
-  interface Window {
-    gtag: (...args: any[]) => void;
-  }
-}
-
-const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 export function isAnalyticsEnabled(): boolean {
-  return typeof window !== 'undefined' && !!GA_ID;
+  return false;
 }
 
-/** Track a page view */
-export function trackPageView(url: string): void {
-  if (!isAnalyticsEnabled()) return;
-  window.gtag('config', GA_ID!, { page_path: url });
-}
+/** Track a page view (no-op — Vercel Analytics covers this) */
+export function trackPageView(_url: string): void {}
 
-/** Track a custom event */
+/** Track a custom event (no-op) */
 export function trackEvent(
-  action: string,
-  params?: {
+  _action: string,
+  _params?: {
     category?: string;
     label?: string;
     value?: number;
     [key: string]: any;
   },
-): void {
-  if (!isAnalyticsEnabled()) return;
-  window.gtag('event', action, {
-    event_category: params?.category,
-    event_label: params?.label,
-    value: params?.value,
-    ...params,
-  });
-}
+): void {}
 
-// ── Predefined events ──
+// ── Predefined event stubs ──
 
-export function trackContactFormSubmit(): void {
-  trackEvent('contact_form_submit', { category: 'engagement' });
-}
-
-export function trackMembershipInterest(): void {
-  trackEvent('membership_interest', { category: 'conversion' });
-}
-
-export function trackDonation(amount: number): void {
-  trackEvent('donation', { category: 'conversion', value: amount });
-}
-
-export function trackRSVP(eventId: string): void {
-  trackEvent('event_rsvp', { category: 'engagement', label: eventId });
-}
-
-export function trackDuesPayment(amount: number): void {
-  trackEvent('dues_payment', { category: 'conversion', value: amount });
-}
-
-export function trackSignIn(): void {
-  trackEvent('sign_in', { category: 'auth' });
-}
-
-export function trackSignOut(): void {
-  trackEvent('sign_out', { category: 'auth' });
-}
+export function trackContactFormSubmit(): void {}
+export function trackMembershipInterest(): void {}
+export function trackDonation(_amount: number): void {}
+export function trackRSVP(_eventId: string): void {}
+export function trackDuesPayment(_amount: number): void {}
+export function trackSignIn(): void {}
+export function trackSignOut(): void {}

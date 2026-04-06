@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getArticleBySlug } from '@/lib/firebase/queries';
 import { formatDate } from '@/lib/utils/format';
+import SafeHtml from '@/components/ui/SafeHtml';
 import { SITE } from '@/lib/constants';
 import Badge from '@/components/ui/Badge';
 
@@ -113,9 +114,10 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
       {/* Content */}
       <section className="section-padding bg-white dark:bg-gray-950">
         <div className="container-page">
-          <article
+          <SafeHtml
+            html={article.content}
+            as="article"
             className="max-w-3xl mx-auto prose prose-lg dark:prose-invert prose-headings:font-display prose-a:text-cranberry hover:prose-a:text-cranberry-700 prose-img:rounded-xl prose-img:shadow-lg"
-            dangerouslySetInnerHTML={{ __html: article.content }}
           />
 
           {/* Share & engagement */}

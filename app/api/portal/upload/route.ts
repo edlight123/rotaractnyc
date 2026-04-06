@@ -23,10 +23,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'fileName and fileType are required' }, { status: 400 });
     }
 
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    if (!allowedTypes.some((t) => fileType.startsWith(t.split('/')[0]) || fileType === t)) {
-      return NextResponse.json({ error: 'File type not allowed' }, { status: 400 });
+    // Validate file type against explicit MIME whitelist
+    const ALLOWED_MIME_TYPES = new Set([
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ]);
+    if (!ALLOWED_MIME_TYPES.has(fileType)) {
+      return NextResponse.json({ error: 'File type not allowed. Accepted: JPEG, PNG, WebP, GIF, PDF, DOCX.' }, { status: 400 });
     }
 
     // Generate a safe path

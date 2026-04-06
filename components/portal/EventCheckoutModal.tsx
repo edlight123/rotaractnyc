@@ -171,7 +171,7 @@ export default function EventCheckoutModal({
                 )}
                 <div className="text-gray-600 dark:text-gray-400">Amount: {amount}</div>
                 <div className="text-xs text-gray-500 mt-2">
-                  Please include your name and "Event Ticket" in the transfer reference.
+                  Please include your name and &quot;Event Ticket&quot; in the transfer reference.
                 </div>
               </div>
             )}
@@ -188,7 +188,7 @@ export default function EventCheckoutModal({
                 )}
                 <div className="text-gray-600 dark:text-gray-400">Amount: {amount}</div>
                 <div className="text-xs text-gray-500 mt-2">
-                  Please note "Event Ticket" in your Venmo memo.
+                  Please note &quot;Event Ticket&quot; in your Venmo memo.
                 </div>
               </div>
             )}
@@ -207,7 +207,7 @@ export default function EventCheckoutModal({
               <div className="space-y-2 text-sm">
                 <div className="font-semibold text-gray-900 dark:text-white">Check Payment</div>
                 <div className="text-gray-600 dark:text-gray-400">
-                  Mail a check for {amount} payable to "Rotaract NYC" with reference "Event Ticket".
+                  Mail a check for {amount} payable to &quot;Rotaract NYC&quot; with reference &quot;Event Ticket&quot;.
                 </div>
                 <div className="text-xs text-gray-500 mt-2">
                   Contact the treasurer for the mailing address.

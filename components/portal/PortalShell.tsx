@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -107,6 +107,10 @@ export default function PortalShell({ children }: { children: React.ReactNode })
   const router = useRouter();
   const { member, signOut, loading } = useAuth();
   const { status: duesStatus } = useDues();
+  const sidebarRef = useRef<HTMLElement>(null);
+  const signOutDialogRef = useRef<HTMLDivElement>(null);
+  const signOutTriggerRef = useRef<HTMLButtonElement>(null);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
 
   /* Pull-to-refresh on mobile: reloads the current page data */
   const { bind: pullBind, isRefreshing: isPullRefreshing, pullDistance, indicatorStyle } = usePullToRefresh({
@@ -122,13 +126,32 @@ export default function PortalShell({ children }: { children: React.ReactNode })
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (showSignOutConfirm) { setShowSignOutConfirm(false); return; }
-        if (sidebarOpen) setSidebarOpen(false);
+        if (showSignOutConfirm) { setShowSignOutConfirm(false); signOutTriggerRef.current?.focus(); return; }
+        if (sidebarOpen) { setSidebarOpen(false); hamburgerRef.current?.focus(); }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [sidebarOpen, showSignOutConfirm]);
+
+  /* Focus trap for sign-out confirmation dialog */
+  useEffect(() => {
+    if (!showSignOutConfirm) return;
+    const dialog = signOutDialogRef.current;
+    if (!dialog) return;
+    const focusables = dialog.querySelectorAll<HTMLElement>('button');
+    const first = focusables[0];
+    first?.focus();
+  }, [showSignOutConfirm]);
+
+  /* Focus first nav item when mobile sidebar opens */
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const sidebar = sidebarRef.current;
+    if (!sidebar) return;
+    const firstLink = sidebar.querySelector<HTMLElement>('nav a');
+    firstLink?.focus();
+  }, [sidebarOpen]);
 
   const handleSignOut = useCallback(() => {
     setShowSignOutConfirm(true);
@@ -208,10 +231,12 @@ export default function PortalShell({ children }: { children: React.ReactNode })
 
       {/* ═══ Sidebar ═══ */}
       <aside
+        ref={sidebarRef}
         className={cn(
           'fixed top-0 left-0 z-50 h-full w-[272px] bg-white dark:bg-gray-900 border-r border-gray-200/80 dark:border-gray-800/80 transform transition-transform duration-300 ease-out lg:translate-x-0 flex flex-col',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
+        aria-label="Portal navigation"
       >
         {/* Logo header */}
         <div className="h-20 flex items-center justify-between pl-10 pr-4 border-b border-gray-100 dark:border-gray-800/60 shrink-0">
@@ -229,7 +254,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
             aria-label="Close navigation menu"
             className="lg:hidden ml-2 p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            <svg className="w-5 h-5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
@@ -255,6 +280,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
                       key={item.href}
                       href={item.href}
                       onClick={() => setSidebarOpen(false)}
+                      aria-current={isActive(item.href) ? 'page' : undefined}
                       className={cn(
                         'flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150',
                         isActive(item.href)
@@ -262,7 +288,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800/60'
                       )}
                     >
-                      <span className={cn(
+                      <span aria-hidden="true" className={cn(
                         'shrink-0 transition-colors',
                         isActive(item.href)
                           ? 'text-cranberry dark:text-cranberry-400'
@@ -308,15 +334,24 @@ export default function PortalShell({ children }: { children: React.ReactNode })
             </Link>
             <div className="relative">
               <button
+                ref={signOutTriggerRef}
                 onClick={handleSignOut}
                 className="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
                 title="Sign out"
                 aria-label="Sign out"
+                aria-haspopup="dialog"
+                aria-expanded={showSignOutConfirm}
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>
+                <svg className="w-4 h-4" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>
               </button>
               {showSignOutConfirm && (
-                <div className="absolute left-0 bottom-full mb-2 w-56 rounded-xl border border-gray-200 bg-white shadow-xl dark:bg-gray-900 dark:border-gray-700 p-4 animate-scale-in origin-bottom-left z-50">
+                <div
+                  ref={signOutDialogRef}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Confirm sign out"
+                  className="absolute left-0 bottom-full mb-2 w-56 rounded-xl border border-gray-200 bg-white shadow-xl dark:bg-gray-900 dark:border-gray-700 p-4 animate-scale-in origin-bottom-left z-50"
+                >
                   <p className="text-sm font-medium text-gray-900 dark:text-white mb-3">Sign out of the portal?</p>
                   <div className="flex gap-2">
                     <button
@@ -343,16 +378,17 @@ export default function PortalShell({ children }: { children: React.ReactNode })
       <div className="lg:ml-[272px]">
         {/* Mobile hamburger — floating top-left, only when sidebar closed */}
         <button
+          ref={hamburgerRef}
           onClick={() => setSidebarOpen(true)}
           className="lg:hidden fixed top-4 left-4 z-30 p-2.5 rounded-xl bg-white dark:bg-gray-900 shadow-md border border-gray-200/80 dark:border-gray-800 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors"
           aria-label="Open navigation menu"
           aria-expanded={sidebarOpen}
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+          <svg className="w-5 h-5" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
         </button>
 
         {/* Page content */}
-        <main {...pullBind()} className="p-4 pt-16 lg:pt-8 lg:p-8 pb-safe" style={{ touchAction: 'pan-x' }}>
+        <main id="main-content" tabIndex={-1} {...pullBind()} className="p-4 pt-16 lg:pt-8 lg:p-8 pb-safe" style={{ touchAction: 'pan-x' }}>
           {/* Pull-to-refresh indicator */}
           <div style={indicatorStyle} className="lg:hidden">
             {(pullDistance > 0 || isPullRefreshing) && (

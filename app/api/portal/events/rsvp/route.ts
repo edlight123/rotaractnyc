@@ -22,6 +22,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Event ID and status are required' }, { status: 400 });
     }
 
+    const VALID_RSVP_STATUSES = ['going', 'maybe', 'not_going'];
+    if (!VALID_RSVP_STATUSES.includes(status)) {
+      return NextResponse.json({ error: `Invalid RSVP status. Must be one of: ${VALID_RSVP_STATUSES.join(', ')}` }, { status: 400 });
+    }
+
     // Upsert RSVP
     const rsvpRef = adminDb.collection('rsvps').doc(`${uid}_${eventId}`);
     await rsvpRef.set(

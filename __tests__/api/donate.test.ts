@@ -38,10 +38,12 @@ describe('POST /api/donate', () => {
     delete process.env.STRIPE_SECRET_KEY;
   });
 
-  it('returns 503 when Stripe is not configured', async () => {
+  it('returns 500 when Stripe is not configured', async () => {
     delete process.env.STRIPE_SECRET_KEY;
+    const spy = jest.spyOn(console, 'error').mockImplementation();
     const res = await POST(makeRequest({ amount: '25' }));
-    expect(res.status).toBe(503);
+    expect(res.status).toBe(500);
+    spy.mockRestore();
   });
 
   it('creates checkout session for preset $25', async () => {

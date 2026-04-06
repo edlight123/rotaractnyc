@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
+import { getStripe } from '@/lib/stripe/client';
 import { rateLimit, getRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 import { clampNumber } from '@/lib/utils/sanitize';
 
@@ -24,13 +24,6 @@ export async function POST(request: NextRequest) {
   try {
     const { amount, customAmount } = await request.json();
 
-    if (!process.env.STRIPE_SECRET_KEY) {
-      return NextResponse.json(
-        { error: 'Payment processing is not configured.' },
-        { status: 503 },
-      );
-    }
-
     let cents: number;
     let description: string;
 
@@ -47,7 +40,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const stripe = getStripe();
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -65,7 +58,7 @@ export async function POST(request: NextRequest) {
           quantity: 1,
         },
       ],
-      success_url: `${SITE_URL}/donate?success=true`,
+      success_url: `${SITE_URL}/donate?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${SITE_URL}/donate?cancelled=true`,
       metadata: {
         type: 'donation',
@@ -77,7 +70,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Donate checkout error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to create checkout session.' },
+      { error: 'Payment processing failed. Please try again later.' },
       { status: 500 },
     );
   }

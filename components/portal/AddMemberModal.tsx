@@ -104,7 +104,7 @@ export default function AddMemberModal({ open, onClose, onCreated }: AddMemberMo
             )}
 
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Enter the new member's basic info. They'll receive an invite email and complete the rest of their profile during onboarding.
+              Enter the new member&apos;s basic info. They&apos;ll receive an invite email and complete the rest of their profile during onboarding.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

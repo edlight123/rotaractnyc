@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { rateLimit, getRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 import { sendEmail } from '@/lib/email/send';
 import { membershipInterestEmail } from '@/lib/email/templates';
-import { escapeHtml, isValidEmail } from '@/lib/utils/sanitize';
+import { isValidEmail } from '@/lib/utils/sanitize';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,16 +34,18 @@ export async function POST(request: Request) {
 
     const fullName = [firstName, lastName].filter(Boolean).join(' ');
 
+    // Templates handle HTML escaping internally (defense-in-depth)
     const template = membershipInterestEmail({
-      name: escapeHtml(fullName),
-      email: escapeHtml(email),
-      message: reason ? escapeHtml(reason) : undefined,
+      name: fullName,
+      email,
+      message: reason || undefined,
     });
 
     const result = await sendEmail({
       to: TO_EMAIL,
       subject: template.subject,
       html: template.html,
+      text: template.text,
       replyTo: email,
     });
 

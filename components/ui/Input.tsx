@@ -10,6 +10,8 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, label, error, helperText, id, ...props }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
+    const errorId = error ? `${inputId}-error` : undefined;
+    const helperId = helperText && !error ? `${inputId}-helper` : undefined;
     return (
       <div className="w-full">
         {label && (
@@ -20,6 +22,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           id={inputId}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={errorId || helperId}
           className={cn(
             'w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm',
             'placeholder:text-gray-400 transition-colors duration-150',
@@ -30,8 +34,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
           {...props}
         />
-        {error && <p className="mt-1.5 text-sm text-red-600 dark:text-red-400">{error}</p>}
-        {helperText && !error && <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">{helperText}</p>}
+        {error && <p id={errorId} className="mt-1.5 text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
+        {helperText && !error && <p id={helperId} className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">{helperText}</p>}
       </div>
     );
   }

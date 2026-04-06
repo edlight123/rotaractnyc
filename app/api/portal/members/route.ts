@@ -23,8 +23,10 @@ export async function GET(request: NextRequest) {
   try {
     await verifySession();
 
+    // Only return active members to protect the directory
     const snapshot = await adminDb
       .collection('members')
+      .where('status', '==', 'active')
       .orderBy('displayName')
       .get();
 
@@ -125,6 +127,7 @@ export async function POST(request: NextRequest) {
         to: email.toLowerCase().trim(),
         subject: template.subject,
         html: template.html,
+        text: template.text,
       });
     } catch (emailErr) {
       console.error('Invitation email failed (non-blocking):', emailErr);
@@ -191,6 +194,7 @@ export async function PATCH(request: NextRequest) {
           to: memberData?.email,
           subject: template.subject,
           html: template.html,
+          text: template.text,
         });
       } catch (emailErr) {
         console.error('Welcome email failed:', emailErr);

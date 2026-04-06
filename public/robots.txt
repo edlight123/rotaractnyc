@@ -4,6 +4,7 @@ Allow: /
 
 # Private / authenticated areas
 Disallow: /portal/
+Disallow: /finance/
 Disallow: /api/
 
 # Static assets that don't need indexing

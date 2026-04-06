@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button';
 import Avatar from '@/components/ui/Avatar';
 import Spinner from '@/components/ui/Spinner';
 import { formatDate } from '@/lib/utils/format';
+import { sanitizeHtml } from '@/lib/utils/sanitizeHtml';
 import type { Article } from '@/types';
 
 const categoryColors: Record<string, 'cranberry' | 'azure' | 'green' | 'gold' | 'gray'> = {
@@ -94,7 +95,7 @@ export default function PortalArticleDetailPage() {
         {/* Content */}
         <div className="mt-8 prose prose-sm dark:prose-invert max-w-none">
           {article.content ? (
-            <div dangerouslySetInnerHTML={{ __html: article.content }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(article.content) }} />
           ) : (
             <p className="text-gray-600 dark:text-gray-400">{article.excerpt}</p>
           )}
