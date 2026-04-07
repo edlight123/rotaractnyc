@@ -68,8 +68,9 @@ export default async function HomePage() {
     getHeroSlides(),
   ]);
 
-  // Take only the next 3 upcoming events
-  const upcomingEvents = events.slice(0, 3);
+  // Take only the next 3 upcoming events (filter out past)
+  const now = new Date().toISOString();
+  const upcomingEvents = events.filter((e) => e.date >= now).slice(0, 3);
   // Take the 3 most recent articles
   const recentArticles = articles.slice(0, 3);
   return (

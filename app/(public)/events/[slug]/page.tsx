@@ -74,8 +74,8 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
             <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             Back to Events
           </Link>
-          <Badge variant={event.type === 'service' ? 'azure' : event.type === 'paid' ? 'gold' : 'green'} className="mb-4">
-            {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
+          <Badge variant={event.type === 'service' ? 'azure' : event.type === 'paid' ? 'gold' : event.type === 'hybrid' ? 'cranberry' : 'green'} className="mb-4">
+            {event.type === 'service' ? '🤝 Service' : event.type === 'paid' ? '🎟️ Ticketed' : event.type === 'hybrid' ? '⭐ Hybrid' : '✓ Free'}
           </Badge>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold">{event.title}</h1>
         </div>
