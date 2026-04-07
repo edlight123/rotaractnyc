@@ -1,9 +1,30 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import Button from '@/components/ui/Button';
 import Link from 'next/link';
+import { useToast } from '@/components/ui/Toast';
 
 export default function OnboardingSuccessPage() {
+  const { toast } = useToast();
+  const calledRef = useRef(false);
+
+  useEffect(() => {
+    if (calledRef.current) return;
+    calledRef.current = true;
+
+    fetch('/api/portal/onboarding/complete', { method: 'POST' })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          toast('Welcome email sent! 🎉');
+        }
+      })
+      .catch(() => {
+        // Silently fail — onboarding is still complete in the UI
+      });
+  }, [toast]);
+
   return (
     <div className="max-w-lg mx-auto text-center space-y-6 py-12 page-enter">
       <div className="w-20 h-20 rounded-full bg-cranberry-50 dark:bg-cranberry-900/20 flex items-center justify-center mx-auto">

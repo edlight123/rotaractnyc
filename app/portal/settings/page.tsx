@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/firebase/auth';
 import { useToast } from '@/components/ui/Toast';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
+import NotificationPreferences from '@/components/portal/NotificationPreferences';
 
 export default function SettingsPage() {
   const { user, member, signOut } = useAuth();
@@ -112,15 +113,13 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {/* ── Notifications (placeholder) ── */}
+      {/* ── Notifications ── */}
       <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</h2>
         </div>
         <div className="px-6 py-5">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Email notification preferences are coming soon. You will be able to control which emails you receive for events, dues reminders, and announcements.
-          </p>
+          <NotificationPreferences />
         </div>
       </section>
 

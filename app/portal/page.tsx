@@ -15,6 +15,8 @@ import EmptyState from '@/components/ui/EmptyState';
 import ProgressRing from '@/components/ui/ProgressRing';
 import PostComposerModal from '@/components/portal/PostComposerModal';
 import FeedCard from '@/components/portal/FeedCard';
+import ProfileCompletionCard from '@/components/portal/ProfileCompletionCard';
+import OnboardingChecklist from '@/components/portal/OnboardingChecklist';
 import { formatRelativeTime } from '@/lib/utils/format';
 import type { CommunityPost, RotaractEvent, ServiceHour } from '@/types';
 
@@ -95,6 +97,13 @@ export default function PortalDashboard() {
     .filter((e) => new Date(e.date) >= new Date())
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 4);
+
+  // Phase 2: onboarding / profile completion
+  const hasRsvp = false; // TODO: derive from RSVP subcollection when available
+  const isNewMember = member
+    ? (Date.now() - new Date(member.joinedAt).getTime()) < 30 * 24 * 60 * 60 * 1000
+    : false;
+  const showOnboarding = isNewMember && !member?.onboardingComplete;
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -192,6 +201,14 @@ export default function PortalDashboard() {
           </div>
         </div>
       </section>
+
+      {/* ═══════ PHASE 2: ONBOARDING / PROFILE COMPLETION ═══════ */}
+      {member && showOnboarding && (
+        <OnboardingChecklist member={member} duesStatus={duesStatus} hasRsvp={hasRsvp} />
+      )}
+      {member && !showOnboarding && (
+        <ProfileCompletionCard member={member} />
+      )}
 
       {/* ═══════ QUICK ACTIONS STRIP ═══════ */}
       {/* On mobile: only show in overview tab. On sm+: always show */}

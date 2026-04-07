@@ -4,5 +4,19 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "outputDirectory": ".next",
-  "regions": ["iad1"]
+  "regions": ["iad1"],
+  "crons": [
+    {
+      "path": "/api/cron/dues-reminders",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/event-reminders",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/welcome-sequence",
+      "schedule": "0 14 * * *"
+    }
+  ]
 }

@@ -201,3 +201,65 @@ export function eventReminderEmail(name: string, event: {
     text: `Event Reminder\n\nHi ${name},\n\nThis is a reminder about an upcoming event:\n\n${event.title}\n📅 ${event.date} at ${event.time}\n📍 ${event.location}\n\nView event: ${SITE.url}/portal/events\n\n--\n${SITE.name}\n${SITE.address}`,
   };
 }
+
+// ── Onboarding Sequence Templates ──
+
+export function profileReminderEmail(name: string): { subject: string; html: string; text: string } {
+  const safeName = escapeHtml(name);
+
+  return {
+    subject: `Complete your profile — ${SITE.shortName}`,
+    html: wrapTemplate(`
+      <h2 style="color: #111827; font-size: 20px; margin: 0 0 16px;">Hey ${safeName}, your profile is waiting! 👋</h2>
+      <p style="color: #374151; margin: 0 0 12px;">We noticed you haven't finished setting up your member profile yet. A complete profile helps other members get to know you and makes it easier to connect.</p>
+      <p style="color: #374151; margin: 0 0 12px;">It only takes a couple of minutes — add a photo, a short bio, and your interests so the community can welcome you properly.</p>
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="${SITE.url}/portal/profile" style="display: inline-block; background-color: #9B1B30; color: #ffffff; padding: 14px 36px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">Complete Your Profile</a>
+      </div>
+      <p style="color: #6b7280; font-size: 13px; margin: 16px 0 0;">If you've already completed your profile, feel free to ignore this email.</p>
+    `),
+    text: `Hey ${name}, your profile is waiting!\n\nWe noticed you haven't finished setting up your member profile yet. A complete profile helps other members get to know you and makes it easier to connect.\n\nIt only takes a couple of minutes — add a photo, a short bio, and your interests so the community can welcome you properly.\n\nComplete your profile: ${SITE.url}/portal/profile\n\nIf you've already completed your profile, feel free to ignore this email.\n\n--\n${SITE.name}\n${SITE.address}`,
+  };
+}
+
+export function duesNudgeEmail(name: string, amount: string): { subject: string; html: string; text: string } {
+  const safeName = escapeHtml(name);
+  const safeAmount = escapeHtml(amount);
+
+  return {
+    subject: `Don't forget your dues — ${SITE.shortName}`,
+    html: wrapTemplate(`
+      <h2 style="color: #111827; font-size: 20px; margin: 0 0 16px;">A quick reminder about dues, ${safeName} 💳</h2>
+      <p style="color: #374151; margin: 0 0 12px;">We wanted to remind you that your annual membership dues of <strong>${safeAmount}</strong> haven't been paid yet.</p>
+      <p style="color: #374151; margin: 0 0 12px;">Your dues directly support our service projects, community events, and partnerships. Paying on time ensures you have full access to all member benefits — including event RSVPs, committee participation, and voting rights.</p>
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="${SITE.url}/portal/dues" style="display: inline-block; background-color: #9B1B30; color: #ffffff; padding: 14px 36px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">Pay Dues Now</a>
+      </div>
+      <p style="color: #6b7280; font-size: 13px; margin: 16px 0 0;">If you've already paid, it may take a moment to process — you can disregard this message.</p>
+    `),
+    text: `A quick reminder about dues, ${name}\n\nWe wanted to remind you that your annual membership dues of ${amount} haven't been paid yet.\n\nYour dues directly support our service projects, community events, and partnerships. Paying on time ensures you have full access to all member benefits — including event RSVPs, committee participation, and voting rights.\n\nPay dues now: ${SITE.url}/portal/dues\n\nIf you've already paid, it may take a moment to process — you can disregard this message.\n\n--\n${SITE.name}\n${SITE.address}`,
+  };
+}
+
+export function oneWeekCheckInEmail(name: string): { subject: string; html: string; text: string } {
+  const safeName = escapeHtml(name);
+
+  return {
+    subject: `How's your first week? — ${SITE.shortName}`,
+    html: wrapTemplate(`
+      <h2 style="color: #111827; font-size: 20px; margin: 0 0 16px;">One week in — how's it going, ${safeName}? 🎉</h2>
+      <p style="color: #374151; margin: 0 0 12px;">It's been a week since you joined ${SITE.name}, and we hope you're settling in!</p>
+      <p style="color: #374151; margin: 0 0 12px;">Here are a couple of ways to make the most of your membership:</p>
+      <ul style="color: #374151; padding-left: 20px;">
+        <li style="margin-bottom: 8px;"><strong>Attend an event</strong> — Check out what's coming up and RSVP. It's the best way to meet fellow members.</li>
+        <li style="margin-bottom: 8px;"><strong>Browse the directory</strong> — Find members with similar interests, industries, or committees and say hello.</li>
+      </ul>
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="${SITE.url}/portal/events" style="display: inline-block; background-color: #9B1B30; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; margin-right: 8px;">Browse Events</a>
+        <a href="${SITE.url}/portal/directory" style="display: inline-block; background-color: #ffffff; color: #9B1B30; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; border: 2px solid #9B1B30;">Member Directory</a>
+      </div>
+      <p style="color: #374151; margin: 16px 0 0;">We meet ${SITE.meetingSchedule} — we'd love to see you there!</p>
+    `),
+    text: `One week in — how's it going, ${name}?\n\nIt's been a week since you joined ${SITE.name}, and we hope you're settling in!\n\nHere are a couple of ways to make the most of your membership:\n\n- Attend an event — Check out what's coming up and RSVP. It's the best way to meet fellow members.\n  ${SITE.url}/portal/events\n\n- Browse the directory — Find members with similar interests, industries, or committees and say hello.\n  ${SITE.url}/portal/directory\n\nWe meet ${SITE.meetingSchedule} — we'd love to see you there!\n\n--\n${SITE.name}\n${SITE.address}`,
+  };
+}
