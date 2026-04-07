@@ -5,6 +5,7 @@ import { getEventBySlug } from '@/lib/firebase/queries';
 import { formatDate, formatCurrency } from '@/lib/utils/format';
 import { SITE } from '@/lib/constants';
 import Badge from '@/components/ui/Badge';
+import GuestRsvpForm from '@/components/public/GuestRsvpForm';
 
 export const revalidate = 120; // 2 min — event details change more frequently
 
@@ -132,18 +133,25 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
               </div>
             )}
 
-            {/* Auth-aware CTA */}
-            <div className="mt-10 p-6 bg-cranberry-50 dark:bg-cranberry-900/10 rounded-2xl border border-cranberry-100 dark:border-cranberry-900/30">
-              <h3 className="font-display font-bold text-gray-900 dark:text-white mb-2">Want to attend?</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                {event.pricing && event.type === 'paid'
-                  ? 'Sign in to get member pricing, or join Rotaract NYC for exclusive discounts.'
-                  : 'Sign in to your member portal to RSVP, or join Rotaract NYC to access all events.'}
+            {/* Guest RSVP + Member CTA */}
+            <GuestRsvpForm
+              eventId={event.id}
+              eventSlug={event.slug}
+              eventTitle={event.title}
+              isPaid={!!(event.pricing && (event.type === 'paid' || event.type === 'hybrid') && event.pricing.guestPrice > 0)}
+              guestPrice={event.pricing?.guestPrice}
+              earlyBirdPrice={event.pricing?.earlyBirdPrice}
+              earlyBirdDeadline={event.pricing?.earlyBirdDeadline}
+            />
+
+            {/* Member login link */}
+            <div className="mt-4 text-center">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Already a member?{' '}
+                <Link href="/portal/login" className="text-cranberry hover:underline font-medium">
+                  Sign in for member pricing
+                </Link>
               </p>
-              <div className="flex gap-3">
-                <Link href="/portal/login" className="btn-sm btn-primary">{event.type === 'paid' ? 'Member Ticket' : 'Member RSVP'}</Link>
-                <Link href="/membership" className="btn-sm btn-outline">Join Us</Link>
-              </div>
             </div>
           </div>
         </div>

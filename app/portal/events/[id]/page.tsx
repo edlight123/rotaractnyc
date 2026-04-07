@@ -50,6 +50,7 @@ export default function PortalEventDetailPage() {
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
   const [checkoutPriceCents, setCheckoutPriceCents] = useState(0);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [guestRsvps, setGuestRsvps] = useState<Array<{ id: string; name: string; email: string; phone?: string; status: string; paymentStatus?: string; createdAt: string }>>([]);
   const { data: rsvps } = useRsvps(id);
 
   const canManageEvents = member && ['board', 'president', 'treasurer'].includes(member.role);
@@ -86,6 +87,12 @@ export default function PortalEventDetailPage() {
       setCurrentRSVP((myRsvp?.status as RSVPStatus) || null);
     }
   }, [rsvps, user]);
+
+  useEffect(() => {
+    if (canManageEvents && id) {
+      apiGet(`/api/events/${id}/guest-rsvps`).then(setGuestRsvps).catch(() => {});
+    }
+  }, [canManageEvents, id]);
 
   const handleRSVP = async (status: RSVPStatus) => {
     try {
@@ -345,6 +352,35 @@ export default function PortalEventDetailPage() {
                       <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{r.memberName}</span>
                     </div>
                   ))}
+              </div>
+            </div>
+          )}
+
+          {/* Guest Registrations - admin only */}
+          {canManageEvents && guestRsvps.length > 0 && (
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6">
+              <h3 className="font-display font-semibold text-gray-900 dark:text-white mb-4 text-lg">
+                Guest Registrations <span className="text-gray-400 dark:text-gray-500 font-normal text-base">({guestRsvps.filter(g => g.status === 'going').length})</span>
+              </h3>
+              <div className="space-y-2">
+                {guestRsvps.map((g) => (
+                  <div key={g.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/60">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{g.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{g.email}{g.phone ? ` · ${g.phone}` : ''}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {g.paymentStatus === 'paid' && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full">Paid</span>
+                      )}
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                        g.status === 'going' 
+                          ? 'text-cranberry bg-cranberry-50 dark:bg-cranberry-900/20' 
+                          : 'text-gray-500 bg-gray-100 dark:bg-gray-700'
+                      }`}>{g.status}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

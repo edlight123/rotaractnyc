@@ -84,6 +84,55 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
     });
   }
 
+  // Guest event ticket purchase
+  if (type === 'guest_event_ticket' && eventId) {
+    const { guestName, guestEmail, guestPhone } = session.metadata;
+
+    // Create or update guest RSVP
+    const existingSnap = await adminDb
+      .collection('guest_rsvps')
+      .where('eventId', '==', eventId)
+      .where('email', '==', (guestEmail || '').toLowerCase())
+      .limit(1)
+      .get();
+
+    if (existingSnap.empty) {
+      await adminDb.collection('guest_rsvps').add({
+        eventId,
+        name: guestName || 'Guest',
+        email: (guestEmail || '').toLowerCase(),
+        phone: guestPhone || null,
+        status: 'going',
+        ticketType: 'guest',
+        paidAmount: session.amount_total || 0,
+        paymentStatus: 'paid',
+        stripeSessionId: session.id,
+        createdAt: new Date().toISOString(),
+      });
+    } else {
+      await adminDb.collection('guest_rsvps').doc(existingSnap.docs[0].id).update({
+        status: 'going',
+        paidAmount: session.amount_total || 0,
+        paymentStatus: 'paid',
+        stripeSessionId: session.id,
+      });
+    }
+
+    // Record income transaction
+    await createTransaction({
+      type: 'income',
+      category: 'Events',
+      amount: (session.amount_total || 0) / 100,
+      description: `Guest event ticket — ${guestName || 'Guest'}`,
+      date: new Date().toISOString(),
+      createdBy: 'stripe',
+      createdAt: new Date().toISOString(),
+      paymentMethod: 'stripe',
+      stripeSessionId: session.id,
+      email: guestEmail || undefined,
+    });
+  }
+
   // 5.6 — Track donations in Firestore
   if (type === 'donation') {
     await createTransaction({

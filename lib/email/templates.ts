@@ -263,3 +263,72 @@ export function oneWeekCheckInEmail(name: string): { subject: string; html: stri
     text: `One week in — how's it going, ${name}?\n\nIt's been a week since you joined ${SITE.name}, and we hope you're settling in!\n\nHere are a couple of ways to make the most of your membership:\n\n- Attend an event — Check out what's coming up and RSVP. It's the best way to meet fellow members.\n  ${SITE.url}/portal/events\n\n- Browse the directory — Find members with similar interests, industries, or committees and say hello.\n  ${SITE.url}/portal/directory\n\nWe meet ${SITE.meetingSchedule} — we'd love to see you there!\n\n--\n${SITE.name}\n${SITE.address}`,
   };
 }
+
+export function guestRsvpConfirmationEmail(
+  name: string,
+  event: { title: string; date: string; time: string; location: string; slug: string },
+): { subject: string; html: string; text: string } {
+  const safeName = escapeHtml(name);
+  const safeTitle = escapeHtml(event.title);
+  const safeDate = escapeHtml(event.date);
+  const safeTime = escapeHtml(event.time);
+  const safeLocation = escapeHtml(event.location);
+
+  return {
+    subject: `You're registered: ${event.title}`,
+    html: wrapTemplate(`
+      <h2 style="color: #111827; font-size: 20px; margin: 0 0 16px;">You're all set, ${safeName}! 🎉</h2>
+      <p style="color: #374151; margin: 0 0 20px;">You've successfully registered for the following event:</p>
+      <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 0 0 24px;">
+        <h3 style="color: #9B1B30; font-size: 18px; margin: 0 0 12px;">${safeTitle}</h3>
+        <p style="color: #374151; margin: 0 0 6px;">📅 ${safeDate} at ${safeTime}</p>
+        <p style="color: #374151; margin: 0;">📍 ${safeLocation}</p>
+      </div>
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="${SITE.url}/events/${event.slug}" style="display: inline-block; background-color: #9B1B30; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">View Event Details</a>
+      </div>
+      <div style="background-color: #fef9e7; border: 1px solid #EBC85B; border-radius: 8px; padding: 20px; margin: 24px 0 0;">
+        <p style="color: #374151; margin: 0 0 12px; font-weight: 600;">Interested in joining Rotaract NYC?</p>
+        <p style="color: #374151; margin: 0 0 16px;">Become a member and get access to exclusive events, service opportunities, and a community of young professionals making a difference.</p>
+        <a href="${SITE.url}/membership" style="display: inline-block; background-color: #ffffff; color: #9B1B30; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; border: 2px solid #9B1B30;">Learn About Membership</a>
+      </div>
+    `),
+    text: `You're all set, ${name}!\n\nYou've successfully registered for:\n\n${event.title}\n${event.date} at ${event.time}\n${event.location}\n\nView event details: ${SITE.url}/events/${event.slug}\n\n---\n\nInterested in joining Rotaract NYC?\nBecome a member and get access to exclusive events, service opportunities, and a community of young professionals making a difference.\n${SITE.url}/membership\n\n--\n${SITE.name}\n${SITE.address}`,
+  };
+}
+
+export function guestTicketConfirmationEmail(
+  name: string,
+  event: { title: string; date: string; time: string; location: string; slug: string },
+  amountCents: number,
+): { subject: string; html: string; text: string } {
+  const safeName = escapeHtml(name);
+  const safeTitle = escapeHtml(event.title);
+  const safeDate = escapeHtml(event.date);
+  const safeTime = escapeHtml(event.time);
+  const safeLocation = escapeHtml(event.location);
+  const amountFormatted = `$${(amountCents / 100).toFixed(2)}`;
+
+  return {
+    subject: `Your ticket: ${event.title}`,
+    html: wrapTemplate(`
+      <h2 style="color: #111827; font-size: 20px; margin: 0 0 16px;">You're all set, ${safeName}! 🎟️</h2>
+      <p style="color: #374151; margin: 0 0 20px;">Your ticket has been confirmed for the following event:</p>
+      <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 0 0 24px;">
+        <h3 style="color: #9B1B30; font-size: 18px; margin: 0 0 12px;">${safeTitle}</h3>
+        <p style="color: #374151; margin: 0 0 6px;">📅 ${safeDate} at ${safeTime}</p>
+        <p style="color: #374151; margin: 0 0 6px;">📍 ${safeLocation}</p>
+        <p style="color: #374151; margin: 12px 0 0; font-weight: 600;">Amount paid: ${amountFormatted}</p>
+      </div>
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="${SITE.url}/events/${event.slug}" style="display: inline-block; background-color: #9B1B30; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">View Event Details</a>
+      </div>
+      <div style="background-color: #fef9e7; border: 1px solid #EBC85B; border-radius: 8px; padding: 20px; margin: 24px 0 0;">
+        <p style="color: #374151; margin: 0 0 12px; font-weight: 600;">Interested in joining Rotaract NYC?</p>
+        <p style="color: #374151; margin: 0 0 16px;">Become a member and get access to exclusive events, service opportunities, and a community of young professionals making a difference.</p>
+        <a href="${SITE.url}/membership" style="display: inline-block; background-color: #ffffff; color: #9B1B30; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; border: 2px solid #9B1B30;">Learn About Membership</a>
+      </div>
+    `),
+    text: `You're all set, ${name}!\n\nYour ticket has been confirmed for:\n\n${event.title}\n${event.date} at ${event.time}\n${event.location}\n\nAmount paid: ${amountFormatted}\n\nView event details: ${SITE.url}/events/${event.slug}\n\n---\n\nInterested in joining Rotaract NYC?\nBecome a member and get access to exclusive events, service opportunities, and a community of young professionals making a difference.\n${SITE.url}/membership\n\n--\n${SITE.name}\n${SITE.address}`,
+  };
+}

@@ -101,6 +101,20 @@ export interface RSVP {
   createdAt: string;
 }
 
+export interface GuestRsvp {
+  id: string;
+  eventId: string;
+  name: string;
+  email: string;
+  phone?: string;
+  status: 'going' | 'waitlist';
+  ticketType: 'guest';
+  paidAmount?: number;           // in cents
+  paymentStatus?: 'free' | 'paid' | 'pending';
+  stripeSessionId?: string;
+  createdAt: string;
+}
+
 // ----- News / Article -----
 export interface Article {
   id: string;
