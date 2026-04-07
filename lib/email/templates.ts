@@ -38,7 +38,7 @@ const footerHtml = `
   </div>
 `;
 
-function wrapTemplate(body: string): string {
+export function wrapTemplate(body: string): string {
   return `
     <!DOCTYPE html>
     <html>

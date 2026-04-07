@@ -290,6 +290,7 @@ export interface GalleryImage {
   url: string;
   caption?: string;
   event?: string;
+  eventId?: string;
   date?: string;
   uploadedBy?: string;
   createdAt: string;

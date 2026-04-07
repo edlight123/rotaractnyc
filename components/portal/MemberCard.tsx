@@ -35,8 +35,13 @@ export default function MemberCard({ member: m, viewerRole, onMessage, compact =
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-900 dark:text-white truncate group-hover:text-cranberry dark:group-hover:text-cranberry-400 transition-colors">{m.displayName}</h3>
-          <Badge variant={roleColors[m.role] || 'gray'} className="mt-1">{m.role}</Badge>
+          <h3 className="font-semibold text-gray-900 dark:text-white truncate group-hover:text-cranberry dark:group-hover:text-cranberry-400 transition-colors">
+            {m.displayName}
+          </h3>
+          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+            <Badge variant={roleColors[m.role] || 'gray'}>{m.role}</Badge>
+            {m.status === 'alumni' && <Badge variant="gold">Alumni</Badge>}
+          </div>
           {m.committee && (
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-1.5">
               <svg aria-hidden="true" className="w-3 h-3 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>

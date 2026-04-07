@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useMembers } from '@/hooks/useFirestore';
+import { useAllMembers } from '@/hooks/useFirestore';
 import { useAuth } from '@/lib/firebase/auth';
 import Avatar from '@/components/ui/Avatar';
 import Badge from '@/components/ui/Badge';
@@ -23,40 +23,81 @@ const roleColors: Record<string, 'cranberry' | 'gold' | 'azure' | 'gray'> = {
 };
 
 type ViewMode = 'grid' | 'table';
+type DirectoryTab = 'active' | 'alumni' | 'all';
+
+/** Extract a 4-digit year from an ISO date string or return null. */
+function yearFromJoinedAt(joinedAt: string | undefined | null): number | null {
+  if (!joinedAt) return null;
+  const d = new Date(joinedAt);
+  return Number.isNaN(d.getTime()) ? null : d.getFullYear();
+}
 
 export default function DirectoryPage() {
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState('active');
+  const [activeTab, setActiveTab] = useState<DirectoryTab>('active');
+  const [alumniYear, setAlumniYear] = useState<string>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const { member: currentMember } = useAuth();
-  const { data: activeMembers, loading: loadingActive } = useMembers(true);
-  const { data: alumniMembers, loading: loadingAlumni } = useMembers(false);
+  const { data: allMembers, loading } = useAllMembers();
 
   const isAdmin = currentMember && ['president', 'board', 'treasurer'].includes(currentMember.role);
 
-  const members = activeTab === 'active' ? activeMembers : alumniMembers;
-  const loading = activeTab === 'active' ? loadingActive : loadingAlumni;
+  // Derived counts for tabs
+  const allList = (allMembers || []) as Member[];
+  const activeList = useMemo(() => allList.filter((m) => m.status === 'active'), [allList]);
+  const alumniList = useMemo(() => allList.filter((m) => m.status === 'alumni'), [allList]);
 
-  const filtered = useMemo(
-    () =>
-      ((members || []) as Member[]).filter(
+  // Unique alumni years (descending) for the year dropdown
+  const alumniYears = useMemo(() => {
+    const years = new Set<number>();
+    alumniList.forEach((m) => {
+      const y = yearFromJoinedAt(m.joinedAt);
+      if (y) years.add(y);
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [alumniList]);
+
+  // Members visible for the current tab
+  const tabMembers = useMemo(() => {
+    if (activeTab === 'active') return activeList;
+    if (activeTab === 'alumni') return alumniList;
+    return allList; // 'all'
+  }, [activeTab, activeList, alumniList, allList]);
+
+  // Apply alumni-year filter, then search
+  const filtered = useMemo(() => {
+    let list = tabMembers;
+
+    // Year filter (only relevant on the alumni tab)
+    if (activeTab === 'alumni' && alumniYear !== 'all') {
+      const yr = Number(alumniYear);
+      list = list.filter((m) => yearFromJoinedAt(m.joinedAt) === yr);
+    }
+
+    // Text search
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(
         (m) =>
-          m.displayName?.toLowerCase().includes(search.toLowerCase()) ||
-          m.committee?.toLowerCase().includes(search.toLowerCase()) ||
-          m.firstName?.toLowerCase().includes(search.toLowerCase()) ||
-          m.lastName?.toLowerCase().includes(search.toLowerCase()) ||
-          m.occupation?.toLowerCase().includes(search.toLowerCase()),
-      ),
-    [members, search],
-  );
+          m.displayName?.toLowerCase().includes(q) ||
+          m.committee?.toLowerCase().includes(q) ||
+          m.firstName?.toLowerCase().includes(q) ||
+          m.lastName?.toLowerCase().includes(q) ||
+          m.occupation?.toLowerCase().includes(q),
+      );
+    }
+
+    return list;
+  }, [tabMembers, search, activeTab, alumniYear]);
 
   const tabs = [
-    { id: 'active', label: 'Active', count: ((activeMembers || []) as Member[]).length },
-    { id: 'alumni', label: 'Alumni', count: ((alumniMembers || []) as Member[]).length },
+    { id: 'active', label: 'Active Members', count: activeList.length },
+    { id: 'alumni', label: 'Alumni', count: alumniList.length },
+    { id: 'all', label: 'All', count: allList.length },
   ];
 
   return (
@@ -99,7 +140,25 @@ export default function DirectoryPage() {
           className="w-full sm:max-w-xs"
         />
         <div className="flex items-center gap-3 overflow-x-auto">
-          <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+          <Tabs tabs={tabs} activeTab={activeTab} onChange={(id) => { setActiveTab(id as DirectoryTab); setAlumniYear('all'); }} />
+
+          {/* Year filter – visible only on the Alumni tab */}
+          {activeTab === 'alumni' && alumniYears.length > 0 && (
+            <select
+              value={alumniYear}
+              onChange={(e) => setAlumniYear(e.target.value)}
+              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm px-3 py-1.5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-cranberry-500 shrink-0"
+              aria-label="Filter alumni by year"
+            >
+              <option value="all">All Years</option>
+              {alumniYears.map((y) => (
+                <option key={y} value={String(y)}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          )}
+
           <div className="ml-auto flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl shrink-0">
           <button
             onClick={() => setViewMode('grid')}
@@ -190,8 +249,9 @@ export default function DirectoryPage() {
                       <div className="flex items-center gap-3">
                         <Avatar src={m.photoURL} alt={m.displayName} size="sm" />
                         <div className="min-w-0">
-                          <p className="font-medium text-gray-900 dark:text-white truncate">
+                          <p className="font-medium text-gray-900 dark:text-white truncate flex items-center gap-1.5">
                             {m.displayName}
+                            {m.status === 'alumni' && <Badge variant="gold">Alumni</Badge>}
                           </p>
                           <p className="text-xs text-gray-400 truncate">{m.email}</p>
                         </div>

@@ -166,6 +166,10 @@ export function useMembers(activeOnly = true) {
   return useCollection('members', constraints);
 }
 
+export function useAllMembers() {
+  return useCollection('members', [orderBy('displayName')]);
+}
+
 export function useServiceHours(memberId: string | null) {
   return useCollection(
     'serviceHours',
