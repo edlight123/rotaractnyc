@@ -129,9 +129,10 @@ export function useDocument<T = DocumentData>(
 
 // ─── Domain-specific hooks ───
 
-export function useEvents(visibility: string[] = ['public', 'members', 'both']) {
+export function useEvents() {
   return useCollection('events', [
-    where('visibility', 'in', visibility),
+    where('status', '==', 'published'),
+    where('isPublic', '==', true),
     orderBy('date', 'desc'),
     limit(30),
   ]);

@@ -6,6 +6,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { recordDuesPayment } from '@/lib/services/dues';
 import { upsertRSVP } from '@/lib/services/events';
 import { createTransaction } from '@/lib/services/finance';
+import { incrementTierSoldCount } from '@/lib/services/tierTracking';
 
 /**
  * 5.1 — Idempotency: check if we already processed this Stripe session.
@@ -32,7 +33,7 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
     return;
   }
 
-  const { type, memberId, memberType, cycleId, cycleName, eventId, ticketType } = session.metadata;
+  const { type, memberId, memberType, cycleId, cycleName, eventId, ticketType, tierId } = session.metadata;
 
   if (type === 'dues' && memberId && memberType) {
     // cycleId is the canonical field; cycleName is kept for backward compat
@@ -68,7 +69,13 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
       memberId,
       memberName: session.customer_email || 'Member',
       status: 'going',
+      tierId: tierId || undefined,
     });
+
+    // Increment tier sold count for capacity tracking
+    if (tierId) {
+      await incrementTierSoldCount(eventId, tierId);
+    }
 
     await createTransaction({
       type: 'income',
@@ -104,6 +111,7 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
         phone: guestPhone || null,
         status: 'going',
         ticketType: 'guest',
+        tierId: tierId || null,
         paidAmount: session.amount_total || 0,
         paymentStatus: 'paid',
         stripeSessionId: session.id,
@@ -112,10 +120,16 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
     } else {
       await adminDb.collection('guest_rsvps').doc(existingSnap.docs[0].id).update({
         status: 'going',
+        tierId: tierId || null,
         paidAmount: session.amount_total || 0,
         paymentStatus: 'paid',
         stripeSessionId: session.id,
       });
+    }
+
+    // Increment tier sold count for capacity tracking
+    if (tierId) {
+      await incrementTierSoldCount(eventId, tierId);
     }
 
     // Record income transaction

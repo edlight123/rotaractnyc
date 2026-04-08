@@ -5,6 +5,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { isValidEmail } from '@/lib/utils/sanitize';
 import { sendEmail } from '@/lib/email/send';
 import { guestTicketConfirmationEmail } from '@/lib/email/templates';
+import { incrementTierSoldCount } from '@/lib/services/tierTracking';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
   if (!rl.allowed) return rateLimitResponse(rl.resetAt);
 
   try {
-    const { eventId, name, email, phone } = await request.json();
+    const { eventId, name, email, phone, tierId } = await request.json();
 
     // Validate required inputs
     if (!eventId || !name || !email) {
@@ -53,10 +54,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determine price: check early bird first, otherwise use guestPrice
+    // Determine price: check tiers first, then early bird, then guestPrice
     let priceCents: number;
+    let resolvedTierId: string | undefined;
+    let tierLabel = 'Guest';
     const now = new Date();
-    if (
+
+    if (event.pricing?.tiers?.length) {
+      let tier = tierId
+        ? event.pricing.tiers.find((t: any) => t.id === tierId)
+        : undefined;
+      if (!tier) {
+        tier = event.pricing.tiers
+          .filter((t: any) => {
+            if (t.deadline && new Date(t.deadline) < now) return false;
+            if (t.capacity != null && (t.soldCount ?? 0) >= t.capacity) return false;
+            return true;
+          })
+          .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))[0];
+      }
+      if (!tier) {
+        return NextResponse.json({ error: 'All ticket tiers are sold out or expired.' }, { status: 409 });
+      }
+      if (tier.deadline && new Date(tier.deadline) < now) {
+        return NextResponse.json({ error: `The "${tier.label}" tier has expired.` }, { status: 409 });
+      }
+      if (tier.capacity != null && (tier.soldCount ?? 0) >= tier.capacity) {
+        return NextResponse.json({ error: `The "${tier.label}" tier is sold out.` }, { status: 409 });
+      }
+      priceCents = tier.guestPrice;
+      tierLabel = tier.label;
+      resolvedTierId = tier.id;
+    } else if (
       event.earlyBirdPrice != null &&
       event.earlyBirdDeadline &&
       now < new Date(event.earlyBirdDeadline)
@@ -75,10 +104,16 @@ export async function POST(request: NextRequest) {
         phone: phone || null,
         status: 'going',
         ticketType: 'guest',
+        tierId: resolvedTierId || null,
         paidAmount: 0,
         paymentStatus: 'free',
         createdAt: new Date().toISOString(),
       });
+
+      // Track tier capacity
+      if (resolvedTierId) {
+        await incrementTierSoldCount(eventId, resolvedTierId);
+      }
 
       // Send confirmation email for free ticket
       try {
@@ -115,7 +150,7 @@ export async function POST(request: NextRequest) {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `${event.title} — Guest Ticket`,
+              name: `${event.title} — ${tierLabel} Ticket`,
             },
             unit_amount: priceCents,
           },
@@ -131,6 +166,7 @@ export async function POST(request: NextRequest) {
         guestEmail: email,
         guestPhone: phone || '',
         ticketType: 'guest',
+        tierId: resolvedTierId || '',
         amountCents: String(priceCents),
       },
     });

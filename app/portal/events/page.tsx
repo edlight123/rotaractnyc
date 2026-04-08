@@ -26,6 +26,13 @@ const typeGradients: Record<EventType, string> = {
 };
 const typeIcons: Record<EventType, string> = { free: '', paid: '', service: '', hybrid: '' };
 
+/* RSVP status label + color */
+const rsvpDisplay: Record<string, { label: string; color: string; icon: string }> = {
+  going: { label: 'Going', color: 'text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/30', icon: '✓' },
+  maybe: { label: 'Maybe', color: 'text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/30', icon: '?' },
+  not_going: { label: 'Not going', color: 'text-gray-500 bg-gray-100 dark:text-gray-400 dark:bg-gray-800', icon: '✕' },
+};
+
 export default function PortalEventsPage() {
   const { user, member } = useAuth();
   const { toast } = useToast();
@@ -35,6 +42,8 @@ export default function PortalEventsPage() {
   const [typeFilter, setTypeFilter] = useState<EventType | 'all'>('all');
   const [rsvpLoading, setRsvpLoading] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  // Optimistic RSVP state: eventId → status
+  const [optimisticRsvps, setOptimisticRsvps] = useState<Record<string, RSVPStatus>>({});
 
   const canManageEvents = member && ['board', 'president', 'treasurer'].includes(member.role);
 
@@ -59,11 +68,24 @@ export default function PortalEventsPage() {
 
   const handleRSVP = async (eventId: string, status: RSVPStatus) => {
     if (!user) return;
+    // Optimistic update — show the status immediately
+    const previousStatus = optimisticRsvps[eventId];
+    setOptimisticRsvps((prev) => ({ ...prev, [eventId]: status }));
     setRsvpLoading(eventId);
     try {
       await apiPost('/api/portal/events/rsvp', { eventId, status });
-      toast(status === 'going' ? "You're going!" : 'RSVP updated');
+      toast(status === 'going' ? "You're going! 🎉" : status === 'maybe' ? 'Marked as maybe' : 'RSVP updated');
     } catch (err: any) {
+      // Revert optimistic update on error
+      setOptimisticRsvps((prev) => {
+        const updated = { ...prev };
+        if (previousStatus) {
+          updated[eventId] = previousStatus;
+        } else {
+          delete updated[eventId];
+        }
+        return updated;
+      });
       toast(err.message || 'RSVP failed', 'error');
     } finally {
       setRsvpLoading(null);
@@ -157,8 +179,33 @@ export default function PortalEventsPage() {
 
       {/* ── Event list ── */}
       {loading ? (
-        <div className="flex justify-center py-16">
-          <Spinner />
+        <div className="grid gap-5">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 overflow-hidden animate-pulse">
+              <div className="h-1 bg-gray-200 dark:bg-gray-700" />
+              <div className="flex flex-col md:flex-row">
+                <div className="md:w-52 h-32 md:h-full min-h-[8rem] bg-gray-200 dark:bg-gray-800" />
+                <div className="flex-1 p-5 md:p-6 space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <div className="h-6 w-32 bg-gray-200 dark:bg-gray-800 rounded" />
+                      <div className="h-6 w-16 bg-gray-200 dark:bg-gray-800 rounded-full" />
+                    </div>
+                    <div className="h-4 w-full bg-gray-200 dark:bg-gray-800 rounded" />
+                    <div className="h-4 w-2/3 bg-gray-200 dark:bg-gray-800 rounded" />
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="h-4 w-24 bg-gray-200 dark:bg-gray-800 rounded" />
+                    <div className="h-4 w-28 bg-gray-200 dark:bg-gray-800 rounded" />
+                  </div>
+                  <div className="flex gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+                    <div className="h-9 w-24 bg-gray-200 dark:bg-gray-800 rounded-lg" />
+                    <div className="h-9 w-16 bg-gray-200 dark:bg-gray-800 rounded-lg" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : events.length === 0 ? (
         <EmptyState
@@ -168,7 +215,7 @@ export default function PortalEventsPage() {
         />
       ) : (
         <div className="grid gap-5">
-          {events.map((event) => {
+          {events.map((event, index) => {
             const d = formatEventDay(event.date);
             const paid = isPaid(event);
             const spots = spotsLeft(event);
@@ -177,11 +224,13 @@ export default function PortalEventsPage() {
               event.pricing?.earlyBirdPrice != null &&
               event.pricing?.earlyBirdDeadline &&
               new Date(event.pricing.earlyBirdDeadline) > now;
+            const myRsvp = optimisticRsvps[event.id];
 
             return (
               <div
                 key={event.id}
-                className="group relative bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden"
+                className="group relative bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden animate-in fade-in slide-in-from-bottom-2"
+                style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'both' }}
               >
                 {/* Coloured top accent bar */}
                 <div className={`h-1 bg-gradient-to-r ${typeGradients[event.type]}`} />
@@ -248,6 +297,12 @@ export default function PortalEventsPage() {
                         )}
                         {event.status === 'draft' && <Badge variant="gray">Draft</Badge>}
                         {event.status === 'cancelled' && <Badge variant="red">Cancelled</Badge>}
+                        {/* Your RSVP status */}
+                        {myRsvp && rsvpDisplay[myRsvp] && (
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full transition-all duration-300 ${rsvpDisplay[myRsvp].color}`}>
+                            {rsvpDisplay[myRsvp].icon} {rsvpDisplay[myRsvp].label}
+                          </span>
+                        )}
                       </div>
 
                       {/* Description */}
@@ -285,6 +340,28 @@ export default function PortalEventsPage() {
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
                       {/* Pricing block */}
                       {paid && event.pricing ? (
+                        event.pricing.tiers?.length ? (
+                          /* ── Tier-based price summary ── */
+                          <div className="flex flex-wrap items-center gap-2">
+                            {[...event.pricing.tiers].sort((a, b) => a.sortOrder - b.sortOrder).map((tier) => {
+                              const expired = tier.deadline && new Date(tier.deadline) < new Date();
+                              const soldOut = tier.capacity != null && (tier.soldCount ?? 0) >= tier.capacity;
+                              return (
+                                <span
+                                  key={tier.id}
+                                  className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-lg text-sm font-semibold ${
+                                    expired || soldOut
+                                      ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 line-through'
+                                      : 'bg-cranberry-50 dark:bg-cranberry-900/30 text-cranberry-700 dark:text-cranberry-300'
+                                  }`}
+                                >
+                                  {tier.memberPrice === 0 ? 'Free' : formatCurrency(tier.memberPrice)}
+                                  <span className="text-[10px] uppercase font-semibold opacity-70">{tier.label}</span>
+                                </span>
+                              );
+                            })}
+                          </div>
+                        ) : (
                         <div className="flex flex-wrap items-center gap-2">
                           <div className="inline-flex items-center gap-1.5 bg-cranberry-50 dark:bg-cranberry-900/30 text-cranberry-700 dark:text-cranberry-300 pl-1.5 pr-2.5 py-1 rounded-lg">
                             <span className="flex items-center justify-center w-5 h-5 rounded-full bg-cranberry-100 dark:bg-cranberry-800/50"><svg aria-hidden="true" className="w-3 h-3 text-cranberry-600 dark:text-cranberry-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></span>
@@ -304,6 +381,7 @@ export default function PortalEventsPage() {
                             </span>
                           )}
                         </div>
+                        )
                       ) : (
                         <span className="inline-flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400 font-semibold">
                           <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -318,45 +396,49 @@ export default function PortalEventsPage() {
                             <>
                               <Button
                                 size="sm"
-                                variant="gold"
+                                variant={myRsvp === 'going' ? 'secondary' : 'gold'}
                                 loading={rsvpLoading === event.id}
-                                onClick={() => handleTicketPurchase(event.id, 'member')}
+                                onClick={() => myRsvp === 'going' ? handleRSVP(event.id, 'not_going') : handleTicketPurchase(event.id, 'member')}
                                 className="flex-1 sm:flex-initial"
                               >
-                                Buy Ticket
+                                {myRsvp === 'going' ? '✓ Ticket Purchased' : `Buy Ticket · ${formatCurrency(event.pricing.memberPrice)}`}
                               </Button>
-                              <Button size="sm" variant="ghost" disabled={!!rsvpLoading} onClick={() => handleRSVP(event.id, 'maybe')}>
-                                Maybe
-                              </Button>
+                              {myRsvp !== 'going' && (
+                                <Button size="sm" variant={myRsvp === 'maybe' ? 'secondary' : 'ghost'} disabled={!!rsvpLoading} onClick={() => handleRSVP(event.id, myRsvp === 'maybe' ? 'not_going' : 'maybe')}>
+                                  {myRsvp === 'maybe' ? '? Maybe' : 'Maybe'}
+                                </Button>
+                              )}
                             </>
                           ) : paid && event.pricing && event.pricing.memberPrice === 0 ? (
                             <>
                               <Button
                                 size="sm"
-                                variant="primary"
+                                variant={myRsvp === 'going' ? 'secondary' : 'primary'}
                                 loading={rsvpLoading === event.id}
-                                onClick={() => handleTicketPurchase(event.id, 'member')}
+                                onClick={() => myRsvp === 'going' ? handleRSVP(event.id, 'not_going') : handleTicketPurchase(event.id, 'member')}
                                 className="flex-1 sm:flex-initial"
                               >
-                                Get Free Ticket
+                                {myRsvp === 'going' ? '✓ Registered' : 'Get Free Ticket'}
                               </Button>
-                              <Button size="sm" variant="ghost" disabled={!!rsvpLoading} onClick={() => handleRSVP(event.id, 'maybe')}>
-                                Maybe
-                              </Button>
+                              {myRsvp !== 'going' && (
+                                <Button size="sm" variant={myRsvp === 'maybe' ? 'secondary' : 'ghost'} disabled={!!rsvpLoading} onClick={() => handleRSVP(event.id, myRsvp === 'maybe' ? 'not_going' : 'maybe')}>
+                                  {myRsvp === 'maybe' ? '? Maybe' : 'Maybe'}
+                                </Button>
+                              )}
                             </>
                           ) : (
                             <>
                               <Button
                                 size="sm"
-                                variant="primary"
+                                variant={myRsvp === 'going' ? 'secondary' : 'primary'}
                                 loading={rsvpLoading === event.id}
-                                onClick={() => handleRSVP(event.id, 'going')}
+                                onClick={() => handleRSVP(event.id, myRsvp === 'going' ? 'not_going' : 'going')}
                                 className="flex-1 sm:flex-initial"
                               >
-                                I&apos;m Going
+                                {myRsvp === 'going' ? '✓ Going' : "I'm Going"}
                               </Button>
-                              <Button size="sm" variant="ghost" disabled={!!rsvpLoading} onClick={() => handleRSVP(event.id, 'maybe')}>
-                                Maybe
+                              <Button size="sm" variant={myRsvp === 'maybe' ? 'secondary' : 'ghost'} disabled={!!rsvpLoading} onClick={() => handleRSVP(event.id, myRsvp === 'maybe' ? 'not_going' : 'maybe')}>
+                                {myRsvp === 'maybe' ? '? Maybe' : 'Maybe'}
                               </Button>
                             </>
                           )}

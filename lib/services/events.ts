@@ -99,17 +99,20 @@ export async function upsertRSVP(data: {
   memberName: string;
   memberPhoto?: string;
   status: RSVPStatus;
+  tierId?: string;
 }): Promise<string> {
   const existing = await getMemberRSVP(data.eventId, data.memberId);
   if (existing) {
     await adminDb.collection(RSVPS).doc(existing.id).update({
       status: data.status,
+      ...(data.tierId ? { tierId: data.tierId } : {}),
       createdAt: new Date().toISOString(),
     });
     return existing.id;
   }
   const ref = await adminDb.collection(RSVPS).add({
     ...data,
+    ...(data.tierId ? { tierId: data.tierId } : {}),
     createdAt: new Date().toISOString(),
   });
   return ref.id;

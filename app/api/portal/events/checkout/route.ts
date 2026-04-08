@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { cookies } from 'next/headers';
 import { rateLimit, getRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
+import { incrementTierSoldCount } from '@/lib/services/tierTracking';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { eventId, ticketType, paymentMethod = 'stripe', proofUrl } = body;
+    const { eventId, ticketType, tierId, paymentMethod = 'stripe', proofUrl } = body;
 
     if (!eventId) {
       return NextResponse.json({ error: 'Event ID is required' }, { status: 400 });
@@ -60,22 +61,57 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     let priceCents: number;
     let priceLabel: string;
+    let resolvedTierId: string | undefined;
 
-    // Check early bird
-    const earlyBirdActive =
-      event.pricing.earlyBirdPrice != null &&
-      event.pricing.earlyBirdDeadline &&
-      new Date(event.pricing.earlyBirdDeadline) > now;
+    // ── Tier-based pricing (takes precedence) ──
+    if (event.pricing.tiers?.length) {
+      let tier = tierId
+        ? event.pricing.tiers.find((t: any) => t.id === tierId)
+        : undefined;
 
-    if (earlyBirdActive) {
-      priceCents = event.pricing.earlyBirdPrice;
-      priceLabel = 'Early Bird';
-    } else if (isMember && ticketType !== 'guest') {
-      priceCents = event.pricing.memberPrice;
-      priceLabel = 'Member';
+      if (!tier) {
+        // Pick the first available tier
+        tier = event.pricing.tiers
+          .filter((t: any) => {
+            if (t.deadline && new Date(t.deadline) < now) return false;
+            if (t.capacity != null && (t.soldCount ?? 0) >= t.capacity) return false;
+            return true;
+          })
+          .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))[0];
+      }
+
+      if (!tier) {
+        return NextResponse.json({ error: 'All ticket tiers are sold out or expired.' }, { status: 409 });
+      }
+
+      // Check tier availability
+      if (tier.deadline && new Date(tier.deadline) < now) {
+        return NextResponse.json({ error: `The "${tier.label}" tier has expired.` }, { status: 409 });
+      }
+      if (tier.capacity != null && (tier.soldCount ?? 0) >= tier.capacity) {
+        return NextResponse.json({ error: `The "${tier.label}" tier is sold out.` }, { status: 409 });
+      }
+
+      priceCents = isMember && ticketType !== 'guest' ? tier.memberPrice : tier.guestPrice;
+      priceLabel = tier.label;
+      resolvedTierId = tier.id;
     } else {
-      priceCents = event.pricing.guestPrice;
-      priceLabel = 'Guest';
+      // ── Legacy flat pricing ──
+      const earlyBirdActive =
+        event.pricing.earlyBirdPrice != null &&
+        event.pricing.earlyBirdDeadline &&
+        new Date(event.pricing.earlyBirdDeadline) > now;
+
+      if (earlyBirdActive) {
+        priceCents = event.pricing.earlyBirdPrice;
+        priceLabel = 'Early Bird';
+      } else if (isMember && ticketType !== 'guest') {
+        priceCents = event.pricing.memberPrice;
+        priceLabel = 'Member';
+      } else {
+        priceCents = event.pricing.guestPrice;
+        priceLabel = 'Guest';
+      }
     }
 
     // If price is 0 (free for members), just RSVP directly
@@ -88,11 +124,17 @@ export async function POST(request: NextRequest) {
             eventId,
             status: 'going',
             ticketType: priceLabel.toLowerCase(),
+            tierId: resolvedTierId || null,
             paidAmount: 0,
             updatedAt: new Date().toISOString(),
           },
           { merge: true },
         );
+
+        // Track tier capacity
+        if (resolvedTierId) {
+          await incrementTierSoldCount(eventId, resolvedTierId);
+        }
       }
       return NextResponse.json({ free: true, message: 'Free ticket — you\'re in!' });
     }
@@ -110,6 +152,7 @@ export async function POST(request: NextRequest) {
         memberEmail: null,
         amount: priceCents,
         method: paymentMethod,
+        tierId: resolvedTierId || null,
         status: 'pending',
         proofUrl: proofUrl || null,
         submittedAt: new Date().toISOString(),
@@ -126,6 +169,7 @@ export async function POST(request: NextRequest) {
             eventId,
             status: 'going',
             ticketType: priceLabel.toLowerCase(),
+            tierId: resolvedTierId || null,
             paidAmount: 0,
             paymentStatus: 'pending_offline',
             paymentMethod: paymentMethod,
@@ -134,6 +178,11 @@ export async function POST(request: NextRequest) {
           },
           { merge: true },
         );
+
+        // Track tier capacity (reserved even while pending)
+        if (resolvedTierId) {
+          await incrementTierSoldCount(eventId, resolvedTierId);
+        }
       }
 
       return NextResponse.json({
@@ -169,6 +218,7 @@ export async function POST(request: NextRequest) {
         eventId,
         memberId: uid || '',
         ticketType: priceLabel.toLowerCase(),
+        tierId: resolvedTierId || '',
         amountCents: String(priceCents),
         eventTitle: event.title,
       },

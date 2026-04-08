@@ -6,7 +6,7 @@
 export type MemberRole = 'member' | 'board' | 'president' | 'treasurer';
 export type MemberStatus = 'pending' | 'active' | 'inactive' | 'alumni';
 export type EventType = 'free' | 'paid' | 'service' | 'hybrid';
-export type RSVPStatus = 'going' | 'maybe' | 'not';
+export type RSVPStatus = 'going' | 'maybe' | 'not_going';
 export type DuesPaymentStatus = 'UNPAID' | 'PAID' | 'PAID_OFFLINE' | 'WAIVED';
 export type ServiceHourStatus = 'pending' | 'approved' | 'rejected';
 export type PostType = 'text' | 'image' | 'link' | 'announcement' | 'spotlight';
@@ -56,11 +56,26 @@ export interface RecurrenceRule {
   occurrences?: number;       // OR stop after N occurrences (default 10)
 }
 
+export interface TicketTier {
+  id: string;                  // unique, e.g. 'early-bird', 'general', 'vip'
+  label: string;               // "Early Bird", "General Admission", "VIP"
+  description?: string;        // "Includes reserved seating and gift bag"
+  memberPrice: number;         // cents
+  guestPrice: number;          // cents
+  capacity?: number;           // optional per-tier cap (null = unlimited)
+  soldCount?: number;          // tracked server-side
+  deadline?: string;           // ISO date — tier auto-closes after this
+  sortOrder: number;           // display order (lower = first)
+}
+
 export interface EventPricing {
+  // Legacy flat fields (backward-compatible — used when tiers is absent)
   memberPrice: number; // in cents
   guestPrice: number;
   earlyBirdPrice?: number;
   earlyBirdDeadline?: string;
+  // Tier-based pricing (takes precedence when present)
+  tiers?: TicketTier[];
 }
 
 export interface RotaractEvent {
@@ -98,6 +113,8 @@ export interface RSVP {
   memberName: string;
   memberPhoto?: string;
   status: RSVPStatus;
+  checkedIn?: boolean;
+  checkedInAt?: string;
   createdAt: string;
 }
 

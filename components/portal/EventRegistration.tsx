@@ -5,13 +5,14 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Card from '@/components/ui/Card';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
+import { hasTiers, getAvailableTiers, getAllTiers, isTierAvailable, tierSpotsLeft } from '@/lib/utils/pricing';
 import type { RotaractEvent } from '@/types';
 
 interface EventRegistrationProps {
   event: RotaractEvent;
-  currentRSVP?: 'going' | 'maybe' | 'not' | null;
-  onRSVP: (status: 'going' | 'maybe' | 'not') => Promise<void>;
-  onPurchaseTicket?: (ticketType: 'member' | 'guest') => Promise<void>;
+  currentRSVP?: 'going' | 'maybe' | 'not_going' | null;
+  onRSVP: (status: 'going' | 'maybe' | 'not_going') => Promise<void>;
+  onPurchaseTicket?: (ticketType: 'member' | 'guest', tierId?: string) => Promise<void>;
   attendeeCount?: number;
 }
 
@@ -23,6 +24,7 @@ export default function EventRegistration({
   attendeeCount = 0,
 }: EventRegistrationProps) {
   const [loading, setLoading] = useState(false);
+  const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
   const isPast = new Date(event.date) < new Date();
   const now = new Date();
   const isPaid = (event.type === 'paid' || event.type === 'hybrid') && event.pricing;
@@ -32,6 +34,9 @@ export default function EventRegistration({
     event.pricing?.earlyBirdPrice != null &&
     event.pricing?.earlyBirdDeadline &&
     new Date(event.pricing.earlyBirdDeadline) > now;
+  const tierPricing = isPaid && event.pricing && hasTiers(event.pricing);
+  const allTiers = tierPricing ? getAllTiers(event.pricing!) : [];
+  const availTiers = tierPricing ? getAvailableTiers(event.pricing!) : [];
 
   const handleAction = async (action: () => Promise<void>) => {
     setLoading(true);
@@ -78,7 +83,77 @@ export default function EventRegistration({
           ) : (
             <>
               {/* ── Pricing tiers ── */}
-              {isPaid && event.pricing && (
+              {tierPricing ? (
+                /* ── Tier-based pricing ── */
+                <div className="space-y-2">
+                  {allTiers.map((tier) => {
+                    const available = isTierAvailable(tier);
+                    const spots = tierSpotsLeft(tier);
+                    const selected = selectedTierId === tier.id;
+                    const expired = tier.deadline && new Date(tier.deadline) < now;
+                    const soldOut = tier.capacity != null && (tier.soldCount ?? 0) >= tier.capacity;
+
+                    return (
+                      <button
+                        key={tier.id}
+                        type="button"
+                        disabled={!available}
+                        onClick={() => setSelectedTierId(selected ? null : tier.id)}
+                        className={`w-full text-left rounded-xl p-3.5 border-2 transition-all duration-200 ${
+                          !available
+                            ? 'opacity-50 cursor-not-allowed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30'
+                            : selected
+                            ? 'border-cranberry bg-cranberry-50/50 dark:bg-cranberry-900/20 ring-1 ring-cranberry/30 shadow-sm'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-cranberry/50 bg-white dark:bg-gray-800/50'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className={`font-semibold text-sm ${selected ? 'text-cranberry' : 'text-gray-900 dark:text-white'}`}>
+                                {tier.label}
+                              </span>
+                              {expired && <Badge variant="gray" className="text-[10px]">Expired</Badge>}
+                              {soldOut && <Badge variant="cranberry" className="text-[10px]">Sold Out</Badge>}
+                              {!expired && !soldOut && tier.deadline && (
+                                <Badge variant="green" className="text-[10px]">
+                                  Until {formatDate(tier.deadline)}
+                                </Badge>
+                              )}
+                            </div>
+                            {tier.description && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{tier.description}</p>
+                            )}
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-lg font-display font-bold text-cranberry leading-tight">
+                              {tier.memberPrice === 0 ? 'Free' : formatCurrency(tier.memberPrice)}
+                            </p>
+                            <p className="text-[10px] text-gray-400 uppercase font-semibold">member</p>
+                            {tier.guestPrice !== tier.memberPrice && (
+                              <p className="text-xs text-gray-500 mt-0.5">{formatCurrency(tier.guestPrice)} guest</p>
+                            )}
+                          </div>
+                        </div>
+                        {available && spots !== null && (
+                          <div className="mt-2 flex items-center gap-1.5">
+                            <div className="flex-1 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${spots <= 5 ? 'bg-red-500' : spots <= 15 ? 'bg-amber-500' : 'bg-cranberry'}`}
+                                style={{ width: `${Math.min(100, Math.round(((tier.soldCount ?? 0) / tier.capacity!) * 100))}%` }}
+                              />
+                            </div>
+                            <span className={`text-[10px] font-medium whitespace-nowrap ${spots <= 5 ? 'text-red-500' : 'text-gray-400'}`}>
+                              {spots} left
+                            </span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : isPaid && event.pricing && (
+                /* ── Legacy member/guest pricing ── */
                 <div className="grid grid-cols-2 gap-3">
                   {/* Member tier */}
                   <div className="relative border-2 border-cranberry-200 dark:border-cranberry-800 rounded-xl p-3 text-center bg-cranberry-50/50 dark:bg-cranberry-900/10">
@@ -117,7 +192,35 @@ export default function EventRegistration({
               )}
 
               {/* ── Actions ── */}
-              {isPaid && event.pricing && event.pricing.memberPrice > 0 ? (
+              {tierPricing ? (
+                /* Tier-based action */
+                <div className="space-y-2">
+                  <Button
+                    className="w-full"
+                    variant={selectedTierId ? 'gold' : 'secondary'}
+                    size="lg"
+                    loading={loading}
+                    disabled={spotsLeft === 0 || (!selectedTierId && availTiers.length > 0)}
+                    onClick={() => {
+                      if (selectedTierId) {
+                        handleAction(() => onPurchaseTicket?.(
+                          'member',
+                          selectedTierId,
+                        ) || Promise.resolve());
+                      }
+                    }}
+                  >
+                    {spotsLeft === 0
+                      ? 'Sold Out'
+                      : !selectedTierId
+                      ? '↑ Select a tier above'
+                      : `Buy ${allTiers.find((t) => t.id === selectedTierId)?.label} Ticket`}
+                  </Button>
+                  <Button variant="ghost" size="sm" className="w-full" onClick={() => handleAction(() => onRSVP('maybe'))}>
+                    Maybe
+                  </Button>
+                </div>
+              ) : isPaid && event.pricing && event.pricing.memberPrice > 0 ? (
                 <div className="space-y-2">
                   <Button
                     className="w-full"
@@ -167,7 +270,7 @@ export default function EventRegistration({
                     variant={currentRSVP === 'going' ? 'secondary' : 'primary'}
                     size="lg"
                     loading={loading}
-                    onClick={() => handleAction(() => onRSVP(currentRSVP === 'going' ? 'not' : 'going'))}
+                    onClick={() => handleAction(() => onRSVP(currentRSVP === 'going' ? 'not_going' : 'going'))}
                   >
                     {currentRSVP === 'going' ? '✓ Going' : "I'm Going"}
                   </Button>
@@ -207,7 +310,21 @@ export default function EventRegistration({
       {!isPast && (
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800">
           <div className="max-w-lg mx-auto">
-            {isPaid && event.pricing && event.pricing.memberPrice > 0 ? (
+            {tierPricing && selectedTierId ? (
+              <Button
+                className="w-full"
+                variant="gold"
+                size="lg"
+                loading={loading}
+                onClick={() => handleAction(() => onPurchaseTicket?.('member', selectedTierId) || Promise.resolve())}
+              >
+                Buy {allTiers.find((t) => t.id === selectedTierId)?.label} Ticket
+              </Button>
+            ) : tierPricing ? (
+              <Button className="w-full" variant="secondary" size="lg" disabled>
+                Select a tier above
+              </Button>
+            ) : isPaid && event.pricing && event.pricing.memberPrice > 0 ? (
               <div className="flex gap-3">
                 <Button
                   className="flex-1"
@@ -238,7 +355,7 @@ export default function EventRegistration({
                   variant={currentRSVP === 'going' ? 'secondary' : 'primary'}
                   size="lg"
                   loading={loading}
-                  onClick={() => handleAction(() => onRSVP(currentRSVP === 'going' ? 'not' : 'going'))}
+                  onClick={() => handleAction(() => onRSVP(currentRSVP === 'going' ? 'not_going' : 'going'))}
                 >
                   {currentRSVP === 'going' ? '✓ Going' : "I'm Going"}
                 </Button>

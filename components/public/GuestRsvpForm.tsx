@@ -3,7 +3,8 @@
 import { useState, useEffect, FormEvent } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { formatCurrency } from '@/lib/utils/format';
+import { formatCurrency, formatDate } from '@/lib/utils/format';
+import type { TicketTier } from '@/types';
 
 interface GuestRsvpFormProps {
   eventId: string;
@@ -13,6 +14,7 @@ interface GuestRsvpFormProps {
   guestPrice?: number; // in cents
   earlyBirdPrice?: number; // in cents
   earlyBirdDeadline?: string; // ISO date
+  tiers?: TicketTier[]; // tier-based pricing
 }
 
 export default function GuestRsvpForm({
@@ -23,12 +25,14 @@ export default function GuestRsvpForm({
   guestPrice,
   earlyBirdPrice,
   earlyBirdDeadline,
+  tiers,
 }: GuestRsvpFormProps) {
   const searchParams = useSearchParams();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -40,12 +44,29 @@ export default function GuestRsvpForm({
     }
   }, [searchParams]);
 
+  const hasTierPricing = tiers && tiers.length > 0;
+  const now = new Date();
+  const availableTiers = hasTierPricing
+    ? tiers.filter((t) => {
+        if (t.deadline && new Date(t.deadline) < now) return false;
+        if (t.capacity != null && (t.soldCount ?? 0) >= t.capacity) return false;
+        return true;
+      }).sort((a, b) => a.sortOrder - b.sortOrder)
+    : [];
+
   const isEarlyBird =
+    !hasTierPricing &&
     earlyBirdPrice != null &&
     earlyBirdDeadline &&
-    new Date(earlyBirdDeadline) > new Date();
+    new Date(earlyBirdDeadline) > now;
 
-  const displayPrice = isEarlyBird ? earlyBirdPrice! : guestPrice;
+  const displayPrice = hasTierPricing
+    ? (selectedTierId
+      ? (tiers.find((t) => t.id === selectedTierId)?.guestPrice ?? null)
+      : (availableTiers[0]?.guestPrice ?? null))
+    : isEarlyBird
+    ? earlyBirdPrice!
+    : guestPrice;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -53,7 +74,7 @@ export default function GuestRsvpForm({
     setError('');
 
     try {
-      const body = { eventId, name, email, phone: phone || undefined };
+      const body = { eventId, name, email, phone: phone || undefined, tierId: selectedTierId || undefined };
 
       const res = await fetch('/api/events/rsvp', {
         method: 'POST',
@@ -156,7 +177,44 @@ export default function GuestRsvpForm({
         Want to attend?
       </h3>
 
-      {isPaid && displayPrice != null ? (
+      {hasTierPricing ? (
+        /* ── Tier selector for guests ── */
+        <div className="mb-5 space-y-2">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            Select your ticket tier:
+          </p>
+          {availableTiers.length === 0 ? (
+            <p className="text-sm text-red-500 font-medium">All ticket tiers are sold out or expired.</p>
+          ) : (
+            availableTiers.map((tier) => {
+              const selected = selectedTierId === tier.id;
+              const spots = tier.capacity != null ? Math.max(0, tier.capacity - (tier.soldCount ?? 0)) : null;
+              return (
+                <button
+                  key={tier.id}
+                  type="button"
+                  onClick={() => setSelectedTierId(tier.id)}
+                  className={`w-full text-left rounded-xl p-3 border-2 transition-all ${
+                    selected
+                      ? 'border-cranberry bg-white dark:bg-gray-900 shadow-sm'
+                      : 'border-cranberry-200/60 dark:border-cranberry-900/40 hover:border-cranberry/50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className={`font-semibold text-sm ${selected ? 'text-cranberry' : 'text-gray-900 dark:text-white'}`}>{tier.label}</span>
+                      {tier.description && <p className="text-xs text-gray-500 mt-0.5">{tier.description}</p>}
+                      {tier.deadline && <p className="text-[10px] text-green-600 mt-0.5">Until {formatDate(tier.deadline)}</p>}
+                      {spots !== null && <p className={`text-[10px] mt-0.5 ${spots <= 5 ? 'text-red-500 font-medium' : 'text-gray-400'}`}>{spots} left</p>}
+                    </div>
+                    <p className="text-lg font-display font-bold text-gray-900 dark:text-white">{formatCurrency(tier.guestPrice)}</p>
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+      ) : isPaid && displayPrice != null ? (
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-5">
           Guest ticket:{' '}
           <span className="font-semibold text-gray-900 dark:text-white">

@@ -5,6 +5,7 @@ import { rateLimit, getRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 export const dynamic = 'force-dynamic';
 import { cookies } from 'next/headers';
 import { FieldValue } from 'firebase-admin/firestore';
+import { incrementTierSoldCount, decrementTierSoldCount } from '@/lib/services/tierTracking';
 
 // RSVP to an event
 export async function POST(request: NextRequest) {
@@ -31,8 +32,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Invalid RSVP status. Must be one of: ${VALID_RSVP_STATUSES.join(', ')}` }, { status: 400 });
     }
 
-    // Upsert RSVP
+    // Read existing RSVP to track tier sold-count changes
     const rsvpRef = adminDb.collection('rsvps').doc(`${uid}_${eventId}`);
+    const existingDoc = await rsvpRef.get();
+    const prevStatus = existingDoc.exists ? existingDoc.data()?.status : null;
+    const prevTierId = existingDoc.exists ? existingDoc.data()?.tierId : null;
+
+    // Upsert RSVP
     await rsvpRef.set(
       {
         memberId: uid,
@@ -42,6 +48,20 @@ export async function POST(request: NextRequest) {
       },
       { merge: true }
     );
+
+    // Adjust tier sold count when status changes to/from 'going'
+    if (prevTierId) {
+      const wasGoing = prevStatus === 'going';
+      const nowGoing = status === 'going';
+
+      if (!wasGoing && nowGoing) {
+        // Re-attending → increment
+        await incrementTierSoldCount(eventId, prevTierId);
+      } else if (wasGoing && !nowGoing) {
+        // Cancelling → decrement to free up the spot
+        await decrementTierSoldCount(eventId, prevTierId);
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -19,13 +19,27 @@ export async function POST(
     await adminAuth.verifySessionCookie(sessionCookie, true);
 
     const { id: eventId } = await params;
-    const { searchParams } = new URL(request.url);
-    const memberId = searchParams.get('m');
-    const timestamp = searchParams.get('t');
-    const signature = searchParams.get('sig');
+
+    // Support both POST body and query params for flexibility
+    let memberId: string | null = null;
+    let timestamp: string | null = null;
+    let signature: string | null = null;
+
+    try {
+      const body = await request.json();
+      memberId = body.memberId || null;
+      timestamp = body.timestamp || null;
+      signature = body.signature || null;
+    } catch {
+      // Fallback to query params
+      const { searchParams } = new URL(request.url);
+      memberId = searchParams.get('m');
+      timestamp = searchParams.get('t');
+      signature = searchParams.get('sig');
+    }
 
     if (!memberId || !timestamp || !signature) {
-      return NextResponse.json({ error: 'Missing required query parameters (m, t, sig)' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required parameters (memberId/m, timestamp/t, signature/sig)' }, { status: 400 });
     }
 
     // Verify the HMAC signature and 24-hour expiry
@@ -50,6 +64,17 @@ export async function POST(
     const rsvpRef = adminDb.collection('rsvps').doc(`${memberId}_${eventId}`);
     const rsvpDoc = await rsvpRef.get();
     const now = new Date().toISOString();
+    const eventName = eventDoc.data()?.title || 'Event';
+
+    // Detect duplicate check-in
+    if (rsvpDoc.exists && rsvpDoc.data()?.checkedIn) {
+      return NextResponse.json({
+        success: true,
+        alreadyCheckedIn: true,
+        eventName,
+        checkedInAt: rsvpDoc.data()?.checkedInAt || now,
+      });
+    }
 
     if (rsvpDoc.exists) {
       await rsvpRef.update({
@@ -66,7 +91,7 @@ export async function POST(
       });
     }
 
-    return NextResponse.json({ success: true, checkedInAt: now });
+    return NextResponse.json({ success: true, eventName, checkedInAt: now });
   } catch (error) {
     console.error('Error processing check-in:', error);
     return NextResponse.json({ error: 'Failed to check in' }, { status: 500 });

@@ -35,8 +35,14 @@
  *   --dry-run             Print what would be imported without uploading anything
  *   --album <slug>        Only import the pre-defined album matching this slug
  *   --limit <n>           Max photos per album (default: all)
- *   --no-skip-existing    Re-import albums that already exist in Firestore
+ *   --no-skip-existing    Re-check albums that already exist (backfills missing photos)
  *   --debug               Verbose URL logging during scraping
+ *
+ * BACKFILL MODE:
+ *   Albums that already exist in Firestore will automatically detect if the
+ *   scraped album has more photos than previously imported and backfill only
+ *   the missing ones — no duplicates. Use --no-skip-existing to force a
+ *   re-check even if counts match.
  *
  * REQUIREMENTS:
  *   - .env.local with FIREBASE_SERVICE_ACCOUNT_KEY (or FIREBASE_PROJECT_ID etc.)
@@ -301,6 +307,41 @@ async function scrapeAlbum(
 ): Promise<{ urls: string[]; scrapedTitle: string }> {
   console.log(`  🌐 Opening album: ${albumUrl}`);
 
+  // ── Network interception: capture ALL googleusercontent URLs from traffic ──
+  // Google Photos uses virtual scrolling with aggressive DOM recycling (~30 nodes).
+  // Instead of scraping the DOM, we intercept network requests/responses to collect
+  // every photo URL the browser fetches, plus extract URLs from embedded page data.
+  const networkUrls = new Set<string>();
+
+  page.on('request', (req) => {
+    const url = req.url();
+    if (url.includes('googleusercontent.com')) {
+      networkUrls.add(url);
+    }
+  });
+
+  page.on('response', async (res) => {
+    const url = res.url();
+    if (url.includes('googleusercontent.com')) {
+      networkUrls.add(url);
+    }
+    // Google Photos loads photo metadata via internal API calls (batchexecute)
+    // The response bodies contain googleusercontent URLs in JSON/text
+    try {
+      if (
+        url.includes('batchexecute') ||
+        url.includes('photosdata') ||
+        url.includes('_/PhotosUi/')
+      ) {
+        const body = await res.text().catch(() => '');
+        const matches = body.match(/https?:\/\/lh\d\.googleusercontent\.com\/[^\s"'\],\\)]+/g);
+        if (matches) {
+          for (const m of matches) networkUrls.add(m);
+        }
+      }
+    } catch {}
+  });
+
   // Use 'load' instead of 'networkidle' — Google Photos makes continuous API calls
   // that prevent networkidle from ever firing within reasonable timeouts
   await page.goto(albumUrl, { waitUntil: 'load', timeout: 60000 });
@@ -333,67 +374,90 @@ async function scrapeAlbum(
     return { urls: [], scrapedTitle: '' };
   }
 
-  // Scroll to load all photos (Google Photos lazy-loads thumbnails)
-  console.log('  📜 Scrolling to load all photos...');
-  let previousCount = 0;
+  // ── Strategy 1: Extract URLs embedded in page source / scripts ───────────
+  // Google Photos embeds photo data in the initial HTML (inside script blocks).
+  const pageContent = await page.content();
+  const embeddedMatches = pageContent.match(
+    /https?:\/\/lh\d\.googleusercontent\.com\/[^\s"'\],\\)]+/g
+  );
+  if (embeddedMatches) {
+    for (const m of embeddedMatches) networkUrls.add(m);
+  }
+  if (DEBUG) {
+    console.log(`  🔍 DEBUG: ${networkUrls.size} URLs after page source extraction`);
+  }
+
+  // ── Strategy 2: Slow incremental scroll to trigger lazy-load requests ────
+  console.log('  📜 Scrolling to trigger all photo loads...');
+
   let stableRounds = 0;
+  let previousNetworkCount = networkUrls.size;
 
-  while (stableRounds < 4) {
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await sleep(2000);
+  // Phase 1: Scroll down incrementally
+  let scrollPosition = 0;
+  while (stableRounds < 5) {
+    const viewportH = await page.evaluate(() => window.innerHeight);
+    scrollPosition += Math.floor(viewportH * 0.75);
+    await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'smooth' }), scrollPosition);
+    await sleep(1500);
 
-    const currentCount = await page.evaluate(() => {
-      // Count all candidate images
-      const imgs = document.querySelectorAll('img[src*="googleusercontent.com"]');
-      return imgs.length;
-    });
+    // Check if at bottom
+    const atBottom = await page.evaluate(() =>
+      window.scrollY + window.innerHeight >= document.body.scrollHeight - 50
+    );
 
-    if (currentCount === previousCount) {
-      stableRounds++;
+    if (networkUrls.size === previousNetworkCount) {
+      if (atBottom) stableRounds++;
     } else {
       stableRounds = 0;
-      previousCount = currentCount;
+      previousNetworkCount = networkUrls.size;
     }
 
-    if (currentCount >= limit) break;
+    process.stdout.write(`\r  📷 Network captured ${networkUrls.size} URLs so far...`);
 
-    process.stdout.write(`\r  📷 Found ${currentCount} images so far...`);
+    if (atBottom) {
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await sleep(2000);
+    }
   }
-  console.log('');
 
-  // Extract all unique photo URLs — check img src, data-src, and background-image
-  const rawUrls: string[] = await page.evaluate(() => {
+  // Phase 2: Scroll back to top and do one more slow pass
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await sleep(2000);
+
+  const totalHeight = await page.evaluate(() => document.body.scrollHeight);
+  const viewportHeight = await page.evaluate(() => window.innerHeight);
+  const step = Math.floor(viewportHeight * 0.6);
+  for (let pos = 0; pos < totalHeight; pos += step) {
+    await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'smooth' }), pos);
+    await sleep(800);
+  }
+  await sleep(2000);
+
+  // ── Strategy 3: Also grab any remaining DOM URLs ─────────────────────────
+  const domUrls: string[] = await page.evaluate(() => {
     const urls = new Set<string>();
-
-    // Strategy 1: img[src] and img[data-src]
     document.querySelectorAll<HTMLImageElement>('img').forEach((img) => {
       const src = img.src || img.getAttribute('data-src') || '';
       if (src) urls.add(src);
     });
-
-    // Strategy 2: elements with background-image style containing googleusercontent
     document.querySelectorAll<HTMLElement>('[style*="googleusercontent.com"]').forEach((el) => {
       const style = el.getAttribute('style') || '';
       const match = style.match(/url\(["']?(https:\/\/[^"')]+googleusercontent[^"')]+)["']?\)/);
       if (match) urls.add(match[1]);
     });
-
-    // Strategy 3: any element with data-src containing googleusercontent
     document.querySelectorAll<HTMLElement>('[data-src*="googleusercontent"]').forEach((el) => {
       const src = el.getAttribute('data-src') || '';
       if (src) urls.add(src);
     });
-
     return Array.from(urls);
   });
+  for (const u of domUrls) networkUrls.add(u);
 
-  if (DEBUG) {
-    console.log(`  🔍 DEBUG: ${rawUrls.length} total raw URLs found`);
-    rawUrls.slice(0, 5).forEach((u) => console.log(`     → ${u.slice(0, 100)}`));
-  }
+  console.log('');
 
-  // Filter to real photo URLs (not UI icons, avatars, profile pics)
-  const filtered = rawUrls.filter((src) => {
+  // ── Filter & deduplicate ─────────────────────────────────────────────────
+  const isPhotoUrl = (src: string): boolean => {
     if (!src.includes('googleusercontent.com')) return false;
     // Exclude profile / avatar URLs (path component /a/)
     if (/googleusercontent\.com\/a\//.test(src)) return false;
@@ -401,22 +465,23 @@ async function scrapeAlbum(
     const sizeMatch = src.match(/=(?:w|s)(\d+)/);
     if (sizeMatch && parseInt(sizeMatch[1], 10) < 100) return false;
     // Must have size params or known photo path segments
-    const isPhoto = src.includes('=w') || src.includes('=s') || src.includes('/photo/') || /\/pw\//.test(src) || /lh\d\.googleusercontent/.test(src);
-    return isPhoto;
-  });
+    return src.includes('=w') || src.includes('=s') || src.includes('/photo/') || /\/pw\//.test(src) || /lh\d\.googleusercontent/.test(src);
+  };
+
+  const allRaw = Array.from(networkUrls);
+  const filtered = allRaw.filter(isPhotoUrl);
 
   if (DEBUG) {
-    console.log(`  🔍 DEBUG: ${filtered.length} photo URLs after filtering`);
-    filtered.slice(0, 5).forEach((u) => console.log(`     → ${u.slice(0, 100)}`));
+    console.log(`  🔍 DEBUG: ${allRaw.length} total raw URLs, ${filtered.length} after filtering`);
   }
 
   // Deduplicate by base URL (strip size params for comparison)
-  const seen = new Set<string>();
+  const seenBases = new Set<string>();
   const unique: string[] = [];
   for (const url of filtered) {
     const base = url.replace(/=[^?]+(\?.*)?$/, '');
-    if (!seen.has(base)) {
-      seen.add(base);
+    if (!seenBases.has(base)) {
+      seenBases.add(base);
       unique.push(toFullRes(url));
     }
   }
@@ -539,12 +604,41 @@ async function importAlbum(
 
   console.log(`\n📁 Album: ${album.title} (${album.slug})`);
 
-  // Check if album already exists (skip in dry-run)
-  if (SKIP_EXISTING && !DRY_RUN) {
+  // Check if album already exists
+  let existingAlbumId: string | null = null;
+  let existingPhotoCount = 0;
+  let existingStoragePaths = new Set<string>();
+
+  if (!DRY_RUN) {
     const existing = await db.collection('albums').where('slug', '==', album.slug).limit(1).get();
     if (!existing.empty) {
-      console.log(`  ⏭️  Skipping — already exists in Firestore (use --no-skip-existing to re-import)`);
-      return;
+      existingAlbumId = existing.docs[0].id;
+      existingPhotoCount = existing.docs[0].data().photoCount || 0;
+
+      if (SKIP_EXISTING) {
+        // In skip mode, check if album appears to have fewer photos than scraped.
+        // If so, offer to backfill. Otherwise, skip entirely.
+        if (photoUrls.length <= existingPhotoCount) {
+          console.log(`  ⏭️  Skipping — already has ${existingPhotoCount} photos (scraped ${photoUrls.length}). Use --no-skip-existing to force re-check.`);
+          return;
+        }
+        console.log(`  🔄 Album exists with ${existingPhotoCount} photos, but scraped ${photoUrls.length}. Backfilling missing photos...`);
+      } else {
+        console.log(`  🔄 Album exists (${existingPhotoCount} photos). Will backfill missing photos only.`);
+      }
+
+      // Gather storage paths already uploaded to avoid duplicates
+      const gallerySnap = await db.collection('gallery').where('albumId', '==', existingAlbumId).get();
+      for (const doc of gallerySnap.docs) {
+        const sp = doc.data().storagePath;
+        if (sp) existingStoragePaths.add(sp);
+        // Also track by the base URL for better dedup
+        const url = doc.data().url;
+        if (url) {
+          const base = url.replace(/=[^?]+(\?.*)?$/, '').replace(/https:\/\/storage\.googleapis\.com\/[^/]+\//, '');
+          existingStoragePaths.add(base);
+        }
+      }
     }
   }
 
@@ -566,11 +660,19 @@ async function importAlbum(
     let coverPhotoUrl = '';
     const photoIds: string[] = [];
 
-    // Create album doc first to get the ID
-    const albumRef = db.collection('albums').doc();
+    // Re-use existing album doc or create a new one
+    const albumRef = existingAlbumId
+      ? db.collection('albums').doc(existingAlbumId)
+      : db.collection('albums').doc();
     const albumId = albumRef.id;
 
-    console.log(`  ⬆️  Uploading ${photoUrls.length} photos to Firebase Storage...`);
+    // Determine starting order index for new photos
+    const startOrder = existingPhotoCount;
+
+    console.log(`  ⬆️  Processing ${photoUrls.length} scraped photos...`);
+
+    let skipped = 0;
+    let uploaded = 0;
 
     for (let i = 0; i < photoUrls.length; i++) {
       const photoUrl = photoUrls[i];
@@ -578,7 +680,13 @@ async function importAlbum(
       const localPath = path.join(tmpDir, fileName);
       const storagePath = `albums/${album.slug}/${fileName}`;
 
-      process.stdout.write(`\r  📤 Uploading ${i + 1}/${photoUrls.length}: ${fileName}...`);
+      // Skip photos that already exist in Firebase
+      if (existingStoragePaths.has(storagePath) || existingStoragePaths.has(`albums/${album.slug}/${fileName}`)) {
+        skipped++;
+        continue;
+      }
+
+      process.stdout.write(`\r  📤 Uploading ${uploaded + 1} new (${i + 1}/${photoUrls.length} total, ${skipped} already exist)...`);
 
       try {
         // Download
@@ -610,7 +718,7 @@ async function importAlbum(
           thumbnailUrl,
           storagePath,
           caption: '',
-          order: i,
+          order: startOrder + uploaded,
           isPreview,
           isFeatured,
           likes: 0,
@@ -621,9 +729,10 @@ async function importAlbum(
         });
 
         photoIds.push(galleryRef.id);
+        uploaded++;
 
-        // First photo becomes the cover
-        if (i === 0) coverPhotoUrl = publicUrl;
+        // First photo becomes the cover (only for brand new albums)
+        if (!existingAlbumId && uploaded === 1) coverPhotoUrl = publicUrl;
 
         // Clean up local file
         fs.unlinkSync(localPath);
@@ -637,26 +746,38 @@ async function importAlbum(
     }
 
     console.log('');
+    if (skipped > 0) {
+      console.log(`  ⏭️  Skipped ${skipped} photos that already exist in Storage`);
+    }
 
-    // Save album to Firestore
-    await albumRef.set({
-      slug: album.slug,
-      title: album.title,
-      date: album.date,
-      description: album.description || '',
-      coverPhotoUrl,
-      photoCount: photoIds.length,
-      isPublic: album.isPublic,
-      publicPreviewCount: album.publicPreviewCount,
-      googlePhotosUrl: album.googlePhotosUrl,
-      isFeatured: album.isFeatured || false,
-      tags: ALBUM_CONTEXT_TAGS[album.slug] || [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-
-    console.log(`  ✅ Done! ${photoIds.length} photos uploaded. Album ID: ${albumId}`);
-    console.log(`     Cover: ${coverPhotoUrl.slice(0, 60)}...`);
+    // Save / update album in Firestore
+    if (existingAlbumId) {
+      // Backfill mode — update photo count, keep everything else
+      const newTotalCount = existingPhotoCount + photoIds.length;
+      await albumRef.update({
+        photoCount: newTotalCount,
+        updatedAt: new Date().toISOString(),
+      });
+      console.log(`  ✅ Backfilled ${photoIds.length} new photos. Total now: ${newTotalCount}. Album ID: ${albumId}`);
+    } else {
+      await albumRef.set({
+        slug: album.slug,
+        title: album.title,
+        date: album.date,
+        description: album.description || '',
+        coverPhotoUrl,
+        photoCount: photoIds.length,
+        isPublic: album.isPublic,
+        publicPreviewCount: album.publicPreviewCount,
+        googlePhotosUrl: album.googlePhotosUrl,
+        isFeatured: album.isFeatured || false,
+        tags: ALBUM_CONTEXT_TAGS[album.slug] || [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      console.log(`  ✅ Done! ${photoIds.length} photos uploaded. Album ID: ${albumId}`);
+      console.log(`     Cover: ${coverPhotoUrl.slice(0, 60)}...`);
+    }
 
   } finally {
     // Clean up temp dir

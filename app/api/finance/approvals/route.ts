@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { rateLimit, getRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
+import { incrementTierSoldCount } from '@/lib/services/tierTracking';
 
 // GET — List pending approvals (budgets + offline payments)
 export async function GET(request: NextRequest) {
@@ -156,12 +157,18 @@ export async function PATCH(request: NextRequest) {
               eventId: payment.relatedId,
               status: 'going',
               ticketType: 'member',
+              tierId: payment.tierId || null,
               paidAmount: payment.amount,
               paymentMethod: payment.method,
               updatedAt: FieldValue.serverTimestamp(),
             },
             { merge: true }
           );
+
+          // Track tier capacity
+          if (payment.tierId) {
+            await incrementTierSoldCount(payment.relatedId, payment.tierId);
+          }
         }
       }
 

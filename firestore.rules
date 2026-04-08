@@ -87,12 +87,40 @@ service cloud.firestore {
       allow read: if isMember();
 
       // Members can write their own RSVP (doc ID must start with their uid)
+      // Cannot modify tierId or paidAmount from client (those are set server-side)
       allow create, update: if isMember()
-                            && rsvpId.matches(request.auth.uid + '_.*');
+                            && rsvpId.matches(request.auth.uid + '_.*')
+                            && !request.resource.data.diff(resource.data).affectedKeys()
+                                .hasAny(['tierId', 'paidAmount', 'paymentStatus']);
 
       // Only owner or board can delete
       allow delete: if (isMember() && rsvpId.matches(request.auth.uid + '_.*'))
                     || isBoard();
+    }
+
+    // ───────────────────────────────────────
+    // Guest RSVPs (managed server-side only)
+    // ───────────────────────────────────────
+    match /guest_rsvps/{rsvpId} {
+      // Board+ can read guest RSVPs (for event management)
+      allow read: if isBoard();
+
+      // All writes go through Admin SDK (checkout routes, webhooks)
+      allow write: if false;
+    }
+
+    // ───────────────────────────────────────
+    // Offline Payments (managed server-side only)
+    // ───────────────────────────────────────
+    match /offlinePayments/{paymentId} {
+      // Treasurer+ can read all offline payments
+      allow read: if isTreasurer();
+
+      // Members can read their own offline payments
+      allow read: if isMember() && resource.data.memberId == request.auth.uid;
+
+      // All writes go through Admin SDK (checkout + approval routes)
+      allow write: if false;
     }
 
     // ───────────────────────────────────────

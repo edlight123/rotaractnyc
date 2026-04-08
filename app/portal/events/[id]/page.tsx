@@ -12,6 +12,8 @@ import Avatar from '@/components/ui/Avatar';
 import EventRegistration from '@/components/portal/EventRegistration';
 import EventCheckoutModal from '@/components/portal/EventCheckoutModal';
 import CreateEventModal from '@/components/portal/CreateEventModal';
+import EventActionBar from '@/components/portal/EventActionBar';
+import EventQRCode from '@/components/portal/EventQRCode';
 import { formatDate, formatCurrency } from '@/lib/utils/format';
 import type { RotaractEvent, RSVPStatus, PaymentSettings } from '@/types';
 
@@ -45,7 +47,10 @@ export default function PortalEventDetailPage() {
   const [loading, setLoading] = useState(true);
   const [currentRSVP, setCurrentRSVP] = useState<RSVPStatus | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateEvent, setDuplicateEvent] = useState<RotaractEvent | null>(null);
   const [checkoutTicketType, setCheckoutTicketType] = useState<'member' | 'guest'>('member');
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
   const [checkoutPriceCents, setCheckoutPriceCents] = useState(0);
@@ -104,9 +109,35 @@ export default function PortalEventDetailPage() {
     }
   };
 
-  const handlePurchaseTicket = async (ticketType: 'member' | 'guest') => {
+  const handlePurchaseTicket = async (ticketType: 'member' | 'guest', tierId?: string) => {
     if (!event?.pricing) return;
-    
+
+    // ── Tier-based pricing ──
+    if (event.pricing.tiers?.length) {
+      const tier = tierId
+        ? event.pricing.tiers.find((t) => t.id === tierId)
+        : event.pricing.tiers[0];
+      if (!tier) return;
+
+      const priceCents = member && ticketType !== 'guest' ? tier.memberPrice : tier.guestPrice;
+
+      if (priceCents === 0) {
+        try {
+          await apiPost('/api/portal/events/checkout', { eventId: id, ticketType, tierId: tier.id });
+          toast("You're in!");
+          setCurrentRSVP('going');
+        } catch (err: any) {
+          toast(err.message || 'Checkout failed', 'error');
+        }
+      } else {
+        setCheckoutTicketType(ticketType);
+        setCheckoutPriceCents(priceCents);
+        setShowCheckoutModal(true);
+      }
+      return;
+    }
+
+    // ── Legacy flat pricing ──
     const now = new Date();
     const earlyBirdActive =
       event.pricing.earlyBirdPrice != null &&
@@ -171,7 +202,6 @@ export default function PortalEventDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) return;
     setDeleteLoading(true);
     try {
       await apiDelete(`/api/portal/events?id=${id}`);
@@ -181,10 +211,56 @@ export default function PortalEventDetailPage() {
       toast(err.message || 'Failed to delete event', 'error');
     } finally {
       setDeleteLoading(false);
+      setShowDeleteConfirm(false);
     }
   };
 
-  if (loading) return <div className="flex justify-center py-20"><Spinner size="lg" /></div>;
+  const handleDuplicate = () => {
+    if (!event) return;
+    // Pre-populate a new event from the current one and open create modal
+    const duplicatedEvent = {
+      ...event,
+      id: '', // Force create mode
+      title: `${event.title} (Copy)`,
+      slug: `${event.slug}-copy`,
+      status: 'draft' as const,
+      attendeeCount: 0,
+      date: '', // Clear date so user picks a new one
+      createdAt: '',
+    };
+    setDuplicateEvent(duplicatedEvent);
+    setShowDuplicateModal(true);
+  };
+
+  if (loading) return (
+    <div className="max-w-4xl mx-auto space-y-6 animate-pulse">
+      <div className="h-4 w-28 bg-gray-200 dark:bg-gray-800 rounded" />
+      <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-5">
+          <div className="h-52 bg-gray-200 dark:bg-gray-800 rounded-2xl" />
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 space-y-4">
+            <div className="flex gap-2">
+              <div className="h-6 w-16 bg-gray-200 dark:bg-gray-800 rounded-full" />
+              <div className="h-6 w-20 bg-gray-200 dark:bg-gray-800 rounded-full" />
+            </div>
+            <div className="h-8 w-3/4 bg-gray-200 dark:bg-gray-800 rounded" />
+            <div className="grid grid-cols-2 gap-2.5">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-14 bg-gray-100 dark:bg-gray-800/60 rounded-xl" />
+              ))}
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 space-y-3">
+            <div className="h-6 w-40 bg-gray-200 dark:bg-gray-800 rounded" />
+            <div className="h-4 w-full bg-gray-200 dark:bg-gray-800 rounded" />
+            <div className="h-4 w-5/6 bg-gray-200 dark:bg-gray-800 rounded" />
+            <div className="h-4 w-2/3 bg-gray-200 dark:bg-gray-800 rounded" />
+          </div>
+        </div>
+        <div className="h-80 bg-gray-200 dark:bg-gray-800 rounded-2xl" />
+      </div>
+    </div>
+  );
   if (!event) return (
     <div className="text-center py-20">
       <p className="text-gray-500 mb-4">Event not found.</p>
@@ -193,6 +269,7 @@ export default function PortalEventDetailPage() {
   );
 
   const goingCount = rsvps?.filter((r) => r.status === 'going').length || 0;
+  const isPast = new Date(event.date) < new Date();
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 page-enter pb-28 lg:pb-6">
@@ -236,13 +313,23 @@ export default function PortalEventDetailPage() {
               </div>
               {canManageEvents && (
                 <div className="flex items-center gap-2">
-                  <Button size="sm" variant="secondary" onClick={() => setShowEditModal(true)}>Edit</Button>
-                  <Button size="sm" variant="ghost" loading={deleteLoading} onClick={handleDelete} className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">Delete</Button>
+                  <Button size="sm" variant="secondary" onClick={() => setShowEditModal(true)}>
+                    <svg className="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                    Edit
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={handleDuplicate} title="Duplicate this event">
+                    <svg className="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    Duplicate
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setShowDeleteConfirm(true)} className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">Delete</Button>
                 </div>
               )}
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-display font-bold text-gray-900 dark:text-white leading-tight">{event.title}</h1>
+
+            {/* ── Action Bar: Calendar, Share, Directions ── */}
+            <EventActionBar event={event} onCopied={() => toast('Link copied to clipboard!')} />
 
             {/* Meta grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -308,31 +395,100 @@ export default function PortalEventDetailPage() {
           {event.pricing && (event.type === 'paid' || event.type === 'hybrid') && (
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6">
               <h3 className="font-display font-semibold text-gray-900 dark:text-white mb-4 text-lg">Pricing</h3>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="bg-cranberry-50 dark:bg-cranberry-900/20 rounded-xl p-4 border border-cranberry-100 dark:border-cranberry-900/40">
-                  <p className="text-xs font-bold text-cranberry uppercase tracking-wider mb-1.5">Member Price</p>
-                  <p className="text-3xl font-display font-bold text-gray-900 dark:text-white">
-                    {event.pricing.memberPrice === 0 ? 'Free' : formatCurrency(event.pricing.memberPrice)}
-                  </p>
+
+              {event.pricing.tiers?.length ? (
+                /* ── Tier grid ── */
+                <div className="space-y-3">
+                  {[...event.pricing.tiers].sort((a, b) => a.sortOrder - b.sortOrder).map((tier) => {
+                    const expired = tier.deadline && new Date(tier.deadline) < new Date();
+                    const soldOut = tier.capacity != null && (tier.soldCount ?? 0) >= tier.capacity;
+                    const spots = tier.capacity != null ? Math.max(0, tier.capacity - (tier.soldCount ?? 0)) : null;
+
+                    return (
+                      <div
+                        key={tier.id}
+                        className={`rounded-xl p-4 border ${expired || soldOut ? 'opacity-60 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30' : 'border-cranberry-100 dark:border-cranberry-900/40 bg-cranberry-50/30 dark:bg-cranberry-900/10'}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-gray-900 dark:text-white">{tier.label}</h4>
+                              {expired && <Badge variant="gray">Expired</Badge>}
+                              {soldOut && <Badge variant="cranberry">Sold Out</Badge>}
+                            </div>
+                            {tier.description && (
+                              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{tier.description}</p>
+                            )}
+                            {tier.deadline && !expired && (
+                              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+                                Available until {formatDate(tier.deadline)}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="flex gap-4">
+                              <div>
+                                <p className="text-xs font-bold text-cranberry uppercase tracking-wider">Member</p>
+                                <p className="text-2xl font-display font-bold text-gray-900 dark:text-white">
+                                  {tier.memberPrice === 0 ? 'Free' : formatCurrency(tier.memberPrice)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Guest</p>
+                                <p className="text-2xl font-display font-bold text-gray-900 dark:text-white">
+                                  {formatCurrency(tier.guestPrice)}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        {spots !== null && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${spots <= 5 ? 'bg-red-500' : spots <= 15 ? 'bg-amber-500' : 'bg-cranberry'}`}
+                                style={{ width: `${Math.min(100, Math.round(((tier.soldCount ?? 0) / tier.capacity!) * 100))}%` }}
+                              />
+                            </div>
+                            <span className={`text-xs font-medium ${spots <= 5 ? 'text-red-500' : 'text-gray-400'}`}>
+                              {spots === 0 ? 'Sold out' : `${spots}/${tier.capacity} left`}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Guest Price</p>
-                  <p className="text-3xl font-display font-bold text-gray-900 dark:text-white">{formatCurrency(event.pricing.guestPrice)}</p>
-                </div>
-              </div>
-              {event.pricing.earlyBirdPrice != null && event.pricing.earlyBirdDeadline && (
-                <div className="mt-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800 flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-800/50 flex items-center justify-center shrink-0">
-                    <svg aria-hidden="true" className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              ) : (
+                /* ── Legacy member/guest grid ── */
+                <>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="bg-cranberry-50 dark:bg-cranberry-900/20 rounded-xl p-4 border border-cranberry-100 dark:border-cranberry-900/40">
+                      <p className="text-xs font-bold text-cranberry uppercase tracking-wider mb-1.5">Member Price</p>
+                      <p className="text-3xl font-display font-bold text-gray-900 dark:text-white">
+                        {event.pricing.memberPrice === 0 ? 'Free' : formatCurrency(event.pricing.memberPrice)}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Guest Price</p>
+                      <p className="text-3xl font-display font-bold text-gray-900 dark:text-white">{formatCurrency(event.pricing.guestPrice)}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">Early Bird: {formatCurrency(event.pricing.earlyBirdPrice)}</p>
-                    <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
-                      Available until {formatDate(event.pricing.earlyBirdDeadline)}
-                      {new Date(event.pricing.earlyBirdDeadline) < new Date() && ' — expired'}
-                    </p>
-                  </div>
-                </div>
+                  {event.pricing.earlyBirdPrice != null && event.pricing.earlyBirdDeadline && (
+                    <div className="mt-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800 flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-800/50 flex items-center justify-center shrink-0">
+                        <svg aria-hidden="true" className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">Early Bird: {formatCurrency(event.pricing.earlyBirdPrice)}</p>
+                        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
+                          Available until {formatDate(event.pricing.earlyBirdDeadline)}
+                          {new Date(event.pricing.earlyBirdDeadline) < new Date() && ' — expired'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -347,9 +503,16 @@ export default function PortalEventDetailPage() {
                 {rsvps
                   .filter((r) => r.status === 'going')
                   .map((r) => (
-                    <div key={r.id} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-full pl-1 pr-3 py-1 border border-gray-100 dark:border-gray-700">
+                    <div key={r.id} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-full pl-1 pr-3 py-1 border border-gray-100 dark:border-gray-700 group/attendee relative">
                       <Avatar src={r.memberPhoto} alt={r.memberName} size="sm" />
                       <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{r.memberName}</span>
+                      {r.checkedIn && (
+                        <span className="flex items-center justify-center w-4 h-4 rounded-full bg-emerald-100 dark:bg-emerald-900/40" title={`Checked in${r.checkedInAt ? ` at ${new Date(r.checkedInAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : ''}`}>
+                          <svg className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </span>
+                      )}
                     </div>
                   ))}
               </div>
@@ -387,8 +550,16 @@ export default function PortalEventDetailPage() {
         </div>
 
         {/* ── Sidebar ── */}
-        <div className="lg:sticky lg:top-6">
+        <div className="lg:sticky lg:top-6 space-y-4">
           <EventRegistration event={event} currentRSVP={currentRSVP} onRSVP={handleRSVP} onPurchaseTicket={handlePurchaseTicket} attendeeCount={goingCount} />
+          
+          {/* QR Code for check-in */}
+          {!isPast && (
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-5">
+              <h3 className="font-display font-semibold text-gray-900 dark:text-white mb-3 text-sm">Your Check-in QR Code</h3>
+              <EventQRCode eventId={id} />
+            </div>
+          )}
         </div>
       </div>
 
@@ -407,6 +578,48 @@ export default function PortalEventDetailPage() {
           paymentSettings={paymentSettings}
           onStripeCheckout={handleStripeCheckout}
           onOfflinePayment={handleOfflinePayment}
+        />
+      )}
+
+      {/* Delete confirmation dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 max-w-sm w-full animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-display font-semibold text-gray-900 dark:text-white">Delete Event</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">This action cannot be undone.</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
+              Are you sure you want to delete <strong>&ldquo;{event?.title}&rdquo;</strong>? All RSVPs and check-in data will be permanently removed.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button size="sm" variant="ghost" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
+              <Button size="sm" loading={deleteLoading} onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white">Delete Event</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Duplicate event modal */}
+      {canManageEvents && duplicateEvent && (
+        <CreateEventModal
+          open={showDuplicateModal}
+          onClose={() => { setShowDuplicateModal(false); setDuplicateEvent(null); }}
+          event={duplicateEvent}
+          onSaved={() => {
+            setShowDuplicateModal(false);
+            setDuplicateEvent(null);
+            toast('Event duplicated as draft!');
+            router.push('/portal/events');
+          }}
         />
       )}
     </div>

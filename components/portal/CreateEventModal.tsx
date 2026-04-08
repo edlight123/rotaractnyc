@@ -8,7 +8,7 @@ import Textarea from '@/components/ui/Textarea';
 import FileUpload from '@/components/ui/FileUpload';
 import { apiPost, apiPatch } from '@/hooks/useFirestore';
 import { uploadFile, validateFile } from '@/lib/firebase/upload';
-import type { RotaractEvent, EventType, EventPricing, RecurrenceFrequency, RecurrenceRule } from '@/types';
+import type { RotaractEvent, EventType, EventPricing, TicketTier, RecurrenceFrequency, RecurrenceRule } from '@/types';
 
 interface CreateEventModalProps {
   open: boolean;
@@ -99,6 +99,15 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [activeStep, setActiveStep] = useState(0);
+
+  // Steps configuration
+  const STEPS = [
+    { id: 'basics', label: 'Basics', icon: '📝' },
+    { id: 'datetime', label: 'When', icon: '📅' },
+    { id: 'location', label: 'Where', icon: '📍' },
+    { id: 'details', label: 'Details', icon: '⚙️' },
+  ];
 
   // Basic info
   const [title, setTitle] = useState('');
@@ -129,6 +138,36 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
   const [guestPrice, setGuestPrice] = useState('');
   const [earlyBirdPrice, setEarlyBirdPrice] = useState('');
   const [earlyBirdDeadline, setEarlyBirdDeadline] = useState('');
+
+  // Tier pricing
+  const [useTiers, setUseTiers] = useState(false);
+  const [tiers, setTiers] = useState<Array<{
+    id: string; label: string; description: string;
+    memberPrice: string; guestPrice: string;
+    capacity: string; deadline: string;
+  }>>([]);
+
+  function addTier() {
+    const idx = tiers.length + 1;
+    const presets: Record<number, { id: string; label: string }> = {
+      1: { id: 'early-bird', label: 'Early Bird' },
+      2: { id: 'general', label: 'General Admission' },
+      3: { id: 'vip', label: 'VIP' },
+    };
+    const preset = presets[idx] || { id: `tier-${idx}`, label: `Tier ${idx}` };
+    setTiers((prev) => [...prev, {
+      id: preset.id, label: preset.label, description: '',
+      memberPrice: '', guestPrice: '', capacity: '', deadline: '',
+    }]);
+  }
+
+  function removeTier(index: number) {
+    setTiers((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function updateTier(index: number, field: string, value: string) {
+    setTiers((prev) => prev.map((t, i) => i === index ? { ...t, [field]: value } : t));
+  }
 
   // Recurrence
   const [recurrenceFrequency, setRecurrenceFrequency] = useState<RecurrenceFrequency | 'none'>('none');
@@ -171,11 +210,27 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
         setEarlyBirdDeadline(
           event.pricing.earlyBirdDeadline ? event.pricing.earlyBirdDeadline.split('T')[0] : ''
         );
+        // Populate tier state
+        if (event.pricing.tiers?.length) {
+          setUseTiers(true);
+          setTiers(event.pricing.tiers.map((t) => ({
+            id: t.id, label: t.label, description: t.description || '',
+            memberPrice: String(t.memberPrice / 100),
+            guestPrice: String(t.guestPrice / 100),
+            capacity: t.capacity ? String(t.capacity) : '',
+            deadline: t.deadline ? t.deadline.split('T')[0] : '',
+          })));
+        } else {
+          setUseTiers(false);
+          setTiers([]);
+        }
       } else {
         setMemberPrice('');
         setGuestPrice('');
         setEarlyBirdPrice('');
         setEarlyBirdDeadline('');
+        setUseTiers(false);
+        setTiers([]);
       }
       // Recurrence — display-only in edit mode
       if (event.recurrence) {
@@ -222,6 +277,8 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
     setGuestPrice('');
     setEarlyBirdPrice('');
     setEarlyBirdDeadline('');
+    setUseTiers(false);
+    setTiers([]);
     setRecurrenceFrequency('none');
     setRecurrenceDays([]);
     setRecurrenceEndDate('');
@@ -229,9 +286,67 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
     setRecurrenceEndType('occurrences');
     setError('');
     setSuccess(false);
+    setActiveStep(0);
+  }
+
+  // ── Autosave draft to localStorage (create mode only) ──
+  const DRAFT_KEY = 'rotaract_event_draft';
+
+  // Save draft whenever form fields change (debounced via effect)
+  useEffect(() => {
+    if (isEdit || !open) return;
+    // Only save if there's meaningful content
+    if (!title && !description && !date) return;
+    const draft = { title, slug, description, date, endDate, time, endTime, location, address, type, tags, capacity, isPublic, status: status, memberPrice, guestPrice, earlyBirdPrice, earlyBirdDeadline, recurrenceFrequency, recurrenceDays, recurrenceEndDate, recurrenceOccurrences, recurrenceEndType, savedAt: Date.now() };
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, description, date, time, location, type, tags, memberPrice, guestPrice, isEdit, open]);
+
+  // Restore draft on mount (create mode only)
+  useEffect(() => {
+    if (isEdit || !open) return;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      // Only restore if less than 24 hours old
+      if (Date.now() - (draft.savedAt || 0) > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(DRAFT_KEY);
+        return;
+      }
+      if (draft.title) setTitle(draft.title);
+      if (draft.slug) setSlug(draft.slug);
+      if (draft.description) setDescription(draft.description);
+      if (draft.date) setDate(draft.date);
+      if (draft.endDate) setEndDate(draft.endDate);
+      if (draft.time) setTime(draft.time);
+      if (draft.endTime) setEndTime(draft.endTime);
+      if (draft.location) setLocation(draft.location);
+      if (draft.address) setAddress(draft.address);
+      if (draft.type) setType(draft.type);
+      if (draft.tags) setTags(draft.tags);
+      if (draft.capacity) setCapacity(draft.capacity);
+      if (draft.isPublic !== undefined) setIsPublic(draft.isPublic);
+      if (draft.status) setStatus(draft.status);
+      if (draft.memberPrice) setMemberPrice(draft.memberPrice);
+      if (draft.guestPrice) setGuestPrice(draft.guestPrice);
+      if (draft.earlyBirdPrice) setEarlyBirdPrice(draft.earlyBirdPrice);
+      if (draft.earlyBirdDeadline) setEarlyBirdDeadline(draft.earlyBirdDeadline);
+      if (draft.recurrenceFrequency) setRecurrenceFrequency(draft.recurrenceFrequency);
+      if (draft.recurrenceDays) setRecurrenceDays(draft.recurrenceDays);
+      if (draft.recurrenceEndDate) setRecurrenceEndDate(draft.recurrenceEndDate);
+      if (draft.recurrenceOccurrences) setRecurrenceOccurrences(draft.recurrenceOccurrences);
+      if (draft.recurrenceEndType) setRecurrenceEndType(draft.recurrenceEndType);
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit, open]);
+
+  function clearDraft() {
+    try { localStorage.removeItem(DRAFT_KEY); } catch {}
   }
 
   function handleClose() {
+    // Don't clear draft on close (user can resume later) unless it was a successful save
     resetForm();
     onClose();
   }
@@ -281,15 +396,36 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
       // Build pricing object
       let pricing: EventPricing | undefined;
       if (showPricing) {
-        pricing = {
-          memberPrice: Math.round(parseFloat(memberPrice || '0') * 100),
-          guestPrice: Math.round(parseFloat(guestPrice || '0') * 100),
-        };
-        if (earlyBirdPrice) {
-          pricing.earlyBirdPrice = Math.round(parseFloat(earlyBirdPrice) * 100);
-        }
-        if (earlyBirdDeadline) {
-          pricing.earlyBirdDeadline = new Date(earlyBirdDeadline + 'T23:59:59').toISOString();
+        if (useTiers && tiers.length > 0) {
+          // Tier-based pricing
+          const builtTiers: TicketTier[] = tiers.map((t, i) => ({
+            id: t.id || `tier-${i}`,
+            label: t.label,
+            description: t.description || undefined,
+            memberPrice: Math.round(parseFloat(t.memberPrice || '0') * 100),
+            guestPrice: Math.round(parseFloat(t.guestPrice || '0') * 100),
+            capacity: t.capacity ? parseInt(t.capacity) : undefined,
+            deadline: t.deadline ? new Date(t.deadline + 'T23:59:59').toISOString() : undefined,
+            sortOrder: i,
+          }));
+          // Set legacy fields from the first (cheapest) tier for backward compat
+          pricing = {
+            memberPrice: builtTiers[0].memberPrice,
+            guestPrice: builtTiers[0].guestPrice,
+            tiers: builtTiers,
+          };
+        } else {
+          // Legacy flat pricing
+          pricing = {
+            memberPrice: Math.round(parseFloat(memberPrice || '0') * 100),
+            guestPrice: Math.round(parseFloat(guestPrice || '0') * 100),
+          };
+          if (earlyBirdPrice) {
+            pricing.earlyBirdPrice = Math.round(parseFloat(earlyBirdPrice) * 100);
+          }
+          if (earlyBirdDeadline) {
+            pricing.earlyBirdDeadline = new Date(earlyBirdDeadline + 'T23:59:59').toISOString();
+          }
         }
       }
 
@@ -349,6 +485,7 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
       }
 
       setSuccess(true);
+      clearDraft();
       onSaved?.();
       setTimeout(() => handleClose(), 1200);
     } catch (err: any) {
@@ -372,6 +509,53 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* ── Step Progress Indicator ── */}
+          <div className="flex items-center justify-between px-1">
+            {STEPS.map((step, i) => (
+              <button
+                key={step.id}
+                type="button"
+                onClick={() => setActiveStep(i)}
+                className="flex flex-col items-center gap-1 group"
+              >
+                <div className={`relative flex items-center justify-center w-9 h-9 rounded-full text-sm font-medium transition-all duration-300 ${
+                  i === activeStep
+                    ? 'bg-cranberry text-white shadow-md shadow-cranberry/25 scale-110'
+                    : i < activeStep
+                    ? 'bg-cranberry/10 text-cranberry dark:bg-cranberry-900/30 dark:text-cranberry-400'
+                    : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500'
+                }`}>
+                  {step.icon}
+                </div>
+                <span className={`text-[10px] font-medium transition-colors ${
+                  i === activeStep ? 'text-cranberry' : 'text-gray-400 dark:text-gray-500'
+                }`}>
+                  {step.label}
+                </span>
+                {i < STEPS.length - 1 && (
+                  <div className="absolute w-[calc(100%/4-2rem)] h-0.5 top-[18px] left-[calc(50%+1.25rem)]" />
+                )}
+              </button>
+            ))}
+          </div>
+          {/* Step progress bar */}
+          <div className="h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden -mt-2">
+            <div
+              className="h-full bg-gradient-to-r from-cranberry to-cranberry-600 rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${((activeStep + 1) / STEPS.length) * 100}%` }}
+            />
+          </div>
+
+          {/* Autosave indicator */}
+          {!isEdit && (title || description || date) && (
+            <div className="flex items-center gap-1.5 text-[10px] text-gray-400 dark:text-gray-500">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Draft auto-saved
+            </div>
+          )}
+
           {error && (
             <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-300">
               {error}
@@ -379,7 +563,7 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
           )}
 
           {/* ── Section: Basic Info ── */}
-          <div>
+          <div className={activeStep === 0 ? 'animate-in fade-in slide-in-from-right-2 duration-300' : 'hidden'}>
             <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
               Basic Information
             </h3>
@@ -430,7 +614,7 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
           </div>
 
           {/* ── Section: Date & Time ── */}
-          <div>
+          <div className={activeStep === 1 ? 'animate-in fade-in slide-in-from-right-2 duration-300' : 'hidden'}>
             <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
               Date &amp; Time
             </h3>
@@ -466,7 +650,7 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
 
           {/* ── Section: Recurrence ── */}
           {showRecurrence && (
-            <div>
+            <div className={activeStep === 1 ? 'animate-in fade-in slide-in-from-right-2 duration-300' : 'hidden'}>
               <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
                 Recurrence
               </h3>
@@ -594,7 +778,7 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
           )}
 
           {/* ── Section: Location ── */}
-          <div>
+          <div className={activeStep === 2 ? 'animate-in fade-in slide-in-from-right-2 duration-300' : 'hidden'}>
             <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
               Location
             </h3>
@@ -617,78 +801,240 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
 
           {/* ── Section: Pricing (conditional) ── */}
           {showPricing && (
-            <div>
-              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-                Pricing
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                Enter prices in dollars (e.g. 15.00). Set member price to 0 for free member admission.
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <Input
-                  label="Member Price ($)"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  value={memberPrice}
-                  onChange={(e) => setMemberPrice(e.target.value)}
-                  helperText={type === 'hybrid' ? 'Usually $0 for hybrid' : undefined}
-                />
-                <Input
-                  label="Guest Price ($)"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="25.00"
-                  value={guestPrice}
-                  onChange={(e) => setGuestPrice(e.target.value)}
-                  required
-                />
-                <Input
-                  label="Early Bird Price ($)"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="10.00"
-                  value={earlyBirdPrice}
-                  onChange={(e) => setEarlyBirdPrice(e.target.value)}
-                  helperText="Optional discount"
-                />
-                <Input
-                  label="Early Bird Deadline"
-                  type="date"
-                  value={earlyBirdDeadline}
-                  onChange={(e) => setEarlyBirdDeadline(e.target.value)}
-                  helperText="When early bird ends"
-                />
+            <div className={activeStep === 3 ? 'animate-in fade-in slide-in-from-right-2 duration-300' : 'hidden'}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Pricing
+                </h3>
+                <label className="inline-flex items-center gap-2 cursor-pointer">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{useTiers ? 'Tier Pricing' : 'Simple Pricing'}</span>
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={useTiers}
+                      onChange={(e) => {
+                        setUseTiers(e.target.checked);
+                        if (e.target.checked && tiers.length === 0) {
+                          // Seed with 2 default tiers
+                          setTiers([
+                            { id: 'early-bird', label: 'Early Bird', description: '', memberPrice: '', guestPrice: '', capacity: '', deadline: '' },
+                            { id: 'general', label: 'General Admission', description: '', memberPrice: '', guestPrice: '', capacity: '', deadline: '' },
+                          ]);
+                        }
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cranberry-500/20 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-cranberry-600" />
+                  </div>
+                </label>
               </div>
 
-              {/* Pricing preview */}
-              {(memberPrice || guestPrice) && (
-                <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm">
-                  <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">Pricing Preview:</p>
-                  <div className="flex flex-wrap gap-3 text-xs">
-                    <span className="bg-cranberry-50 dark:bg-cranberry-900/20 text-cranberry-700 dark:text-cranberry-300 px-2 py-1 rounded-lg font-semibold">
-                      {parseFloat(memberPrice || '0') === 0 ? 'Free' : `$${parseFloat(memberPrice || '0').toFixed(2)}`} member
-                    </span>
-                    <span className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-lg font-semibold">
-                      ${parseFloat(guestPrice || '0').toFixed(2)} guest
-                    </span>
-                    {earlyBirdPrice && (
-                      <span className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 px-2 py-1 rounded-lg font-semibold">
-                        Early bird ${parseFloat(earlyBirdPrice).toFixed(2)} early bird
-                        {earlyBirdDeadline && ` (until ${new Date(earlyBirdDeadline).toLocaleDateString()})`}
-                      </span>
-                    )}
-                  </div>
+              {useTiers ? (
+                /* ── Tier Builder ── */
+                <div className="space-y-3">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Create multiple pricing tiers (e.g. Early Bird, General, VIP). Each tier can have its own price, capacity, and deadline.
+                  </p>
+
+                  {tiers.map((tier, i) => (
+                    <div key={i} className="relative border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3 bg-gray-50/50 dark:bg-gray-800/30">
+                      {/* Tier header */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-cranberry-100 dark:bg-cranberry-900/40 text-cranberry text-xs font-bold">
+                            {i + 1}
+                          </span>
+                          <input
+                            type="text"
+                            value={tier.label}
+                            onChange={(e) => updateTier(i, 'label', e.target.value)}
+                            placeholder="Tier name"
+                            className="text-sm font-semibold bg-transparent border-none focus:outline-none text-gray-900 dark:text-white placeholder:text-gray-400 w-40"
+                          />
+                        </div>
+                        {tiers.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeTier(i)}
+                            className="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            title="Remove tier"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Tier ID + Description */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <Input
+                          label="Tier ID"
+                          placeholder="early-bird"
+                          value={tier.id}
+                          onChange={(e) => updateTier(i, 'id', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                          helperText="Unique identifier"
+                        />
+                        <Input
+                          label="Description"
+                          placeholder="Includes priority seating"
+                          value={tier.description}
+                          onChange={(e) => updateTier(i, 'description', e.target.value)}
+                          helperText="Optional perks"
+                        />
+                      </div>
+
+                      {/* Prices */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <Input
+                          label="Member ($)"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={tier.memberPrice}
+                          onChange={(e) => updateTier(i, 'memberPrice', e.target.value)}
+                          required
+                        />
+                        <Input
+                          label="Guest ($)"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="25.00"
+                          value={tier.guestPrice}
+                          onChange={(e) => updateTier(i, 'guestPrice', e.target.value)}
+                          required
+                        />
+                        <Input
+                          label="Capacity"
+                          type="number"
+                          min="1"
+                          placeholder="∞"
+                          value={tier.capacity}
+                          onChange={(e) => updateTier(i, 'capacity', e.target.value)}
+                          helperText="Per-tier cap"
+                        />
+                        <Input
+                          label="Deadline"
+                          type="date"
+                          value={tier.deadline}
+                          onChange={(e) => updateTier(i, 'deadline', e.target.value)}
+                          helperText="Auto-closes after"
+                        />
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Add tier button */}
+                  <button
+                    type="button"
+                    onClick={addTier}
+                    className="w-full py-2.5 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl text-sm text-gray-500 dark:text-gray-400 hover:border-cranberry hover:text-cranberry transition-colors flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add Tier
+                  </button>
+
+                  {/* Tier preview */}
+                  {tiers.some((t) => t.memberPrice || t.guestPrice) && (
+                    <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm">
+                      <p className="font-medium text-gray-700 dark:text-gray-300 mb-2">Tier Preview:</p>
+                      <div className="space-y-1.5">
+                        {tiers.map((t, i) => (
+                          <div key={i} className="flex items-center justify-between text-xs">
+                            <span className="font-semibold text-gray-600 dark:text-gray-400">{t.label || `Tier ${i + 1}`}</span>
+                            <div className="flex gap-3">
+                              <span className="text-cranberry-700 dark:text-cranberry-300">
+                                {parseFloat(t.memberPrice || '0') === 0 ? 'Free' : `$${parseFloat(t.memberPrice || '0').toFixed(2)}`} member
+                              </span>
+                              <span className="text-gray-500">
+                                ${parseFloat(t.guestPrice || '0').toFixed(2)} guest
+                              </span>
+                              {t.capacity && <span className="text-gray-400">{t.capacity} spots</span>}
+                              {t.deadline && <span className="text-gray-400">until {new Date(t.deadline).toLocaleDateString()}</span>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
+              ) : (
+                /* ── Legacy Simple Pricing ── */
+                <>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                    Enter prices in dollars (e.g. 15.00). Set member price to 0 for free member admission.
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <Input
+                      label="Member Price ($)"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      value={memberPrice}
+                      onChange={(e) => setMemberPrice(e.target.value)}
+                      helperText={type === 'hybrid' ? 'Usually $0 for hybrid' : undefined}
+                    />
+                    <Input
+                      label="Guest Price ($)"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="25.00"
+                      value={guestPrice}
+                      onChange={(e) => setGuestPrice(e.target.value)}
+                      required
+                    />
+                    <Input
+                      label="Early Bird Price ($)"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="10.00"
+                      value={earlyBirdPrice}
+                      onChange={(e) => setEarlyBirdPrice(e.target.value)}
+                      helperText="Optional discount"
+                    />
+                    <Input
+                      label="Early Bird Deadline"
+                      type="date"
+                      value={earlyBirdDeadline}
+                      onChange={(e) => setEarlyBirdDeadline(e.target.value)}
+                      helperText="When early bird ends"
+                    />
+                  </div>
+
+                  {/* Pricing preview */}
+                  {(memberPrice || guestPrice) && (
+                    <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm">
+                      <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">Pricing Preview:</p>
+                      <div className="flex flex-wrap gap-3 text-xs">
+                        <span className="bg-cranberry-50 dark:bg-cranberry-900/20 text-cranberry-700 dark:text-cranberry-300 px-2 py-1 rounded-lg font-semibold">
+                          {parseFloat(memberPrice || '0') === 0 ? 'Free' : `$${parseFloat(memberPrice || '0').toFixed(2)}`} member
+                        </span>
+                        <span className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-lg font-semibold">
+                          ${parseFloat(guestPrice || '0').toFixed(2)} guest
+                        </span>
+                        {earlyBirdPrice && (
+                          <span className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 px-2 py-1 rounded-lg font-semibold">
+                            Early bird ${parseFloat(earlyBirdPrice).toFixed(2)} early bird
+                            {earlyBirdDeadline && ` (until ${new Date(earlyBirdDeadline).toLocaleDateString()})`}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
 
           {/* ── Section: Additional Details ── */}
-          <div>
+          <div className={activeStep === 3 ? 'animate-in fade-in slide-in-from-right-2 duration-300' : 'hidden'}>
             <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
               Additional Details
             </h3>
@@ -801,16 +1147,37 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
 
           {/* ── Actions ── */}
           <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-800">
-            <p className="text-xs text-gray-400">
-              {showPricing ? 'Stripe checkout will be used for paid tickets.' : 'Free event — members can RSVP directly.'}
-            </p>
-            <div className="flex gap-3">
-              <Button type="button" variant="ghost" onClick={handleClose}>
-                Cancel
-              </Button>
-              <Button type="submit" loading={loading}>
-                {isEdit ? 'Update Event' : 'Create Event'}
-              </Button>
+            <div>
+              {activeStep > 0 && (
+                <Button type="button" variant="ghost" onClick={() => setActiveStep((s) => s - 1)}>
+                  <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Back
+                </Button>
+              )}
+              {activeStep === 0 && (
+                <Button type="button" variant="ghost" onClick={handleClose}>
+                  Cancel
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <p className="text-[10px] text-gray-400 hidden sm:block">
+                {showPricing ? 'Stripe checkout for paid tickets' : 'Free — direct RSVP'}
+              </p>
+              {activeStep < STEPS.length - 1 ? (
+                <Button type="button" onClick={() => setActiveStep((s) => s + 1)}>
+                  Next
+                  <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </Button>
+              ) : (
+                <Button type="submit" loading={loading}>
+                  {isEdit ? 'Update Event' : 'Create Event'}
+                </Button>
+              )}
             </div>
           </div>
         </form>
