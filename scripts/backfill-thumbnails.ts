@@ -29,7 +29,10 @@ function initFirebase() {
   if (saJson) {
     let sa: ServiceAccount;
     try { sa = JSON.parse(saJson) as ServiceAccount; }
-    catch { sa = JSON.parse(saJson.replace(/\n/g, '\\n')) as ServiceAccount; }
+    catch {
+      // dotenv may turn literal \n inside the key into real newlines — re-escape them
+      sa = JSON.parse(saJson.replace(/\n/g, '\\n')) as ServiceAccount;
+    }
     initializeApp({ credential: cert(sa) });
   } else if (process.env.FIREBASE_PROJECT_ID) {
     initializeApp({
