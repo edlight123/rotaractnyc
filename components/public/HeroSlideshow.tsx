@@ -37,15 +37,16 @@ export default function HeroSlideshow({ slides }: HeroSlideshowProps) {
         if (!isActive && !isNext && !isPrev) return null;
 
         return hasRemote ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
+          <Image
             key={src}
             src={src}
             alt=""
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+            fill
+            sizes="100vw"
+            className={`object-cover transition-opacity duration-1000 ${
               isActive ? 'opacity-100' : 'opacity-0'
             }`}
-            loading={i === 0 ? 'eager' : 'lazy'}
+            priority={i === 0}
           />
         ) : (
           <Image

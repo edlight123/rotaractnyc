@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import { formatDate } from '@/lib/utils/format';
@@ -21,13 +22,14 @@ export default function NewsCard({ article, featured = false }: NewsCardProps) {
     <Link href={`/news/${article.slug}`}>
       <Card interactive padding="none" className="overflow-hidden group h-full">
         {/* Cover image */}
-        <div className={`bg-gradient-to-br from-cranberry-100 to-cranberry-50 dark:from-cranberry-900/20 dark:to-cranberry-950/30 overflow-hidden ${featured ? 'h-52' : 'h-36'}`}>
+        <div className={`relative bg-gradient-to-br from-cranberry-100 to-cranberry-50 dark:from-cranberry-900/20 dark:to-cranberry-950/30 overflow-hidden ${featured ? 'h-52' : 'h-36'}`}>
           {article.coverImage && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={article.coverImage}
               alt={article.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
           )}
         </div>

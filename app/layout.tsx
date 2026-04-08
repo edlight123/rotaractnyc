@@ -6,8 +6,8 @@ import { ToastProvider } from '@/components/ui/Toast';
 import PWARegister from '@/components/PWARegister';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
-const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope' });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
+const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', display: 'swap' });
 
 export const viewport: Viewport = {
   themeColor: '#9B1B30',

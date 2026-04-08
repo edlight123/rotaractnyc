@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { cn } from '@/lib/utils/cn';
 import type { GalleryImage } from '@/types';
 
@@ -21,12 +22,12 @@ export default function GalleryGrid({ images, className }: GalleryGridProps) {
             onClick={() => setSelectedImage(image)}
             className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-cranberry-500 focus:ring-offset-2"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={image.url}
               alt={image.caption || 'Gallery image'}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              loading="lazy"
+              fill
+              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="absolute bottom-0 left-0 right-0 p-3 text-left opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -55,11 +56,13 @@ export default function GalleryGrid({ images, className }: GalleryGridProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <div className="max-w-4xl max-h-[90vh] animate-scale-in" onClick={(e) => e.stopPropagation()}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+          <div className="relative max-w-4xl max-h-[90vh] animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <Image
               src={selectedImage.url}
               alt={selectedImage.caption || 'Gallery image'}
+              width={1200}
+              height={800}
+              sizes="(max-width: 1024px) 100vw, 1024px"
               className="max-w-full max-h-[80vh] rounded-xl object-contain"
             />
             {(selectedImage.caption || selectedImage.event) && (

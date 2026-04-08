@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getAlbumBySlug, getAlbumPhotos } from '@/lib/firebase/queries';
 import { formatDate } from '@/lib/utils/format';
 import { SITE } from '@/lib/constants';
@@ -41,11 +42,13 @@ export default async function AlbumDetailPage({ params }: { params: Promise<{ sl
       <section className="relative py-28 sm:py-36 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white overflow-hidden">
         {album.coverPhotoUrl && (
           <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={album.coverPhotoUrl}
               alt=""
-              className="absolute inset-0 w-full h-full object-cover opacity-30"
+              fill
+              sizes="100vw"
+              className="object-cover opacity-30"
+              priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-gray-900/40" />
           </>

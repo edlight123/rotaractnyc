@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import type { GalleryImage } from '@/types';
 
 interface AlbumPreviewGridProps {
@@ -33,12 +34,12 @@ export default function AlbumPreviewGrid({ photos, totalCount, remainingCount, a
             onClick={() => setLightboxIndex(i)}
             className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-cranberry focus:ring-offset-2"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={photo.thumbnailUrl || photo.url}
               alt={photo.caption || 'Photo'}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              loading="lazy"
+              fill
+              sizes="(max-width: 768px) 50vw, 33vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
@@ -147,11 +148,13 @@ export default function AlbumPreviewGrid({ photos, totalCount, remainingCount, a
           )}
 
           {/* Image */}
-          <div className="max-w-5xl max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+          <div className="relative max-w-5xl max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <Image
               src={photos[lightboxIndex].url}
               alt={photos[lightboxIndex].caption || 'Photo'}
+              width={1200}
+              height={800}
+              sizes="(max-width: 1280px) 100vw, 1280px"
               className="max-w-full max-h-[85vh] rounded-xl object-contain mx-auto"
             />
             {photos[lightboxIndex].caption && (

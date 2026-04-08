@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import HeroSection from '@/components/public/HeroSection';
 import { generateMeta } from '@/lib/seo';
 import { getPublicAlbums } from '@/lib/firebase/queries';
@@ -47,12 +48,12 @@ export default async function GalleryPage() {
                   {/* Cover image */}
                   <div className="relative aspect-[4/3] overflow-hidden">
                     {album.coverPhotoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={album.coverPhotoUrl}
                         alt={album.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
                       <div className={`w-full h-full bg-gradient-to-br ${gradients[i % gradients.length]} flex items-center justify-center`}>

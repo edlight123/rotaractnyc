@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Card from '@/components/ui/Card';
 
 interface TestimonialCardProps {
@@ -22,10 +23,11 @@ export default function TestimonialCard({ quote, name, title, photoURL }: Testim
 
         <div className="flex items-center gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
           {photoURL ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={photoURL}
               alt={name}
+              width={40}
+              height={40}
               className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-800"
             />
           ) : (

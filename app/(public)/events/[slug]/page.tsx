@@ -78,6 +78,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
               src={event.imageURL}
               alt=""
               fill
+              sizes="100vw"
               className="object-cover opacity-20"
               priority
             />

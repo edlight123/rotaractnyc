@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import type { GalleryImage } from '@/types';
 
 interface MostLikedCarouselProps {
@@ -69,12 +70,12 @@ export default function MostLikedCarousel({ photos, hasLikes = false }: MostLike
             }`}
             aria-label={`View photo ${i + 1} of ${count}`}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={photo.url}
               alt={photo.caption || 'Community favourite'}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              loading="lazy"
+              fill
+              sizes="(max-width: 640px) 288px, 320px"
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
             />
 
             {/* Gradient overlay */}
