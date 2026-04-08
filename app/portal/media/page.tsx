@@ -43,6 +43,13 @@ const SECTIONS = [
     description: 'Photos shown on the public /gallery page. Square crops look best. Max 10 MB per image.',
     hint: 'You can add an optional caption and event name for each photo.',
   },
+  {
+    key: 'albums',
+    label: 'Photo Albums',
+    icon: '📸',
+    description: 'Organize photos into albums. Public albums are shown on the /gallery page with a preview — full access requires sign-in.',
+    hint: 'Create albums for events and activities, then upload photos to each album.',
+  },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -384,13 +391,403 @@ function GallerySection() {
   );
 }
 
+// ─── Albums Section ───────────────────────────────────────────────────────────
+
+function AlbumsSection() {
+  const { toast } = useToast();
+  const [albums, setAlbums] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newAlbum, setNewAlbum] = useState({ title: '', date: '', description: '', isPublic: true });
+
+  // Album detail state
+  const [albumPhotos, setAlbumPhotos] = useState<any[]>([]);
+  const [photosLoading, setPhotosLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fetchAlbums = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await apiFetch('/api/portal/albums');
+      setAlbums(data);
+    } catch {
+      toast('Failed to load albums', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => { fetchAlbums(); }, [fetchAlbums]);
+
+  const fetchPhotos = useCallback(async (albumId: string) => {
+    setPhotosLoading(true);
+    try {
+      const data = await apiFetch(`/api/portal/albums/${albumId}/photos`);
+      setAlbumPhotos(data.photos || []);
+    } catch {
+      toast('Failed to load photos', 'error');
+    } finally {
+      setPhotosLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    if (selectedAlbumId) fetchPhotos(selectedAlbumId);
+  }, [selectedAlbumId, fetchPhotos]);
+
+  const slugify = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+  const handleCreateAlbum = async () => {
+    if (!newAlbum.title.trim() || !newAlbum.date) {
+      toast('Title and date are required', 'error');
+      return;
+    }
+    setCreating(true);
+    try {
+      await apiFetch('/api/portal/albums', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...newAlbum, slug: slugify(newAlbum.title) }),
+      });
+      toast('Album created!', 'success');
+      setShowCreateForm(false);
+      setNewAlbum({ title: '', date: '', description: '', isPublic: true });
+      await fetchAlbums();
+    } catch (e: any) {
+      toast(e.message || 'Failed to create album', 'error');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleUploadPhotos = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !selectedAlbumId) return;
+    setUploading(true);
+    setUploadProgress(0);
+
+    const urls: string[] = [];
+    const storagePaths: string[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const err = validateFile(file, { maxSizeMB: 10, allowedTypes: ['image/'] });
+      if (err) { toast(err, 'error'); continue; }
+
+      try {
+        const { url, path } = await uploadFile(
+          file, 'albums', selectedAlbumId,
+          (pct) => setUploadProgress(Math.round(((i / files.length) + pct / 100 / files.length) * 100)),
+        );
+        urls.push(url);
+        storagePaths.push(path);
+      } catch (e: any) {
+        toast(`Failed to upload ${file.name}`, 'error');
+      }
+    }
+
+    if (urls.length > 0) {
+      try {
+        await apiFetch(`/api/portal/albums/${selectedAlbumId}/photos`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ urls, storagePaths }),
+        });
+        toast(`${urls.length} photo(s) uploaded`, 'success');
+        await fetchPhotos(selectedAlbumId);
+        // Update local album count
+        setAlbums((prev) => prev.map((a) => a.id === selectedAlbumId ? { ...a, photoCount: (a.photoCount || 0) + urls.length } : a));
+      } catch {
+        toast('Failed to save photo records', 'error');
+      }
+    }
+
+    setUploading(false);
+    setUploadProgress(0);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleDeletePhoto = async (photoId: string) => {
+    if (!selectedAlbumId || !confirm('Delete this photo?')) return;
+    setDeletingPhotoId(photoId);
+    try {
+      await apiFetch(`/api/portal/albums/${selectedAlbumId}/photos?photoId=${photoId}`, { method: 'DELETE' });
+      setAlbumPhotos((prev) => prev.filter((p) => p.id !== photoId));
+      setAlbums((prev) => prev.map((a) => a.id === selectedAlbumId ? { ...a, photoCount: Math.max(0, (a.photoCount || 0) - 1) } : a));
+      toast('Photo deleted', 'success');
+    } catch {
+      toast('Failed to delete photo', 'error');
+    } finally {
+      setDeletingPhotoId(null);
+    }
+  };
+
+  const handleSetCover = async (photoUrl: string) => {
+    if (!selectedAlbumId) return;
+    try {
+      await apiFetch('/api/portal/albums', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: selectedAlbumId, coverPhotoUrl: photoUrl }),
+      });
+      setAlbums((prev) => prev.map((a) => a.id === selectedAlbumId ? { ...a, coverPhotoUrl: photoUrl } : a));
+      toast('Cover photo updated', 'success');
+    } catch {
+      toast('Failed to update cover', 'error');
+    }
+  };
+
+  const handleDeleteAlbum = async (albumId: string) => {
+    if (!confirm('Delete this album and all its photos? This cannot be undone.')) return;
+    try {
+      await apiFetch(`/api/portal/albums?id=${albumId}`, { method: 'DELETE' });
+      setAlbums((prev) => prev.filter((a) => a.id !== albumId));
+      if (selectedAlbumId === albumId) setSelectedAlbumId(null);
+      toast('Album deleted', 'success');
+    } catch {
+      toast('Failed to delete album', 'error');
+    }
+  };
+
+  const selectedAlbum = albums.find((a) => a.id === selectedAlbumId);
+
+  // ── Album Detail View ──
+  if (selectedAlbumId && selectedAlbum) {
+    return (
+      <div>
+        <button
+          onClick={() => { setSelectedAlbumId(null); setAlbumPhotos([]); }}
+          className="group text-sm text-gray-500 hover:text-cranberry mb-4 flex items-center gap-1.5 transition-colors"
+        >
+          <svg aria-hidden="true" className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to albums
+        </button>
+
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-display font-bold text-gray-900 dark:text-white">{selectedAlbum.title}</h3>
+            <p className="text-sm text-gray-500">{selectedAlbum.photoCount || 0} photos</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleDeleteAlbum(selectedAlbumId)}
+              className="px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+            >
+              Delete Album
+            </button>
+          </div>
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => handleUploadPhotos(e.target.files)}
+        />
+
+        {photosLoading ? (
+          <div className="flex justify-center py-8"><Spinner /></div>
+        ) : (
+          <>
+            {albumPhotos.length === 0 ? (
+              <div className="text-center py-10 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl">
+                <p className="text-4xl mb-3">📷</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">No photos yet. Upload photos to this album.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-4">
+                {albumPhotos.map((photo: any) => (
+                  <div key={photo.id} className="relative group rounded-xl overflow-hidden aspect-square bg-gray-100 dark:bg-gray-800">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={photo.thumbnailUrl || photo.url} alt={photo.caption || 'Photo'} className="w-full h-full object-cover" loading="lazy" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors">
+                      <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                        <button
+                          onClick={() => handleSetCover(photo.url)}
+                          className="bg-white/90 hover:bg-white text-gray-700 text-[10px] font-bold px-2 py-1 rounded-lg"
+                          title="Set as album cover"
+                        >
+                          ⭐ Cover
+                        </button>
+                        <button
+                          onClick={() => handleDeletePhoto(photo.id)}
+                          disabled={deletingPhotoId === photo.id}
+                          className="bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold px-2 py-1 rounded-lg disabled:opacity-50"
+                        >
+                          {deletingPhotoId === photo.id ? '…' : '🗑️'}
+                        </button>
+                      </div>
+                      {photo.caption && (
+                        <div className="absolute bottom-0 inset-x-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <p className="text-white text-[10px] font-semibold line-clamp-1">{photo.caption}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center gap-2 px-4 py-2.5 bg-cranberry text-white rounded-xl text-sm font-semibold hover:bg-cranberry-700 transition-colors disabled:opacity-50"
+            >
+              {uploading ? (
+                <><Spinner size="sm" /> Uploading… {uploadProgress}%</>
+              ) : (
+                <>
+                  <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                  Upload Photos
+                </>
+              )}
+            </button>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // ── Album List View ──
+  return (
+    <div>
+      {/* Create Album Form */}
+      {showCreateForm && (
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3">
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">New Album</p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Title *</label>
+              <input
+                type="text"
+                value={newAlbum.title}
+                onChange={(e) => setNewAlbum((p) => ({ ...p, title: e.target.value }))}
+                placeholder="e.g. Gala 2025"
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cranberry"
+              />
+              <p className="text-[10px] text-gray-400 mt-1">Slug: {slugify(newAlbum.title) || '—'}</p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date *</label>
+              <input
+                type="date"
+                value={newAlbum.date}
+                onChange={(e) => setNewAlbum((p) => ({ ...p, date: e.target.value }))}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cranberry"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Description (optional)</label>
+            <textarea
+              value={newAlbum.description}
+              onChange={(e) => setNewAlbum((p) => ({ ...p, description: e.target.value }))}
+              rows={2}
+              placeholder="Brief description of this album..."
+              className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cranberry resize-none"
+            />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <input
+              type="checkbox"
+              checked={newAlbum.isPublic}
+              onChange={(e) => setNewAlbum((p) => ({ ...p, isPublic: e.target.checked }))}
+              className="rounded border-gray-300 text-cranberry focus:ring-cranberry"
+            />
+            Show on public gallery (preview only — full access for members)
+          </label>
+          <div className="flex gap-2">
+            <button
+              onClick={handleCreateAlbum}
+              disabled={creating}
+              className="px-4 py-2 bg-cranberry text-white text-sm font-semibold rounded-lg hover:bg-cranberry-700 transition-colors disabled:opacity-50"
+            >
+              {creating ? 'Creating…' : 'Create Album'}
+            </button>
+            <button
+              onClick={() => { setShowCreateForm(false); setNewAlbum({ title: '', date: '', description: '', isPublic: true }); }}
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex justify-center py-8"><Spinner /></div>
+      ) : (
+        <>
+          {albums.length === 0 && !showCreateForm ? (
+            <div className="text-center py-10 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl">
+              <p className="text-4xl mb-3">📸</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">No albums yet. Create your first album below.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+              {albums.map((album: any) => (
+                <button
+                  key={album.id}
+                  onClick={() => setSelectedAlbumId(album.id)}
+                  className="group text-left bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md hover:border-cranberry-200 dark:hover:border-cranberry-800 transition-all"
+                >
+                  <div className="relative aspect-video bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                    {album.coverPhotoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={album.coverPhotoUrl} alt={album.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-cranberry-200 to-cranberry-400 dark:from-cranberry-800 dark:to-cranberry-900 flex items-center justify-center">
+                        <span className="text-3xl opacity-50">📸</span>
+                      </div>
+                    )}
+                    <div className="absolute top-2 right-2 flex gap-1">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${album.isPublic ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-gray-200 text-gray-600 dark:bg-gray-600 dark:text-gray-300'}`}>
+                        {album.isPublic ? 'Public' : 'Private'}
+                      </span>
+                    </div>
+                    <div className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      {album.photoCount || 0} 📷
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    <p className="font-semibold text-sm text-gray-900 dark:text-white group-hover:text-cranberry transition-colors truncate">{album.title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{album.date}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {!showCreateForm && (
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-cranberry text-white rounded-xl text-sm font-semibold hover:bg-cranberry-700 transition-colors"
+            >
+              <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              Create Album
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function MediaManagerPage() {
   const { member, loading } = useAuth();
   const router = useRouter();
 
-  const hasAccess = member?.role === 'president' || member?.role === 'board';
+  const hasAccess = member?.role === 'president' || member?.role === 'board' || member?.role === 'treasurer';
 
   useEffect(() => {
     if (!loading && (!member || !hasAccess)) {
@@ -431,6 +828,7 @@ export default function MediaManagerPage() {
           {/* Section content */}
           {section.key === 'hero' && <HeroSection />}
           {section.key === 'gallery' && <GallerySection />}
+          {section.key === 'albums' && <AlbumsSection />}
         </div>
       ))}
     </div>

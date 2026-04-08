@@ -14,6 +14,7 @@ import type {
   Article,
   BoardMember,
   GalleryImage,
+  PhotoAlbum,
 } from '@/types';
 
 // ---- Events ----
@@ -187,6 +188,56 @@ export async function getHeroSlides(): Promise<HeroSlide[]> {
     return snap.docs.map((d) => serializeDoc({ id: d.id, ...d.data() }) as HeroSlide);
   } catch (e) {
     console.error('getHeroSlides error:', e);
+    return [];
+  }
+}
+
+// ---- Photo Albums ----
+
+export async function getPublicAlbums(): Promise<PhotoAlbum[]> {
+  try {
+    const snap = await adminDb
+      .collection('albums')
+      .where('isPublic', '==', true)
+      .orderBy('date', 'desc')
+      .get();
+
+    if (snap.empty) return [];
+    return snap.docs.map((d) => serializeDoc({ id: d.id, ...d.data() }) as PhotoAlbum);
+  } catch (e) {
+    console.error('getPublicAlbums error:', e);
+    return [];
+  }
+}
+
+export async function getAlbumBySlug(slug: string): Promise<PhotoAlbum | null> {
+  try {
+    const snap = await adminDb
+      .collection('albums')
+      .where('slug', '==', slug)
+      .limit(1)
+      .get();
+
+    if (snap.empty) return null;
+    return serializeDoc({ id: snap.docs[0].id, ...snap.docs[0].data() }) as PhotoAlbum;
+  } catch {
+    return null;
+  }
+}
+
+export async function getAlbumPhotos(albumId: string, limit?: number): Promise<GalleryImage[]> {
+  try {
+    let query: FirebaseFirestore.Query = adminDb
+      .collection('gallery')
+      .where('albumId', '==', albumId)
+      .orderBy('order', 'asc');
+
+    if (limit) query = query.limit(limit);
+
+    const snap = await query.get();
+    return snap.docs.map((d) => serializeDoc({ id: d.id, ...d.data() }) as GalleryImage);
+  } catch (e) {
+    console.error('getAlbumPhotos error:', e);
     return [];
   }
 }

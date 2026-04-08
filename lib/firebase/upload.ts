@@ -1,7 +1,7 @@
 import { ref, uploadBytesResumable, getDownloadURL, type StorageReference } from 'firebase/storage';
 import { storage as getStorage } from '@/lib/firebase/client';
 
-export type UploadPath = 'profile-photos' | 'post-attachments' | 'documents' | 'event-images' | 'gallery' | 'article-images' | 'site-media';
+export type UploadPath = 'profile-photos' | 'post-attachments' | 'documents' | 'event-images' | 'gallery' | 'article-images' | 'site-media' | 'albums';
 
 interface UploadResult {
   url: string;

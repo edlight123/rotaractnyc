@@ -305,9 +305,29 @@ export interface GalleryImage {
   caption?: string;
   event?: string;
   eventId?: string;
+  albumId?: string;
+  storagePath?: string;
+  thumbnailUrl?: string;
+  order?: number;
   date?: string;
   uploadedBy?: string;
   createdAt: string;
+}
+
+export interface PhotoAlbum {
+  id: string;
+  title: string;
+  slug: string;
+  description?: string;
+  date: string;                    // ISO date of the event/album
+  coverPhotoUrl?: string;          // URL of the cover image
+  eventId?: string;                // optional link to an event
+  photoCount: number;
+  publicPreviewCount: number;      // how many photos public visitors can see (default 6)
+  isPublic: boolean;               // whether album appears on public site
+  createdBy?: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 // ----- Messages -----
