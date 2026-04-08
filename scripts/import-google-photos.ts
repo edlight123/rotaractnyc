@@ -417,7 +417,7 @@ async function importAlbum(
 
         // Create gallery doc
         const galleryRef = db.collection('gallery').doc();
-        const isFeatured = album.isFeatured && i < (album.featuredCount || 2);
+        const isFeatured = album.isFeatured === true && i < (album.featuredCount || 2);
         const isPreview = i < album.publicPreviewCount;
 
         await galleryRef.set({
