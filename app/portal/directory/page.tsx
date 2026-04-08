@@ -26,16 +26,21 @@ type ViewMode = 'grid' | 'table';
 type DirectoryTab = 'active' | 'alumni' | 'all';
 
 /** Extract a 4-digit year from an ISO date string or return null. */
-function yearFromJoinedAt(joinedAt: string | undefined | null): number | null {
-  if (!joinedAt) return null;
-  const d = new Date(joinedAt);
+function yearFromDate(date: string | undefined | null): number | null {
+  if (!date) return null;
+  const d = new Date(date);
   return Number.isNaN(d.getTime()) ? null : d.getFullYear();
+}
+
+/** For alumni: prefer alumniSince year, fall back to joinedAt year. */
+function alumniYear(m: { alumniSince?: string; joinedAt?: string }): number | null {
+  return yearFromDate(m.alumniSince) ?? yearFromDate(m.joinedAt);
 }
 
 export default function DirectoryPage() {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<DirectoryTab>('active');
-  const [alumniYear, setAlumniYear] = useState<string>('all');
+  const [alumniYearFilter, setAlumniYearFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -55,7 +60,7 @@ export default function DirectoryPage() {
   const alumniYears = useMemo(() => {
     const years = new Set<number>();
     alumniList.forEach((m) => {
-      const y = yearFromJoinedAt(m.joinedAt);
+      const y = alumniYear(m);
       if (y) years.add(y);
     });
     return Array.from(years).sort((a, b) => b - a);
@@ -73,9 +78,9 @@ export default function DirectoryPage() {
     let list = tabMembers;
 
     // Year filter (only relevant on the alumni tab)
-    if (activeTab === 'alumni' && alumniYear !== 'all') {
-      const yr = Number(alumniYear);
-      list = list.filter((m) => yearFromJoinedAt(m.joinedAt) === yr);
+    if (activeTab === 'alumni' && alumniYearFilter !== 'all') {
+      const yr = Number(alumniYearFilter);
+      list = list.filter((m) => alumniYear(m) === yr);
     }
 
     // Text search
@@ -92,7 +97,7 @@ export default function DirectoryPage() {
     }
 
     return list;
-  }, [tabMembers, search, activeTab, alumniYear]);
+  }, [tabMembers, search, activeTab, alumniYearFilter]);
 
   const tabs = [
     { id: 'active', label: 'Active Members', count: activeList.length },
@@ -140,13 +145,13 @@ export default function DirectoryPage() {
           className="w-full sm:max-w-xs"
         />
         <div className="flex items-center gap-3 overflow-x-auto">
-          <Tabs tabs={tabs} activeTab={activeTab} onChange={(id) => { setActiveTab(id as DirectoryTab); setAlumniYear('all'); }} />
+          <Tabs tabs={tabs} activeTab={activeTab} onChange={(id) => { setActiveTab(id as DirectoryTab); setAlumniYearFilter('all'); }} />
 
           {/* Year filter – visible only on the Alumni tab */}
           {activeTab === 'alumni' && alumniYears.length > 0 && (
             <select
-              value={alumniYear}
-              onChange={(e) => setAlumniYear(e.target.value)}
+              value={alumniYearFilter}
+              onChange={(e) => setAlumniYearFilter(e.target.value)}
               className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm px-3 py-1.5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-cranberry-500 shrink-0"
               aria-label="Filter alumni by year"
             >

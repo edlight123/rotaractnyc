@@ -84,6 +84,18 @@ export default function SettingsPage() {
                   : '—'}
               </p>
             </div>
+            {member?.status === 'alumni' && (
+              <div>
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Alumni Since
+                </span>
+                <p className="mt-0.5 text-sm text-gray-900 dark:text-white">
+                  {member.alumniSince
+                    ? new Date(member.alumniSince).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                    : '—'}
+                </p>
+              </div>
+            )}
             <div>
               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Auth Provider

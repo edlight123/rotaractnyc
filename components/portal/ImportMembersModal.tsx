@@ -22,6 +22,7 @@ const TEMPLATE_HEADERS = [
   'employer',
   'linkedIn',
   'joinedAt',
+  'alumniSince',
   'birthday',
 ];
 
@@ -37,7 +38,8 @@ const TEMPLATE_EXAMPLE = [
   'Product Manager',
   'Acme Corp',
   'https://linkedin.com/in/janesmith',
-  '2023-09-01',  // YYYY-MM-DD
+  '2023-09-01',  // YYYY-MM-DD (join date)
+  '2025-06-30',  // YYYY-MM-DD (alumni only — when they left)
   '1995-07-15',  // YYYY-MM-DD
 ];
 
@@ -68,6 +70,7 @@ interface ParsedRow {
   employer: string;
   linkedIn: string;
   joinedAt: string;
+  alumniSince: string;
   birthday: string;
   _errors: string[];
 }
@@ -164,6 +167,7 @@ export default function ImportMembersModal({ open, onClose, onImported }: Import
             employer: raw['employer'] || raw['Employer'] || '',
             linkedIn: raw['linkedIn'] || raw['linkedin'] || raw['LinkedIn'] || '',
             joinedAt: raw['joinedAt'] || raw['joined_at'] || raw['Join Date'] || '',
+            alumniSince: raw['alumniSince'] || raw['alumni_since'] || raw['Alumni Since'] || '',
             birthday: raw['birthday'] || raw['Birthday'] || '',
             _errors: [],
           };
@@ -264,6 +268,7 @@ export default function ImportMembersModal({ open, onClose, onImported }: Import
                       { col: 'employer', req: false, vals: 'Any text' },
                       { col: 'linkedIn', req: false, vals: 'URL' },
                       { col: 'joinedAt', req: false, vals: 'YYYY-MM-DD' },
+                      { col: 'alumniSince', req: false, vals: 'YYYY-MM-DD (date member became alumni)' },
                       { col: 'birthday', req: false, vals: 'YYYY-MM-DD' },
                     ].map(({ col, req, vals }) => (
                       <tr key={col} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">

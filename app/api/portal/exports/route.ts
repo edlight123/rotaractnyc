@@ -71,7 +71,7 @@ async function exportMembers(): Promise<string> {
 
   const headers = [
     'Name', 'Email', 'Role', 'Status', 'Member Type',
-    'Committee', 'Joined Date', 'Phone', 'Occupation', 'Employer',
+    'Committee', 'Joined Date', 'Alumni Since', 'Phone', 'Occupation', 'Employer',
   ];
 
   const rows = snapshot.docs.map((doc) => {
@@ -84,6 +84,7 @@ async function exportMembers(): Promise<string> {
       safeField(d.memberType),
       safeField(d.committee),
       safeField(d.joinedDate ?? d.createdAt),
+      safeField(d.alumniSince),
       safeField(d.phone),
       safeField(d.occupation),
       safeField(d.employer),

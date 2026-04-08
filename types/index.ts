@@ -41,6 +41,7 @@ export interface Member {
   onboardingComplete?: boolean;
   invitedAt?: string;
   joinedAt: string;
+  alumniSince?: string;            // ISO date when member became alumni
   updatedAt?: string;
 }
 

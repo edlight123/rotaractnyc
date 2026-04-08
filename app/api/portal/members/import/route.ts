@@ -29,6 +29,7 @@ export interface ImportRow {
   employer?: string;
   linkedIn?: string;
   joinedAt?: string;
+  alumniSince?: string;
   birthday?: string;
 }
 
@@ -117,6 +118,7 @@ export async function POST(request: NextRequest) {
       if (row.employer?.trim()) memberData.employer = row.employer.trim();
       if (row.linkedIn?.trim()) memberData.linkedIn = row.linkedIn.trim();
       if (row.birthday?.trim()) memberData.birthday = row.birthday.trim();
+      if (row.alumniSince?.trim()) memberData.alumniSince = row.alumniSince.trim();
 
       const docRef = adminDb.collection('members').doc();
       batch.set(docRef, memberData);
