@@ -1,4 +1,4 @@
-import type { RotaractEvent, Article, FAQItem, BoardMember, GalleryImage } from '@/types';
+import type { RotaractEvent, Article, FAQItem, BoardMember, GalleryImage, Testimonial } from '@/types';
 
 // ---- Default Events ----
 export const defaultEvents: RotaractEvent[] = [
@@ -146,4 +146,17 @@ export const defaultGallery: GalleryImage[] = [
   { id: 'g-2', url: '/images/gallery/placeholder-2.jpg', caption: 'Annual Gala 2025', event: 'Annual Gala', date: '2025-06-20', createdAt: '2025-06-20' },
   { id: 'g-3', url: '/images/gallery/placeholder-3.jpg', caption: 'UN Visit', event: 'United Nations Tour', date: '2025-09-10', createdAt: '2025-09-10' },
   { id: 'g-4', url: '/images/gallery/placeholder-4.jpg', caption: 'Holiday Fundraiser', event: 'Holiday Charity Drive', date: '2025-12-15', createdAt: '2025-12-15' },
+];
+
+// ---- Default Testimonials ----
+export const defaultTestimonials: Testimonial[] = [
+  {
+    id: 'testimonial-1',
+    quote: 'Joining Rotaract NYC was the best decision I made after moving to the city. I found not just a service club, but a family of passionate, driven people.',
+    name: 'Sarah Chen',
+    title: 'Past President',
+    order: 0,
+    isActive: true,
+    createdAt: '2025-01-01T00:00:00',
+  },
 ];

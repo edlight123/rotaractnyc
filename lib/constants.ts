@@ -48,11 +48,11 @@ export const SITE = {
   },
 } as const;
 
-// Impact statistics — used on homepage + about page.
-// Update these as real numbers grow.
+// Impact statistics — fallback defaults when Firestore has no custom values.
+// Admins can override these from Portal → Admin → Site Settings.
 export const IMPACT_STATS = [
   { value: '5,000+', label: 'Service Hours' },
   { value: '120+', label: 'Active Members' },
   { value: '$50K+', label: 'Raised for Charity' },
   { value: '15+', label: 'Global Partners' },
-] as const;
+];

@@ -288,6 +288,17 @@ service cloud.firestore {
     }
 
     // ───────────────────────────────────────
+    // Testimonials
+    // ───────────────────────────────────────
+    match /testimonials/{testimonialId} {
+      // Testimonials are publicly readable (displayed on homepage)
+      allow read: if true;
+
+      // Board+ can manage testimonials
+      allow create, update, delete: if isBoard();
+    }
+
+    // ───────────────────────────────────────
     // Deny everything else
     // ───────────────────────────────────────
     match /{document=**} {

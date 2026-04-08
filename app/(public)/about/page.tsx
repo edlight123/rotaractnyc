@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import HeroSection from '@/components/public/HeroSection';
-import { SITE, IMPACT_STATS } from '@/lib/constants';
+import { SITE } from '@/lib/constants';
 import { generateMeta } from '@/lib/seo';
+import { getImpactStats } from '@/lib/firebase/queries';
 
 export const metadata: Metadata = generateMeta({
   title: 'About',
@@ -20,7 +21,9 @@ const focusAreas = [
   { title: 'Environmental Sustainability', icon: '🌍' },
 ];
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const impactStats = await getImpactStats();
+
   return (
     <>
       <HeroSection
@@ -50,7 +53,7 @@ export default function AboutPage() {
       <section className="py-12 bg-cranberry text-white">
         <div className="container-page">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-            {IMPACT_STATS.map((stat) => (
+            {impactStats.map((stat) => (
               <div key={stat.label}>
                 <p className="text-3xl sm:text-4xl font-display font-bold text-gold">{stat.value}</p>
                 <p className="mt-1 text-cranberry-200 text-sm font-medium">{stat.label}</p>

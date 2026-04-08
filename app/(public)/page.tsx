@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import { SITE, IMPACT_STATS } from '@/lib/constants';
+import { SITE } from '@/lib/constants';
 import { generateMeta } from '@/lib/seo';
-import { getPublicEvents, getPublishedArticles, getHeroSlides, getCarouselPhotos } from '@/lib/firebase/queries';
+import { getPublicEvents, getPublishedArticles, getHeroSlides, getCarouselPhotos, getTestimonials, getImpactStats } from '@/lib/firebase/queries';
 import { formatDate } from '@/lib/utils/format';
 import Badge from '@/components/ui/Badge';
 import HeroSlideshow from '@/components/public/HeroSlideshow';
@@ -47,14 +47,6 @@ const pillars = [
   },
 ];
 
-const testimonials = [
-  {
-    quote: 'Joining Rotaract NYC was the best decision I made after moving to the city. I found not just a service club, but a family of passionate, driven people.',
-    name: 'Sarah Chen',
-    title: 'Past President',
-  },
-];
-
 const typeColors: Record<string, 'cranberry' | 'green' | 'azure' | 'gold'> = {
   free: 'green',
   service: 'azure',
@@ -63,11 +55,13 @@ const typeColors: Record<string, 'cranberry' | 'green' | 'azure' | 'gold'> = {
 };
 
 export default async function HomePage() {
-  const [events, articles, heroSlides, carouselPhotos] = await Promise.all([
+  const [events, articles, heroSlides, carouselPhotos, testimonials, impactStats] = await Promise.all([
     getPublicEvents(),
     getPublishedArticles(),
     getHeroSlides(),
     getCarouselPhotos(10),
+    getTestimonials(),
+    getImpactStats(),
   ]);
 
   // Does the carousel have any community-liked photos yet?
@@ -170,7 +164,7 @@ export default async function HomePage() {
       <section aria-label="Impact statistics" className="relative -mt-16 z-20">
         <div className="container-page">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {IMPACT_STATS.map((stat) => (
+            {impactStats.map((stat) => (
               <div
                 key={stat.label}
                 className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-6 text-center hover:shadow-xl transition-shadow"

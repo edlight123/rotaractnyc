@@ -354,6 +354,12 @@ export interface MemberMessage {
   sentAt: string;
 }
 
+// ----- Impact Stats -----
+export interface ImpactStat {
+  value: string;
+  label: string;
+}
+
 // ----- Site Settings -----
 export interface SiteSettings {
   contactEmail: string;
@@ -369,6 +375,7 @@ export interface SiteSettings {
     committees: string[];
     occupations: string[];
   };
+  impactStats?: ImpactStat[];
 }
 
 // ----- Payment Settings -----
@@ -491,6 +498,19 @@ export interface FAQItem {
   answer: string;
   category: string;
   order: number;
+}
+
+// ----- Testimonials -----
+export interface Testimonial {
+  id: string;
+  quote: string;
+  name: string;
+  title: string;
+  photoURL?: string;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 // ----- Committees -----

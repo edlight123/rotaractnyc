@@ -8,6 +8,7 @@ import {
   defaultArticles,
   defaultBoard,
   defaultGallery,
+  defaultTestimonials,
 } from '@/lib/defaults/data';
 import type {
   RotaractEvent,
@@ -15,7 +16,10 @@ import type {
   BoardMember,
   GalleryImage,
   PhotoAlbum,
+  Testimonial,
+  ImpactStat,
 } from '@/types';
+import { IMPACT_STATS } from '@/lib/constants';
 
 // ---- Events ----
 
@@ -395,6 +399,42 @@ export async function getCarouselPhotos(limit = 10): Promise<GalleryImage[]> {
     } catch {
       return [];
     }
+  }
+}
+
+// ---- Testimonials ----
+
+export async function getTestimonials(): Promise<Testimonial[]> {
+  try {
+    const snap = await adminDb
+      .collection('testimonials')
+      .where('isActive', '==', true)
+      .orderBy('order', 'asc')
+      .get();
+
+    if (snap.empty) return defaultTestimonials;
+    return snap.docs.map((d) => serializeDoc({ id: d.id, ...d.data() }) as Testimonial);
+  } catch (e) {
+    console.error('getTestimonials error:', e);
+    return defaultTestimonials;
+  }
+}
+
+// ---- Impact Stats ----
+
+export async function getImpactStats(): Promise<ImpactStat[]> {
+  try {
+    const doc = await adminDb.collection('settings').doc('site').get();
+    if (doc.exists) {
+      const data = doc.data();
+      if (data?.impactStats && Array.isArray(data.impactStats) && data.impactStats.length > 0) {
+        return data.impactStats as ImpactStat[];
+      }
+    }
+    return [...IMPACT_STATS];
+  } catch (e) {
+    console.error('getImpactStats error:', e);
+    return [...IMPACT_STATS];
   }
 }
 
