@@ -100,7 +100,7 @@ export async function GET(request: Request) {
 
           // Look up the member's email and name
           const userSnap = await adminDb
-            .collection('users')
+            .collection('members')
             .doc(rsvp.userId)
             .get();
 

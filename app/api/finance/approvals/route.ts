@@ -144,7 +144,7 @@ export async function PATCH(request: NextRequest) {
       // If approved, mark the corresponding dues/event as paid
       if (action === 'approve') {
         if (payment.type === 'dues') {
-          await adminDb.collection('dues').doc(payment.relatedId).update({
+          await adminDb.collection('memberDues').doc(payment.relatedId).update({
             status: 'PAID_OFFLINE',
             paymentMethod: payment.method,
             updatedAt: FieldValue.serverTimestamp(),

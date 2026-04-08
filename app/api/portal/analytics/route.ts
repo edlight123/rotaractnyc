@@ -13,9 +13,9 @@ async function getSession() {
   if (!sessionCookie) return null;
   try {
     const { uid } = await adminAuth.verifySessionCookie(sessionCookie, true);
-    const userDoc = await adminDb.collection('users').doc(uid).get();
-    if (!userDoc.exists) return null;
-    const data = userDoc.data()!;
+    const memberDoc = await adminDb.collection('members').doc(uid).get();
+    if (!memberDoc.exists) return null;
+    const data = memberDoc.data()!;
     return { uid, role: data.role as string };
   } catch {
     return null;
@@ -74,8 +74,8 @@ export async function GET(request: NextRequest) {
     // ── Fetch all collections in parallel ────────────────────────────────
     const [usersSnap, duesSnap, eventsSnap, rsvpsSnap, serviceSnap, postsSnap] =
       await Promise.all([
-        adminDb.collection('users').get(),
-        adminDb.collection('dues').get(),
+        adminDb.collection('members').get(),
+        adminDb.collection('memberDues').get(),
         adminDb.collection('events').get(),
         adminDb.collection('rsvps').get(),
         adminDb.collection('serviceHours').get(),
@@ -223,15 +223,24 @@ export async function GET(request: NextRequest) {
     }
 
     // ── Dues Over Time (last 3 cycles) ───────────────────────────────────
+    // First, build a cycleId → name map
+    const cyclesSnap = await adminDb.collection('duesCycles').get();
+    const cycleNameMap = new Map<string, string>();
+    for (const doc of cyclesSnap.docs) {
+      const name = doc.data().name as string | undefined;
+      cycleNameMap.set(doc.id, name ?? doc.id);
+    }
+
     const cycleMap = new Map<string, { paid: number; total: number }>();
 
     for (const doc of duesSnap.docs) {
       const d = doc.data();
-      const cycle = (d.cycleName ?? d.cycle ?? d.cycleId ?? 'Unknown') as string;
-      if (!cycleMap.has(cycle)) {
-        cycleMap.set(cycle, { paid: 0, total: 0 });
+      const cycleId = (d.cycleId ?? 'Unknown') as string;
+      const cycleName = cycleNameMap.get(cycleId) ?? cycleId;
+      if (!cycleMap.has(cycleName)) {
+        cycleMap.set(cycleName, { paid: 0, total: 0 });
       }
-      const entry = cycleMap.get(cycle)!;
+      const entry = cycleMap.get(cycleName)!;
       entry.total++;
       const status = d.status as string;
       if (status === 'PAID' || status === 'PAID_OFFLINE' || status === 'WAIVED') {

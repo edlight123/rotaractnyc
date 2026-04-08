@@ -67,7 +67,7 @@ async function getMemberRole(uid: string): Promise<string | undefined> {
 // ─── Exporters ──────────────────────────────────────────────────────────────
 
 async function exportMembers(): Promise<string> {
-  const snapshot = await adminDb.collection('users').orderBy('displayName').get();
+  const snapshot = await adminDb.collection('members').orderBy('displayName').get();
 
   const headers = [
     'Name', 'Email', 'Role', 'Status', 'Member Type',
@@ -95,7 +95,7 @@ async function exportMembers(): Promise<string> {
 }
 
 async function exportDues(): Promise<string> {
-  const duesSnapshot = await adminDb.collection('dues').get();
+  const duesSnapshot = await adminDb.collection('memberDues').get();
 
   // Batch-fetch unique member IDs for name resolution
   const memberIds = Array.from(new Set(duesSnapshot.docs.map((d) => d.data().memberId).filter(Boolean)));
@@ -105,7 +105,7 @@ async function exportDues(): Promise<string> {
   for (let i = 0; i < memberIds.length; i += 30) {
     const chunk = memberIds.slice(i, i + 30);
     const snap = await adminDb
-      .collection('users')
+      .collection('members')
       .where('__name__', 'in', chunk)
       .get();
     snap.docs.forEach((doc) => {
@@ -167,7 +167,7 @@ async function exportRsvps(eventId?: string): Promise<string> {
   for (let i = 0; i < memberIds.length; i += 30) {
     const chunk = memberIds.slice(i, i + 30);
     const snap = await adminDb
-      .collection('users')
+      .collection('members')
       .where('__name__', 'in', chunk)
       .get();
     snap.docs.forEach((doc) => {
@@ -222,7 +222,7 @@ async function exportAttendance(): Promise<string> {
   for (let i = 0; i < memberIds.length; i += 30) {
     const chunk = memberIds.slice(i, i + 30);
     const snap = await adminDb
-      .collection('users')
+      .collection('members')
       .where('__name__', 'in', chunk)
       .get();
     snap.docs.forEach((doc) => {

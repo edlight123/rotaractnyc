@@ -83,7 +83,7 @@ export async function GET(request: Request) {
     const cutoff = new Date(Date.now() - LOOKBACK_DAYS * DAY_MS).toISOString();
 
     const membersSnap = await adminDb
-      .collection('users')
+      .collection('members')
       .where('status', '==', 'active')
       .where('joinedAt', '>=', cutoff)
       .get();
@@ -128,8 +128,8 @@ export async function GET(request: Request) {
         try {
           // Check if dues have been paid
           const duesSnap = await adminDb
-            .collection('dues')
-            .where('userId', '==', member.id)
+            .collection('memberDues')
+            .where('memberId', '==', member.id)
             .where('status', 'in', ['PAID', 'WAIVED'])
             .limit(1)
             .get();

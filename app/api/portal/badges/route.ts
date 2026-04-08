@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
 
         // Dues payments for this member
         adminDb
-          .collection('dues')
+          .collection('memberDues')
           .where('memberId', '==', memberId)
           .get(),
       ]);

@@ -42,9 +42,21 @@ export async function GET(request: Request) {
   let errors = 0;
 
   try {
+    // 0. Look up the active dues cycle
+    const cycleSnap = await adminDb
+      .collection('duesCycles')
+      .where('isActive', '==', true)
+      .limit(1)
+      .get();
+
+    if (cycleSnap.empty) {
+      return NextResponse.json({ sent: 0, skipped: 0, errors: 0, message: 'No active dues cycle' });
+    }
+    const activeCycleId = cycleSnap.docs[0].id;
+
     // 1. Fetch all active members
     const membersSnap = await adminDb
-      .collection('users')
+      .collection('members')
       .where('status', '==', 'active')
       .get();
 
@@ -57,9 +69,9 @@ export async function GET(request: Request) {
       try {
         // Look up the member's dues record for the current Rotary year
         const duesSnap = await adminDb
-          .collection('dues')
-          .where('userId', '==', member.id)
-          .where('cycleName', '==', currentYear)
+          .collection('memberDues')
+          .where('memberId', '==', member.id)
+          .where('cycleId', '==', activeCycleId)
           .limit(1)
           .get();
 
@@ -120,9 +132,9 @@ export async function GET(request: Request) {
           });
         } else {
           // No dues doc yet — create one so we track the reminder
-          await adminDb.collection('dues').add({
-            userId: member.id,
-            cycleName: currentYear,
+          await adminDb.collection('memberDues').add({
+            memberId: member.id,
+            cycleId: activeCycleId,
             status: 'UNPAID' as DuesPaymentStatus,
             amount:
               member.memberType === 'student'
