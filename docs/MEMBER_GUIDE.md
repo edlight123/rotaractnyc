@@ -7,23 +7,24 @@ Welcome to the **Rotaract NYC** web portal! This guide will walk you through eve
 ## Table of Contents
 
 1. [Getting Started](#1-getting-started)
-2. [Onboarding Wizard](#2-onboarding-wizard)
-3. [Your Dashboard](#3-your-dashboard)
-4. [Events](#4-events)
-5. [Member Directory](#5-member-directory)
-6. [Messages](#6-messages)
-7. [Committees](#7-committees)
-8. [Gallery](#8-gallery)
-9. [Service Hours](#9-service-hours)
-10. [Service Analytics](#10-service-analytics)
-11. [Dues & Billing](#11-dues--billing)
-12. [Articles & News](#12-articles--news)
-13. [Documents](#13-documents)
-14. [Forms & Surveys](#14-forms--surveys)
-15. [Your Profile](#15-your-profile)
-16. [Settings](#16-settings)
-17. [The Public Website](#17-the-public-website)
-18. [Tips & FAQ](#18-tips--faq)
+2. [Interactive Guided Tour](#2-interactive-guided-tour)
+3. [Onboarding Wizard](#3-onboarding-wizard)
+4. [Your Dashboard](#4-your-dashboard)
+5. [Events](#5-events)
+6. [Member Directory](#6-member-directory)
+7. [Messages](#7-messages)
+8. [Committees](#8-committees)
+9. [Gallery](#9-gallery)
+10. [Service Hours](#10-service-hours)
+11. [Service Analytics](#11-service-analytics)
+12. [Dues & Billing](#12-dues--billing)
+13. [Articles & News](#13-articles--news)
+14. [Documents](#14-documents)
+15. [Forms & Surveys](#15-forms--surveys)
+16. [Your Profile](#16-your-profile)
+17. [Settings](#17-settings)
+18. [The Public Website](#18-the-public-website)
+19. [Tips & FAQ](#19-tips--faq)
 
 ---
 
@@ -64,7 +65,47 @@ Welcome to the **Rotaract NYC** web portal! This guide will walk you through eve
 
 ---
 
-## 2. Onboarding Wizard
+## 2. Interactive Guided Tour
+
+The first time you visit the portal dashboard, you'll be greeted with a **welcome modal** offering an interactive guided tour of the portal.
+
+### How It Works
+
+1. A **welcome screen** appears with the option to **"Start Tour"** or **"Skip for now"**
+2. If you start the tour, a **spotlight overlay** highlights each key area of the portal one at a time
+3. A **tooltip** explains what each section does — with **Next**, **Back**, and **Skip** buttons
+4. **Progress dots** at the bottom show how far along you are
+5. The tour automatically navigates you to relevant pages (e.g., Events, Service Hours)
+
+### What the Tour Covers (8 steps)
+
+| Step | Section | What You'll Learn |
+|------|---------|-------------------|
+| 1 | Sidebar Navigation | How to navigate the portal |
+| 2 | Dashboard | Your personalized home page |
+| 3 | Events | How to find and RSVP to events |
+| 4 | Service Hours | Logging your volunteer hours |
+| 5 | Dues & Billing | Checking and paying your dues |
+| 6 | Directory | Finding and connecting with members |
+| 7 | Messages | Sending messages to other members |
+| 8 | Profile | Keeping your profile up to date |
+
+### Mobile Experience
+
+On mobile devices (under 1024px), the tooltip appears as a **bottom sheet** instead of a positioned tooltip — making it easy to tap through on your phone.
+
+### Restarting the Tour
+
+If you skipped the tour or want to go through it again:
+1. Go to **Portal → Settings**
+2. Scroll to the **"Portal Tour"** section
+3. Click **"Restart Member Tour"**
+
+> 💡 **Tip:** The tour only takes about 2 minutes and is a great way to get familiar with everything the portal offers!
+
+---
+
+## 3. Onboarding Wizard
 
 After your first sign-in, you'll go through a **4-step onboarding** process:
 
@@ -431,13 +472,14 @@ Keep your profile up to date! You can edit:
 
 ---
 
-## 16. Settings
+## 17. Settings
 
 **Path:** Portal → Settings
 
 Manage your account:
 - **Account info** — View your email and role
 - **Notification preferences** — Choose which emails you receive
+- **Portal Tour** — Restart the interactive guided tour anytime
 - **Sign out** — Log out of the portal
 
 ---

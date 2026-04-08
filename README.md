@@ -12,6 +12,7 @@ A modern, full-stack website for the Rotaract Club of New York at the United Nat
 
 ### Member Portal (`/portal`)
 - **Authentication**: Secure Google OAuth with role-based access control
+- **Interactive Guided Tours**: Step-by-step onboarding tutorials for members and admins
 - **Member Directory**: Search and filter member profiles
 - **Events Management**: RSVP system with real-time updates
 - **Announcements**: Club updates and pinned announcements
@@ -47,6 +48,7 @@ A modern, full-stack website for the Rotaract Club of New York at the United Nat
 │   ├── portal/             # Member portal
 │   └── api/                # API routes
 ├── components/             # Shared components
+│   ├── portal/tutorial/    # Interactive onboarding tutorials
 ├── lib/                    # Utilities and configurations
 │   ├── firebase/           # Firebase setup
 │   ├── portal/             # Portal-specific utilities
@@ -124,6 +126,7 @@ npm run lint
 - **Middleware Protection**: Auto-redirect for unauthenticated users
 
 ### Member Portal Features
+- **Interactive Tutorials**: Guided onboarding tours with spotlight overlays for members and admins
 - **Real-time Updates**: Firestore real-time subscriptions
 - **Mobile Responsive**: Touch-friendly interface
 - **Offline Support**: PWA with service worker
@@ -145,6 +148,8 @@ npm run lint
 
 ### Quick Links
 - **[Stripe Setup Guide](STRIPE_SETUP_GUIDE.md)** ⭐ **Set up online dues payment**
+- [Member Guide](docs/MEMBER_GUIDE.md) — End-to-end guide for new members
+- [Admin Guide](docs/ADMIN_GUIDE.md) — Complete admin & board reference
 - [Admin Portal Guide](docs/implementation/ADMIN_PORTAL_CURATION.md)
 - [Portal Implementation](docs/portal/PORTAL_IMPLEMENTATION_SUMMARY.md)
 - [Member Onboarding & Dues Payment](docs/MEMBER_ONBOARDING.md)

@@ -25,7 +25,8 @@ This guide covers **everything board members, the president, and the treasurer**
 17. [Testimonials](#17-testimonials)
 18. [Site Settings](#18-site-settings)
 19. [Google Workspace Integration](#19-google-workspace-integration)
-20. [Troubleshooting & Best Practices](#20-troubleshooting--best-practices)
+20. [Interactive Admin Tour](#20-interactive-admin-tour)
+21. [Troubleshooting & Best Practices](#21-troubleshooting--best-practices)
 
 ---
 
@@ -805,7 +806,48 @@ Connect three Google services to the portal:
 
 ---
 
-## 20. Troubleshooting & Best Practices
+## 20. Interactive Admin Tour
+
+Once a board member completes the **member tutorial**, an **admin-specific guided tour** automatically launches on the dashboard. This tour walks through all the admin-only features.
+
+### How It Works
+
+1. After the member tour is completed, the **admin tour welcome modal** appears on the dashboard
+2. A **spotlight overlay** highlights each admin feature in the sidebar and portal
+3. A **tooltip** explains what each admin tool does — with **Next**, **Back**, and **Skip** buttons
+4. **Progress dots** show your position in the tour
+
+### What the Admin Tour Covers (10 steps)
+
+| Step | Section | What You'll Learn |
+|------|---------|-------------------|
+| 1 | Admin Welcome | Overview of your admin capabilities |
+| 2 | Directory Management | Approving members and managing roles |
+| 3 | Event Management | Creating and managing club events |
+| 4 | Service Hours Review | Reviewing and approving member hours |
+| 5 | Articles & Content | Writing and publishing club news |
+| 6 | Email Broadcasts | Sending announcements to all members |
+| 7 | Automated Reminders | Setting up scheduled reminder emails |
+| 8 | Forms & Surveys | Creating forms for feedback and sign-ups |
+| 9 | Analytics Dashboard | Viewing club engagement metrics |
+| 10 | Site Settings | Configuring portal and public site settings |
+
+### Who Sees the Admin Tour
+
+The admin tour is only available to members with **board**, **treasurer**, or **president** roles. Regular members will not see the admin tour.
+
+### Restarting the Tour
+
+To retake the admin tour at any time:
+1. Go to **Portal → Settings**
+2. Scroll to the **"Portal Tour"** section
+3. Click **"Restart Admin Tour"**
+
+> 💡 **Tip:** New board members should complete both tours during their first week to get up to speed quickly.
+
+---
+
+## 21. Troubleshooting & Best Practices
 
 ### Common Issues
 
