@@ -205,6 +205,11 @@ export default function ImportAlbumPage() {
             disabled={status === 'running'}
             required
           />
+          {form.url && !/^https:\/\/photos\.app\.goo\.gl\/[A-Za-z0-9]+$/.test(form.url.trim()) && (
+            <p className="text-xs text-red-500 mt-1">
+              Must be a Google Photos shared album link: <code>https://photos.app.goo.gl/…</code>
+            </p>
+          )}
         </div>
 
         {/* Title + Slug */}

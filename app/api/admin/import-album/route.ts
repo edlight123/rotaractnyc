@@ -19,8 +19,12 @@ import { spawn } from 'child_process';
 import * as path from 'path';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { rateLimit, getRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 
 const ADMIN_ROLES = ['board', 'president', 'treasurer'];
+
+// Only allow real Google Photos shared-album URLs
+const GOOGLE_PHOTOS_URL_RE = /^https:\/\/photos\.app\.goo\.gl\/[A-Za-z0-9]+$/;
 
 // ─── Auth helper ─────────────────────────────────────────────────────────────
 
@@ -52,6 +56,11 @@ async function requireAdmin(): Promise<{ uid: string } | NextResponse> {
 // ─── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  // ── Rate limit: 3 imports per 10 minutes per user (Chromium is heavy) ───
+  const rlKey = getRateLimitKey(req, 'admin-import-album');
+  const rl = await rateLimit(rlKey, { max: 3, windowSec: 600 });
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt);
+
   const auth = await requireAdmin();
   if (auth instanceof NextResponse) return auth;
 
@@ -77,6 +86,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'url is required' }, { status: 400 });
   }
 
+  // Allowlist: only accept real Google Photos shared-album short URLs.
+  // This blocks SSRF attempts (internal IPs, file://, metadata endpoints, etc.)
+  if (!GOOGLE_PHOTOS_URL_RE.test(body.url.trim())) {
+    return NextResponse.json(
+      { error: 'URL must be a Google Photos shared album link (https://photos.app.goo.gl/…)' },
+      { status: 400 },
+    );
+  }
+
   // ── Build CLI args ──────────────────────────────────────────────────────
   const scriptArgs: string[] = [
     path.join(process.cwd(), 'scripts/import-google-photos.ts'),
@@ -96,15 +114,17 @@ export async function POST(req: NextRequest) {
   // ── Stream stdout + stderr back to the client ────────────────────────────
   const encoder = new TextEncoder();
 
+  // Track the child process outside the stream so cancel() can reach it
+  let importProc: ReturnType<typeof spawn> | null = null;
+
   const stream = new ReadableStream({
     start(controller) {
       const send = (text: string) => {
         try { controller.enqueue(encoder.encode(text)); } catch { /* closed */ }
       };
 
-      let proc: ReturnType<typeof spawn>;
       try {
-        proc = spawn(tsxBin, scriptArgs, {
+        importProc = spawn(tsxBin, scriptArgs, {
           cwd: process.cwd(),
           env: { ...process.env },
         });
@@ -114,18 +134,26 @@ export async function POST(req: NextRequest) {
         return;
       }
 
-      proc.stdout?.on('data', (data: Buffer) => send(data.toString()));
-      proc.stderr?.on('data', (data: Buffer) => send(data.toString()));
+      importProc.stdout?.on('data', (data: Buffer) => send(data.toString()));
+      importProc.stderr?.on('data', (data: Buffer) => send(data.toString()));
 
-      proc.on('error', (err) => {
+      importProc.on('error', (err) => {
         send(`\n❌ Process error: ${err.message}\n`);
         controller.close();
       });
 
-      proc.on('close', (code) => {
+      importProc.on('close', (code) => {
         send(`\n${code === 0 ? '✅' : '❌'} Process exited with code ${code}\n`);
         controller.close();
       });
+    },
+
+    // Kill the Chromium/tsx process if the browser disconnects mid-import.
+    // Without this, zombie Playwright processes accumulate on the server.
+    cancel() {
+      if (importProc && !importProc.killed) {
+        importProc.kill('SIGTERM');
+      }
     },
   });
 
