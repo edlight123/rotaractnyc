@@ -165,6 +165,26 @@ Client (Google OAuth popup)
 
 3. **Error recovery:** Wrap `onAuthStateChanged` in try/catch. On failure, sign the user out of Firebase and redirect to login with an error message.
 
+### ADMIN_ALLOWLIST Auto-Promotion
+
+The `ADMIN_ALLOWLIST` environment variable contains a comma-separated list of Google email addresses that are **automatically promoted to `role: 'president'`** with `status: 'active'` on first sign-in. This is implemented in `POST /api/portal/auth/session`.
+
+**Security considerations:**
+
+| Concern | Details |
+|---------|--------|
+| **Scope** | Grants full president-level access (highest privilege tier) — can delete members, manage all finances, and access all admin features |
+| **Storage** | Server-only env var — never exposed to the client or committed to source control |
+| **Validation** | Compared against the Firebase-verified email from the ID token — cannot be spoofed |
+| **Risk** | If the env var is compromised or misconfigured, unauthorized users could gain full admin access on first login |
+
+**Recommendations:**
+
+1. Keep the allowlist as small as possible — ideally only the current president's email
+2. Review and update the list during every board transition
+3. Audit Firestore `members` collection periodically for unexpected `role: 'president'` entries
+4. Consider adding logging when auto-promotion occurs for audit trail purposes
+
 ---
 
 ## 4. Authorization & Access Control

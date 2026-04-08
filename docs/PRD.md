@@ -250,12 +250,16 @@ The homepage should quickly communicate who the club is, what it does, and why s
 
 ### 9.2.1 Authentication
 
-**Requirements:**
+**Implementation:**
 
-* Secure sign-in
-* Password reset flow
-* Invite-based or approved registration for members
-* Admin ability to activate/deactivate members
+* **Google OAuth sign-in** via Firebase Auth (popup with redirect fallback)
+* **Session cookie architecture** — after Google sign-in, a 14-day `HttpOnly` session cookie is created server-side via `POST /api/portal/auth/session`
+* **Edge middleware** on all `/portal/*` routes checks cookie existence, JWT structure, and expiry
+* **API routes** verify the session cookie cryptographically via Firebase Admin (`verifySessionCookie` with revocation check)
+* **Open registration with approval gate** — anyone with a Google account can sign in, but new users land in `status: 'pending'` and see an "Account Pending Approval" screen until a board member approves them
+* **Invite-based auto-approval** — if a board member pre-adds a member's email, they are auto-activated on first sign-in via invite migration
+* **`ADMIN_ALLOWLIST` auto-promotion** — emails listed in the `ADMIN_ALLOWLIST` env var are auto-approved with `role: 'president'` on first sign-in
+* Admin ability to activate/deactivate members and change roles
 
 ### 9.2.2 Member Dashboard
 

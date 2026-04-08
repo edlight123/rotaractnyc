@@ -62,6 +62,21 @@ The portal uses **role-based access control**. Here's who can do what:
 
 > ⚠️ **Be careful:** Granting `board` or `president` gives significant admin access.
 
+### Initial Admin Setup (ADMIN_ALLOWLIST)
+
+When deploying the portal for the first time, you need at least one admin account. The `ADMIN_ALLOWLIST` environment variable handles this:
+
+1. Set the `ADMIN_ALLOWLIST` env var to a **comma-separated list** of Google email addresses:
+   ```
+   ADMIN_ALLOWLIST=president@example.com,vp@example.com
+   ```
+2. When any of these emails sign in for the first time, they are **automatically approved** with `role: 'president'` and `status: 'active'` — no manual approval needed.
+3. After initial setup, these admins can approve other members and assign roles from the portal.
+
+> ⚠️ **Important:** Only add emails of trusted board members. Anyone on this list gets full president-level access automatically. Review and update this list whenever board leadership changes.
+
+> 💡 **Tip:** This env var is set in your hosting provider (e.g., Vercel Environment Variables). It is **not** committed to the codebase.
+
 ---
 
 ## 2. Member Management

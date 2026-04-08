@@ -563,13 +563,16 @@ Features
 
 ⸻
 
-8.7 Login /login
+8.7 Login /portal/login
 
 Features
-	•	email/password auth
-	•	forgot password
-	•	optional invite acceptance flow
-	•	redirect logic after auth
+	•	Google OAuth sign-in via Firebase Auth (popup with redirect fallback)
+	•	Automatic invite migration — if email matches a pre-added member, auto-activates on sign-in
+	•	New users created with `role: 'member'`, `status: 'pending'` (blocked until board approval)
+	•	`ADMIN_ALLOWLIST` emails auto-promoted to `president` with `status: 'active'`
+	•	Session cookie creation via `POST /api/portal/auth/session` (14-day `HttpOnly` cookie)
+	•	Redirect logic after auth (returns to original page or portal dashboard)
+	•	Loading states, popup-blocked fallback, and error code handling
 
 ⸻
 
@@ -674,7 +677,7 @@ Features
 
 Features
 	•	account settings
-	•	password reset link/flow
+	•	notification preferences
 	•	email preference toggles later if added
 
 ⸻
@@ -760,21 +763,28 @@ MVP reports
 9) Auth and Access Control Requirements
 
 Authentication
-	•	email/password login through Firebase Auth
-	•	password reset via Firebase flow
-	•	optionally invite members first and only allow approved emails
+	•	Google OAuth sign-in via Firebase Auth (popup with redirect fallback) — no email/password
+	•	Server-side session cookie (14-day `HttpOnly`, `Secure`, `SameSite=Lax`) created via `POST /api/portal/auth/session`
+	•	Open registration: anyone with a Google account can sign in, but new users get `status: 'pending'` and are blocked until board approval
+	•	Invite migration: board pre-adds a member's email → auto-activated on first Google sign-in
+	•	`ADMIN_ALLOWLIST` env var: comma-separated emails auto-promoted to `role: 'president'` on first login
 
 Authorization
 
-Use all three layers:
-	1.	middleware or route guard
-	2.	frontend component guards
-	3.	Firestore security rules
+Four enforcement layers:
+	1.	**Edge middleware** — cookie existence + JWT structure + expiry check on all `/portal/*` routes
+	2.	**API routes** — Firebase Admin `verifySessionCookie(cookie, true)` + Firestore role check
+	3.	**Client-side** — `PortalShell` gates UI by `status` (pending → blocked) and `role` (admin features hidden)
+	4.	**Firestore security rules** — `isMember()`, `isBoard()`, `isTreasurer()`, `isPresident()` helpers
+
+Role hierarchy: `member → board → treasurer → president`
 
 Access examples
-	•	unauthenticated users cannot access /portal or /admin
-	•	members cannot access admin routes
-	•	treasurer can access dues admin pages but not necessarily all admin pages unless promoted
+	•	unauthenticated users cannot access /portal (redirected to /portal/login by middleware)
+	•	pending users see "Account Pending Approval" screen — cannot access any portal content
+	•	members cannot access admin features (UI-gated + API-enforced)
+	•	treasurer can access dues/finance pages but not event or member management
+	•	only president can delete members or dues records
 
 ⸻
 
