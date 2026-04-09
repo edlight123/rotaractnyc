@@ -164,7 +164,7 @@ export default function MemberGuidePage() {
                   rotaractnyc.org/portal/login
                 </Link>
               </li>
-              <li>Click <strong>"Sign in with Google"</strong></li>
+              <li>Click <strong>&ldquo;Sign in with Google&rdquo;</strong></li>
               <li>Choose the Google account linked to your Rotaract membership</li>
               <li>You&rsquo;ll be redirected into the member portal</li>
             </ol>
