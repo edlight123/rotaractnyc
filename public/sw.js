@@ -1,8 +1,8 @@
-// @version 2026-04-08
+// @version 2026-04-09
 // Service Worker for PWA offline capabilities
 // Version is updated at build time — see next.config.js generateBuildId or update manually.
 // Cache name uses a date-stamp so each deployment busts stale caches.
-const CACHE_VERSION = '2026-04-08';
+const CACHE_VERSION = '2026-04-09';
 const CACHE_NAME = 'rotaractnyc-v' + CACHE_VERSION;
 
 const STATIC_CACHE = CACHE_NAME + '-static';
