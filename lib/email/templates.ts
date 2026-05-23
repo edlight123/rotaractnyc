@@ -1177,3 +1177,224 @@ export function weeklyEventDigestEmail(params: {
       `\n\nManage notifications: ${SITE.url}/portal/settings\n\n--\n${SITE.name}`,
   };
 }
+
+// ── Gala 2026 invite templates ─────────────────────────────────────────────
+//
+// Two flavors of the same outreach, sent ahead of the 2026 Fundraiser Gala
+// (30th-year celebration):
+//
+//   1. galaInvitePastAttendeeEmail — for the curated list of 2023 + 2025
+//      gala attendees ("welcome back" angle).
+//   2. galaInviteMemberEmail — for current members & alumni who did NOT
+//      attend in 2025 ("this is your club's night" angle).
+//
+// Both render a hero poster image (hosted publicly so most clients inline
+// it) and a primary "Reserve your seat" CTA. The send script
+// (scripts/send-gala-invites.ts) also attaches the poster as a .jpg so
+// recipients can save / forward it.
+
+interface GalaInviteParams {
+  /** Recipient first name. Used in the greeting. */
+  firstName: string;
+  /** Public URL to the ticketing page (event page on rotaractnyc.org). */
+  ticketUrl: string;
+  /** Optional donation URL for the "can't make it" line. */
+  donateUrl?: string;
+  /**
+   * Display-ready event details. All optional — sane defaults are used
+   * if omitted so the script can fire off without wiring everything up.
+   */
+  eventDate?: string;   // e.g. "Saturday, June 6, 2026"
+  eventTime?: string;   // e.g. "7:00 PM – 11:00 PM"
+  eventVenue?: string;  // e.g. "Rooftop @ The Press Lounge, NYC"
+  /**
+   * Public URL of the poster image to render inline at the top of the
+   * email. Defaults to /rotaract-gala-2026-poster.jpg on the marketing
+   * site. The same file is also attached to the message.
+   */
+  posterUrl?: string;
+}
+
+const GALA_DEFAULTS = {
+  eventDate: 'Saturday, June 6, 2026',
+  eventTime: '7:00 PM – 11:00 PM',
+  eventVenue: 'New York City — venue details on the event page',
+  posterPath: '/rotaract-gala-2026-poster.jpg',
+} as const;
+
+/** Hero poster block — full-width, framed, with a subtle gold rule below. */
+function galaPosterBlock(posterUrl: string): string {
+  return `
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 0 0 24px;">
+      <tr>
+        <td style="text-align: center;">
+          <img src="${posterUrl}" alt="Rotaract NYC Gala 2026 — 30th Year Celebration"
+               width="520"
+               style="display: block; width: 100%; max-width: 520px; height: auto; border-radius: 12px; border: 1px solid ${GRAY_BORDER};" />
+        </td>
+      </tr>
+      <tr>
+        <td style="padding-top: 12px;">
+          <div style="height: 2px; background: linear-gradient(90deg, transparent, ${GOLD}, transparent);"></div>
+        </td>
+      </tr>
+    </table>`;
+}
+
+/** Event details card shared by both gala invite templates. Uses bold
+ *  labels rather than inline SVG icons because Gmail (the majority
+ *  client among recipients) strips <svg> from emails. */
+function galaDetailsCard(date: string, time: string, venue: string): string {
+  const row = (label: string, value: string) => `
+    <tr>
+      <td style="padding: 4px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+        <span style="display: inline-block; min-width: 72px; color: ${CRIMSON}; font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;">${label}</span>
+        <span style="color: ${TEXT_DARK}; font-size: 14px;">${value}</span>
+      </td>
+    </tr>`;
+  return infoCard(`
+    <p style="margin: 0 0 12px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: ${CRIMSON};">
+      The 2026 Rotaract NYC Gala
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+      ${row('When', `${escapeHtml(date)} · ${escapeHtml(time)}`)}
+      ${row('Where', escapeHtml(venue))}
+      ${row('Tickets', 'Early-bird pricing open now — limited seats')}
+    </table>
+  `);
+}
+
+/**
+ * "Welcome back" invite for prior gala attendees (2023 & 2025).
+ *
+ * Pre-suppression of 2026 ticket buyers must happen BEFORE this is sent
+ * (handled by scripts/send-gala-invites.ts).
+ */
+export function galaInvitePastAttendeeEmail(
+  params: GalaInviteParams,
+): { subject: string; html: string; text: string } {
+  const firstName = params.firstName?.trim() || 'there';
+  const safeName = escapeHtml(firstName.split(' ')[0]);
+  const date = params.eventDate ?? GALA_DEFAULTS.eventDate;
+  const time = params.eventTime ?? GALA_DEFAULTS.eventTime;
+  const venue = params.eventVenue ?? GALA_DEFAULTS.eventVenue;
+  const posterUrl = params.posterUrl ?? `${SITE.url}${GALA_DEFAULTS.posterPath}`;
+  const ticketUrl = params.ticketUrl;
+  const donateUrl = params.donateUrl ?? `${SITE.url}/donate`;
+
+  const subject = `You made last year's gala unforgettable — let's do it again`;
+  const preview =
+    `Thank you for joining us in 2025. The 2026 Rotaract NYC Gala is on — reserve your seat.`;
+
+  return {
+    subject,
+    html: wrapTemplate(`
+      ${h1(`Hi ${safeName} — we're back.`)}
+      ${p(`Thank you again for joining us at a previous <strong>Rotaract NYC Gala</strong>. Your support helped fund our service projects across the city this past year — from community meals to ShelterBox disaster relief.`)}
+      ${p(`We'd love to have you with us again as we celebrate <strong>30 years</strong> of the Rotaract Club at the United Nations.`)}
+      ${galaDetailsCard(date, time, venue)}
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 8px 0 24px;">
+        <tr>
+          <td style="text-align: center;">
+            ${ctaButton('Reserve Your Seat', ticketUrl)}
+          </td>
+        </tr>
+      </table>
+      ${p(`Each ticket includes entry, appetizers, and a complimentary drink. Dress code is semi-formal. Bringing a guest? They're more than welcome — please grab them their own ticket at the same link above.`)}
+      ${goldBox(`
+        <p style="margin: 0 0 6px; font-size: 13px; font-weight: 700; color: ${TEXT_DARK};">Can't make it this year?</p>
+        <p style="margin: 0; font-size: 13px; color: ${TEXT_BODY};">
+          You can still <a href="${donateUrl}" style="color: ${CRIMSON}; font-weight: 600; text-decoration: none;">support the cause with a donation</a> — every dollar goes directly to our community programs.
+        </p>
+      `)}
+      ${muted(`Already grabbed your ticket? Please ignore this — and thank you.<br/>Questions? Just reply to this email or DM <a href="${SITE.social.instagram}" style="color: ${CRIMSON};">@rotaractnyc</a>.`)}
+    `, preview),
+    text:
+      `Hi ${firstName} — we're back.\n\n` +
+      `Thank you again for joining us at a previous Rotaract NYC Gala. Your support helped fund our service projects across the city this past year.\n\n` +
+      `We'd love to have you with us again as we celebrate 30 years of the Rotaract Club at the United Nations.\n\n` +
+      `THE 2026 ROTARACT NYC GALA\n` +
+      `When:   ${date} · ${time}\n` +
+      `Where:  ${venue}\n` +
+      `Tickets: Early-bird pricing open now — limited seats\n\n` +
+      `Reserve your seat: ${ticketUrl}\n\n` +
+      `Each ticket includes entry, appetizers, and a complimentary drink. Dress code is semi-formal. Bringing a guest? They're welcome — please grab them their own ticket at the link above.\n\n` +
+      `Can't make it? You can still support the cause with a donation: ${donateUrl}\n\n` +
+      `Already grabbed your ticket? Please ignore this — and thank you.\n\n` +
+      `Questions? Reply to this email or DM @rotaractnyc on Instagram.\n\n` +
+      `--\n${SITE.name}\n${SITE.address}`,
+  };
+}
+
+/**
+ * Members & alumni invite — same event, different framing
+ * (community / "your club's night" angle rather than nostalgia).
+ */
+export function galaInviteMemberEmail(
+  params: GalaInviteParams & {
+    /** If true, opens with the "alumni" framing instead of "member". */
+    alumni?: boolean;
+  },
+): { subject: string; html: string; text: string } {
+  const firstName = params.firstName?.trim() || 'there';
+  const safeName = escapeHtml(firstName.split(' ')[0]);
+  const date = params.eventDate ?? GALA_DEFAULTS.eventDate;
+  const time = params.eventTime ?? GALA_DEFAULTS.eventTime;
+  const venue = params.eventVenue ?? GALA_DEFAULTS.eventVenue;
+  const posterUrl = params.posterUrl ?? `${SITE.url}${GALA_DEFAULTS.posterPath}`;
+  const ticketUrl = params.ticketUrl;
+  const donateUrl = params.donateUrl ?? `${SITE.url}/donate`;
+  const isAlumni = !!params.alumni;
+
+  const subject = isAlumni
+    ? `${safeName}, come back for one night — the 2026 Rotaract NYC Gala`
+    : `Your invitation: the 2026 Rotaract NYC Gala`;
+  const preview = isAlumni
+    ? `30 years of Rotaract NYC. One night to celebrate. We'd love to see you there.`
+    : `One night a year, the whole Rotaract NYC family comes together. This is it.`;
+
+  const opener = isAlumni
+    ? `${p(`It's been a minute — and that's exactly why we're writing. <strong>${SITE.name}</strong> is turning <strong>30</strong>, and we want the alumni who built this club in the room with us.`)}`
+    : `${p(`One night a year, the entire <strong>Rotaract NYC</strong> family — current members, alumni, partners, and friends — comes together to celebrate what we've built and raise the funds that make next year possible.`)}` +
+      `${p(`This is that night, and as a member, this is <strong>your</strong> night.`)}`;
+
+  return {
+    subject,
+    html: wrapTemplate(`
+      ${h1(`Hi ${safeName},`)}
+      ${opener}
+      ${galaDetailsCard(date, time, venue)}
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 8px 0 24px;">
+        <tr>
+          <td style="text-align: center;">
+            ${ctaButton('Get Your Ticket', ticketUrl)}
+          </td>
+        </tr>
+      </table>
+      ${p(isAlumni
+        ? `Whether you've been gone a year or a decade, you'll recognize the room. Rally your friends or invite a guest — they're welcome to grab a ticket at the same link above — and help us mark 30 years the right way.`
+        : `Rally your friends, invite a guest (they'll need their own ticket), or just come catch up with the crew — every seat filled is another dollar toward our service work in NYC.`
+      )}
+      ${goldBox(`
+        <p style="margin: 0 0 6px; font-size: 13px; font-weight: 700; color: ${TEXT_DARK};">Can't make it?</p>
+        <p style="margin: 0; font-size: 13px; color: ${TEXT_BODY};">
+          You can still <a href="${donateUrl}" style="color: ${CRIMSON}; font-weight: 600; text-decoration: none;">donate or sponsor a guest's ticket</a> — every contribution funds our community programs.
+        </p>
+      `)}
+      ${muted(`Already grabbed your ticket? Please ignore this — and thank you.<br/>Questions? Just reply to this email.`)}
+    `, preview),
+    text:
+      `Hi ${firstName},\n\n` +
+      (isAlumni
+        ? `It's been a minute — and that's exactly why we're writing. ${SITE.name} is turning 30, and we want the alumni who built this club in the room with us.\n\n`
+        : `One night a year, the entire Rotaract NYC family — current members, alumni, partners, and friends — comes together to celebrate what we've built and raise the funds that make next year possible.\n\nThis is that night, and as a member, this is your night.\n\n`) +
+      `THE 2026 ROTARACT NYC GALA\n` +
+      `When:   ${date} · ${time}\n` +
+      `Where:  ${venue}\n` +
+      `Tickets: Early-bird pricing open now — limited seats\n\n` +
+      `Get your ticket: ${ticketUrl}\n\n` +
+      `Can't make it? You can still donate or sponsor a guest: ${donateUrl}\n\n` +
+      `Already grabbed your ticket? Please ignore this — and thank you.\n\n` +
+      `--\n${SITE.name}\n${SITE.address}`,
+  };
+}

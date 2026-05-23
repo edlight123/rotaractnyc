@@ -372,7 +372,14 @@ async function handleGuestEventTicket(session: Stripe.Checkout.Session): Promise
     tierLabel = tier?.label;
   }
 
-  // Check for existing guest RSVP by email+eventId and update if found, create if not
+  // Check for existing guest RSVP by email+eventId and update if found, create if not.
+  // ── Idempotency + additive update ──
+  // Stripe webhooks can be redelivered, and the same guest can buy tickets
+  // across multiple orders. We track each Stripe session id in a
+  // `stripeSessionIds[]` array on the guest_rsvp doc:
+  //   - If this session is already recorded → skip ALL side effects.
+  //   - Otherwise, INCREMENT quantity and paidAmount (don't overwrite) so
+  //     multi-order guests aren't silently truncated to their latest purchase.
   const existingSnap = await adminDb
     .collection('guest_rsvps')
     .where('eventId', '==', eventId)
@@ -380,6 +387,7 @@ async function handleGuestEventTicket(session: Stripe.Checkout.Session): Promise
     .limit(1)
     .get();
 
+  let skipSideEffects = false;
   if (existingSnap.empty) {
     await adminDb.collection('guest_rsvps').add({
       eventId,
@@ -394,25 +402,45 @@ async function handleGuestEventTicket(session: Stripe.Checkout.Session): Promise
       paidAmount: session.amount_total || 0,
       paymentStatus: 'paid',
       stripeSessionId: session.id,
+      stripeSessionIds: [session.id],
       promoCode: session.metadata?.promoCode || null,
       discountPercent: session.metadata?.discountPercent ? Number(session.metadata.discountPercent) : null,
       customFields: session.metadata?.customFields ? JSON.parse(session.metadata.customFields) : null,
       createdAt: new Date().toISOString(),
     });
   } else {
-    await adminDb.collection('guest_rsvps').doc(existingSnap.docs[0].id).update({
-      status: 'going',
-      tierId: tierId || null,
-      tierLabel: tierLabel || null,
-      quantity,
-      paidAmount: session.amount_total || 0,
-      paymentStatus: 'paid',
-      stripeSessionId: session.id,
-      promoCode: session.metadata?.promoCode || null,
-      discountPercent: session.metadata?.discountPercent ? Number(session.metadata.discountPercent) : null,
-      customFields: session.metadata?.customFields ? JSON.parse(session.metadata.customFields) : null,
-    });
+    const existingDoc = existingSnap.docs[0];
+    const existingData = existingDoc.data() as any;
+    const seenSessions: string[] = Array.isArray(existingData.stripeSessionIds)
+      ? existingData.stripeSessionIds
+      : existingData.stripeSessionId
+        ? [existingData.stripeSessionId]
+        : [];
+    if (seenSessions.includes(session.id)) {
+      console.log('[GuestTicket] Duplicate session; skipping side effects', session.id);
+      skipSideEffects = true;
+    } else {
+      await adminDb.collection('guest_rsvps').doc(existingDoc.id).update({
+        status: 'going',
+        tierId: tierId || existingData.tierId || null,
+        tierLabel: tierLabel || existingData.tierLabel || null,
+        quantity: FieldValue.increment(quantity),
+        paidAmount: FieldValue.increment(session.amount_total || 0),
+        paymentStatus: 'paid',
+        stripeSessionId: session.id,
+        stripeSessionIds: FieldValue.arrayUnion(session.id),
+        promoCode: session.metadata?.promoCode || existingData.promoCode || null,
+        discountPercent: session.metadata?.discountPercent
+          ? Number(session.metadata.discountPercent)
+          : existingData.discountPercent ?? null,
+        customFields: session.metadata?.customFields
+          ? JSON.parse(session.metadata.customFields)
+          : existingData.customFields ?? null,
+      });
+    }
   }
+
+  if (skipSideEffects) return;
 
   if (tierId) await adjustTierSoldCount(eventId, tierId, quantity);
 
@@ -713,6 +741,7 @@ export async function handlePaymentIntentSucceeded(pi: Stripe.PaymentIntent): Pr
       .limit(1)
       .get();
 
+    let piSkipSideEffects = false;
     if (existingSnap.empty) {
       await adminDb.collection('guest_rsvps').add({
         eventId,
@@ -727,19 +756,35 @@ export async function handlePaymentIntentSucceeded(pi: Stripe.PaymentIntent): Pr
         paidAmount: amountCents,
         paymentStatus: 'paid',
         stripeSessionId: pi.id,
+        stripeSessionIds: [pi.id],
         createdAt: new Date().toISOString(),
       });
     } else {
-      await adminDb.collection('guest_rsvps').doc(existingSnap.docs[0].id).update({
-        status: 'going',
-        tierId: tierId || null,
-        tierLabel: tierLabel || null,
-        quantity,
-        paidAmount: amountCents,
-        paymentStatus: 'paid',
-        stripeSessionId: pi.id,
-      });
+      const existingDoc = existingSnap.docs[0];
+      const existingData = existingDoc.data() as any;
+      const seenSessions: string[] = Array.isArray(existingData.stripeSessionIds)
+        ? existingData.stripeSessionIds
+        : existingData.stripeSessionId
+          ? [existingData.stripeSessionId]
+          : [];
+      if (seenSessions.includes(pi.id)) {
+        console.log('[PI GuestTicket] Duplicate PaymentIntent; skipping side effects', pi.id);
+        piSkipSideEffects = true;
+      } else {
+        await adminDb.collection('guest_rsvps').doc(existingDoc.id).update({
+          status: 'going',
+          tierId: tierId || existingData.tierId || null,
+          tierLabel: tierLabel || existingData.tierLabel || null,
+          quantity: FieldValue.increment(quantity),
+          paidAmount: FieldValue.increment(amountCents),
+          paymentStatus: 'paid',
+          stripeSessionId: pi.id,
+          stripeSessionIds: FieldValue.arrayUnion(pi.id),
+        });
+      }
     }
+
+    if (piSkipSideEffects) return;
 
     if (tierId) await adjustTierSoldCount(eventId, tierId, quantity);
 

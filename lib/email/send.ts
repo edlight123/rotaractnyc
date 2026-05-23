@@ -9,9 +9,23 @@ if (!process.env.RESEND_API_KEY) {
   );
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY || 'placeholder');
+// Lazy-initialized Resend client. We can't construct it at module load
+// because Node-loaded CLI scripts (e.g. scripts/send-gala-invites.ts) run
+// `dotenv.config()` AFTER imports are hoisted — so the env var isn't
+// populated yet at module-evaluation time. Building the client on first
+// use lets the script populate process.env before we read it.
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  if (!_resend) {
+    _resend = new Resend(process.env.RESEND_API_KEY || 'placeholder');
+  }
+  return _resend;
+}
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Rotaract NYC <noreply@rotaractnyc.org>';
+const FROM_EMAIL =
+  process.env.RESEND_FROM_EMAIL ||
+  process.env.RESEND_FROM || // production uses RESEND_FROM on Vercel
+  'Rotaract NYC <noreply@rotaractnyc.org>';
 
 interface EmailAttachment {
   filename: string;
@@ -36,7 +50,7 @@ export async function sendEmail({ to, subject, html, replyTo, text, attachments 
   }
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: FROM_EMAIL,
       to: Array.isArray(to) ? to : [to],
       subject,
@@ -72,6 +86,7 @@ export async function sendBulkEmail(
   subject: string,
   html: string,
   text?: string,
+  attachments?: EmailAttachment[],
 ) {
   if (!process.env.RESEND_API_KEY) {
     console.warn('RESEND_API_KEY not set — bulk email not sent:', subject);
@@ -86,7 +101,7 @@ export async function sendBulkEmail(
     const chunk = recipients.slice(i, i + BULK_CHUNK_SIZE);
 
     const results = await Promise.allSettled(
-      chunk.map((to) => sendEmail({ to, subject, html, text })),
+      chunk.map((to) => sendEmail({ to, subject, html, text, attachments })),
     );
 
     for (const result of results) {

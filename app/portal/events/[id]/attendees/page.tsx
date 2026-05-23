@@ -15,6 +15,8 @@ import type { RotaractEvent } from '@/types';
 interface Purchaser {
   id: string;
   kind: 'member' | 'guest';
+  source?: 'transaction' | 'offline_payment' | 'rsvp' | 'guest_rsvp';
+  orderId?: string | null;
   name: string;
   email: string;
   phone?: string | null;
@@ -37,6 +39,8 @@ interface Summary {
   memberCount: number;
   totalTickets: number;
   checkedInCount: number;
+  totalAttendees?: number;
+  orderCount?: number;
 }
 
 type FilterKind = 'all' | 'member' | 'guest';
@@ -112,11 +116,12 @@ export default function EventAttendeesPage() {
       if (filterCheck === 'checked_in' && !p.checkedIn) return false;
       if (filterCheck === 'not_checked_in' && p.checkedIn) return false;
       if (filterPay !== 'all') {
-        const isPaid = p.paymentStatus === 'paid' || (p.kind === 'member' && p.amountCents > 0);
-        const isFree = p.paymentStatus === 'free' || (!isPaid && p.amountCents === 0 && p.paymentStatus !== 'pending');
+        const isPaid = p.paymentStatus === 'paid';
+        const isFree = p.paymentStatus === 'free' || (p.amountCents === 0 && !isPaid && !p.paymentStatus.startsWith('pending'));
+        const isPending = p.paymentStatus === 'pending' || p.paymentStatus === 'pending_offline';
         if (filterPay === 'paid' && !isPaid) return false;
         if (filterPay === 'free' && !isFree) return false;
-        if (filterPay === 'pending' && p.paymentStatus !== 'pending') return false;
+        if (filterPay === 'pending' && !isPending) return false;
       }
       if (q) {
         const hay = [p.name, p.email, p.phone || ''].join(' ').toLowerCase();
@@ -449,8 +454,8 @@ export default function EventAttendeesPage() {
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {filtered.map((p, i) => {
-                  const isPaid =
-                    p.paymentStatus === 'paid' || (p.kind === 'member' && p.amountCents > 0);
+                  const isPaid = p.paymentStatus === 'paid';
+                  const isPending = p.paymentStatus === 'pending' || p.paymentStatus === 'pending_offline';
                   return (
                     <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40">
                       <td className="px-4 py-3 text-gray-400 tabular-nums">{i + 1}</td>
@@ -491,13 +496,13 @@ export default function EventAttendeesPage() {
                             <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full">
                               Paid
                             </span>
-                          ) : p.paymentStatus === 'free' || p.amountCents === 0 ? (
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">
-                              Free
-                            </span>
-                          ) : (
+                          ) : isPending ? (
                             <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-full">
                               Pending
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">
+                              Free
                             </span>
                           )}
                           {p.checkedIn && (

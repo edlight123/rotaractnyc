@@ -42,6 +42,8 @@ export async function GET(
         memberCount: totals.members,
         totalTickets: totals.tickets,
         checkedInCount: totals.checkedIn,
+        totalAttendees: totals.totalAttendees,
+        orderCount: totals.orderCount,
       },
     });
   } catch (err: any) {

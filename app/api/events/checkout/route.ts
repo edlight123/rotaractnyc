@@ -238,29 +238,26 @@ export async function POST(request: NextRequest) {
       const actualQuantity = quantity || 1;
       const now = new Date().toISOString();
 
-      // Create one RSVP record per guest if quantity > 1, otherwise just one
-      const rsvpPromises: Promise<any>[] = [];
-      for (let i = 0; i < actualQuantity; i++) {
-        rsvpPromises.push(
-          adminDb.collection('guest_rsvps').add({
-            eventId,
-            name,
-            email: email.toLowerCase(),
-            phone: phone || null,
-            status: 'going',
-            ticketType: 'guest',
-            tierId: resolvedTierId || null,
-            paidAmount: 0,
-            paymentStatus: 'free',
-            promoCode: discountCode,
-            discountPercent,
-            customFields: customFields || null,
-            quantity: actualQuantity,
-            createdAt: now,
-          })
-        );
-      }
-      await Promise.all(rsvpPromises);
+      // Create ONE guest_rsvp doc that represents the whole order (quantity
+      // captures how many tickets were claimed). Previously we created N
+      // duplicate docs each carrying quantity=N, which inflated ticket counts
+      // by N² in the purchasers panel and made check-in confusing.
+      await adminDb.collection('guest_rsvps').add({
+        eventId,
+        name,
+        email: email.toLowerCase(),
+        phone: phone || null,
+        status: 'going',
+        ticketType: 'guest',
+        tierId: resolvedTierId || null,
+        paidAmount: 0,
+        paymentStatus: 'free',
+        promoCode: discountCode,
+        discountPercent,
+        customFields: customFields || null,
+        quantity: actualQuantity,
+        createdAt: now,
+      });
 
       // Track tier capacity (for free tiers without atomic reservation)
       if (resolvedTierId && !pricing.tiers?.find((t: any) => t.id === resolvedTierId)?.capacity) {

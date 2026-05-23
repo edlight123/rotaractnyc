@@ -63,8 +63,10 @@ export default function PortalEventDetailPage() {
     id: string; kind: 'guest' | 'member'; name: string; email: string;
     phone?: string | null; status: string; paymentStatus: string;
     quantity: number; amountCents: number; tierId: string | null; createdAt: string;
+    source?: 'transaction' | 'offline_payment' | 'rsvp' | 'guest_rsvp';
+    orderId?: string | null;
   }>>([]);
-  const [purchaserSummary, setPurchaserSummary] = useState<{ totalRevenueCents: number; totalRevenue: number; guestCount: number; memberCount: number; totalTickets: number } | null>(null);
+  const [purchaserSummary, setPurchaserSummary] = useState<{ totalRevenueCents: number; totalRevenue: number; guestCount: number; memberCount: number; totalTickets: number; totalAttendees?: number; orderCount?: number } | null>(null);
   const [donations, setDonations] = useState<Array<{
     id: string; donorName: string; donorEmail: string | null;
     amountCents: number; message: string | null; createdAt: string;
@@ -342,25 +344,33 @@ export default function PortalEventDetailPage() {
     </div>
   );
 
-  // Sum *tickets* per RSVP (a single member can buy multiple tickets, in
-  // which case `quantity` > 1). Falling back to 1 keeps legacy RSVPs that
-  // pre-date the `quantity` field counted correctly.
-  const memberGoingCount = rsvps
+  // ── Capacity / tickets sold ──
+  // `goingCount` is used by EventRegistration to report "spots remaining" so
+  // it must represent TICKETS (one per seat). Admins get the authoritative
+  // count from the purchasers API; others fall back to summing RSVP quantity.
+  const memberTicketCount = rsvps
     ?.filter((r) => r.status === 'going')
     .reduce((sum: number, r: any) => sum + (r.quantity || 1), 0) || 0;
-  const guestGoingCount = guestRsvps
+  const guestTicketCount = guestRsvps
     .filter((r) => r.status === 'going')
     .reduce((sum: number, r: any) => sum + (r.quantity || 1), 0);
-  // Non-board members can't read the guest_rsvps collection, so guestGoingCount
-  // is 0 for them. The event document maintains `attendeeCount` as the
-  // source-of-truth (incremented by the RSVP/checkout APIs and Stripe webhooks
-  // for both members *and* guests, by quantity). Prefer it when it's larger
-  // so non-admins still see an accurate "people going" total.
-  const computedGoingCount = memberGoingCount + guestGoingCount;
-  const goingCount = Math.max(
-    computedGoingCount,
-    (event as RotaractEvent & { attendeeCount?: number }).attendeeCount ?? 0,
-  );
+  const computedTicketCount = memberTicketCount + guestTicketCount;
+  const goingCount = purchaserSummary?.totalTickets != null
+    ? purchaserSummary.totalTickets
+    : Math.max(
+        computedTicketCount,
+        (event as RotaractEvent & { attendeeCount?: number }).attendeeCount ?? 0,
+      );
+
+  // ── Distinct attendees ──
+  // The chip list shows one badge per person; admins get the authoritative
+  // distinct count from the API, others fall back to RSVP doc counts (which
+  // are one-per-person by data model).
+  const memberGoingPeople = rsvps?.filter((r) => r.status === 'going').length || 0;
+  const guestGoingPeople = guestRsvps.filter((r) => r.status === 'going').length;
+  const distinctAttendeeCount = purchaserSummary?.totalAttendees != null
+    ? purchaserSummary.totalAttendees
+    : memberGoingPeople + guestGoingPeople;
   const isPast = new Date(event.date) < new Date();
 
   return (
@@ -588,10 +598,15 @@ export default function PortalEventDetailPage() {
           )}
 
           {/* Attendees */}
-          {(goingCount > 0) && (
+          {(distinctAttendeeCount > 0) && (
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6">
               <h3 className="font-display font-semibold text-gray-900 dark:text-white mb-4 text-lg">
-                Attendees <span className="text-gray-400 dark:text-gray-500 font-normal text-base">({goingCount})</span>
+                Attendees <span className="text-gray-400 dark:text-gray-500 font-normal text-base">({distinctAttendeeCount})</span>
+                {goingCount > distinctAttendeeCount && (
+                  <span className="text-gray-400 dark:text-gray-500 font-normal text-sm ml-1">
+                    · {goingCount} ticket{goingCount !== 1 ? 's' : ''}
+                  </span>
+                )}
               </h3>
               <div className="flex flex-wrap gap-2">
                 {rsvps
@@ -666,7 +681,9 @@ export default function PortalEventDetailPage() {
                   Ticket Purchasers
                   {purchaserSummary && (
                     <span className="text-gray-400 dark:text-gray-500 font-normal text-base ml-2">
-                      ({purchaserSummary.totalTickets} ticket{purchaserSummary.totalTickets !== 1 ? 's' : ''})
+                      ({purchaserSummary.orderCount ?? purchasers.length} order{(purchaserSummary.orderCount ?? purchasers.length) !== 1 ? 's' : ''}
+                      {' · '}
+                      {purchaserSummary.totalTickets} ticket{purchaserSummary.totalTickets !== 1 ? 's' : ''})
                     </span>
                   )}
                 </h3>
@@ -712,7 +729,7 @@ export default function PortalEventDetailPage() {
                 {purchasers.map((p) => (
                   <div key={p.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/60">
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{p.name}</p>
                         <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${
                           p.kind === 'member'
@@ -721,8 +738,16 @@ export default function PortalEventDetailPage() {
                         }`}>
                           {p.kind}
                         </span>
+                        {p.source === 'offline_payment' && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md text-amber-700 bg-amber-50 dark:bg-amber-900/20">
+                            offline
+                          </span>
+                        )}
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{p.email}{p.phone ? ` · ${p.phone}` : ''}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {p.email}{p.phone ? ` · ${p.phone}` : ''}
+                        {p.createdAt ? ` · ${formatDate(p.createdAt)}` : ''}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {p.quantity > 1 && (
@@ -735,7 +760,7 @@ export default function PortalEventDetailPage() {
                           {formatCurrency(p.amountCents)}
                         </span>
                       )}
-                      {p.paymentStatus === 'paid' || (p.kind === 'member' && p.status === 'going') ? (
+                      {p.paymentStatus === 'paid' ? (
                         <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full">Paid</span>
                       ) : p.paymentStatus === 'free' ? (
                         <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">Free</span>
