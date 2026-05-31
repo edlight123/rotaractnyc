@@ -48,6 +48,7 @@ import {
   galaInvitePastAttendeeEmail,
   galaInviteMemberEmail,
   galaReminderEmail,
+  galaCorrectionEmail,
 } from '../lib/email/templates';
 import { sendEmail } from '../lib/email/send';
 import { SITE } from '../lib/constants';
@@ -356,6 +357,7 @@ function resolveSegment<T extends { email: string }>(
 async function main() {
   const send = hasFlag('send');
   const reminder = hasFlag('reminder');
+  const correction = hasFlag('correction');
   const listArg = (parseArg('list', 'both') || 'both') as 'past' | 'members' | 'current' | 'both';
   const slug = parseArg('slug', DEFAULT_GALA_SLUG)!;
   const testEmail = parseArg('test');
@@ -392,6 +394,94 @@ async function main() {
     `🛑 Suppression list: ${suppression.size} email${suppression.size === 1 ? '' : 's'} ` +
       `already purchased 2026 tickets${eventId ? ` (eventId: ${eventId})` : ''}`,
   );
+
+  // ── Correction mode ─────────────────────────────────────────────────────
+  // Sends a date-correction notice to EVERYONE who received the earlier
+  // (wrong-date) reminder: past attendees + alumni + current members,
+  // deduped by email. No purchase suppression — ticket buyers also saw the
+  // wrong date and should get the fix.
+  if (correction) {
+    const all = [
+      ...PAST_ATTENDEES.map((r) => ({ firstName: r.firstName, email: r.email })),
+      ...MEMBERS_AND_ALUMNI.map((r) => ({ firstName: r.firstName, email: r.email })),
+    ];
+    // Optional --emails=a@b.com,c@d.com to target only specific recipients
+    // (e.g. to finish a batch that hit the daily quota the day before).
+    const onlyEmails = parseArg('emails');
+    const onlySet = onlyEmails
+      ? new Set(onlyEmails.split(',').map((e) => norm(e)))
+      : null;
+    const filtered = onlySet ? all.filter((r) => onlySet.has(norm(r.email))) : all;
+    const seg = resolveSegment('Date correction', filtered, new Set<string>());
+    printSegmentSummary(seg);
+
+    const buildCorrection = (firstName: string) =>
+      galaCorrectionEmail({
+        firstName,
+        ticketUrl,
+        donateUrl,
+        eventDate: DEFAULT_EVENT_DATE,
+        eventTime: DEFAULT_EVENT_TIME,
+        eventVenue: DEFAULT_EVENT_VENUE,
+      });
+
+    if (testEmail) {
+      if (!send) {
+        console.log(`\n💡 --test provided without --send. Add --send to fire the test correction.`);
+        return;
+      }
+      console.log(`\n📨 Sending TEST correction to ${testEmail}…`);
+      const built = buildCorrection('Friend');
+      const r = await sendEmail({
+        to: testEmail,
+        subject: `[TEST · correction] ${built.subject}`,
+        html: built.html,
+        text: built.text,
+      });
+      console.log(`   correction: ${r.success ? `✅ ${r.id}` : `❌ ${r.error}`}`);
+      return;
+    }
+
+    if (!send) {
+      console.log(`\n💡 Dry run complete. Re-run with --correction --send to deliver these corrections.`);
+      return;
+    }
+
+    console.log(`\n📨 Sending "${seg.label}" → ${seg.recipients.length} recipients…`);
+    let sent = 0;
+    let failed = 0;
+    for (let i = 0; i < seg.recipients.length; i += CHUNK_SIZE) {
+      const chunk = seg.recipients.slice(i, i + CHUNK_SIZE);
+      const results = await Promise.allSettled(
+        chunk.map((r) => {
+          const built = buildCorrection(r.firstName);
+          return sendEmail({
+            to: r.email,
+            subject: built.subject,
+            html: built.html,
+            text: built.text,
+          }).then((res) => ({ res, email: r.email }));
+        }),
+      );
+      for (const settled of results) {
+        if (settled.status === 'fulfilled' && settled.value.res.success) {
+          sent++;
+          console.log(`   ✅ ${settled.value.email}`);
+        } else {
+          failed++;
+          const reason =
+            settled.status === 'fulfilled' ? settled.value.res.error : String(settled.reason);
+          const who = settled.status === 'fulfilled' ? settled.value.email : '(unknown)';
+          console.log(`   ❌ ${who} — ${reason}`);
+        }
+      }
+      if (i + CHUNK_SIZE < seg.recipients.length) {
+        await new Promise((r) => setTimeout(r, CHUNK_DELAY_MS));
+      }
+    }
+    console.log(`   → done: ${sent} sent, ${failed} failed`);
+    return;
+  }
 
   // ── Reminder mode ───────────────────────────────────────────────────────
   // Sends the time-sensitive reminder template. Target is controlled by

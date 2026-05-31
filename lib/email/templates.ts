@@ -1476,3 +1476,59 @@ export function galaReminderEmail(
       `--\n${SITE.name}\n${SITE.address}`,
   };
 }
+
+/**
+ * Date-correction notice for the 2026 gala.
+ *
+ * A previous reminder went out with the wrong day/date/time. This is a
+ * short, apologetic note that states the CORRECT details clearly. It is
+ * sent to everyone who received the earlier (incorrect) reminder.
+ */
+export function galaCorrectionEmail(
+  params: GalaInviteParams,
+): { subject: string; html: string; text: string } {
+  const firstName = params.firstName?.trim() || 'there';
+  const safeName = escapeHtml(firstName.split(' ')[0]);
+  const date = params.eventDate ?? GALA_DEFAULTS.eventDate;
+  const time = params.eventTime ?? GALA_DEFAULTS.eventTime;
+  const venue = params.eventVenue ?? GALA_DEFAULTS.eventVenue;
+  const ticketUrl = params.ticketUrl;
+
+  const subject = `Correction: the Rotaract NYC Gala is FRIDAY, June 5 (not Saturday)`;
+  const preview =
+    `Our last email listed the wrong date. The gala is Friday, June 5 — here are the correct details.`;
+
+  return {
+    subject,
+    html: wrapTemplate(`
+      ${h1(`Quick correction, ${safeName}`)}
+      ${p(`Our last email about the <strong>2026 Rotaract NYC Gala</strong> listed the wrong date — apologies for any confusion. Here are the <strong>correct</strong> details:`)}
+      ${galaDetailsCard(date, time, venue)}
+      ${goldBox(`
+        <p style="margin: 0; font-size: 14px; color: ${TEXT_DARK};">
+          Please note the gala is on <strong>Friday, June 5</strong> — <strong>not</strong> Saturday, June 6.
+        </p>
+      `)}
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 8px 0 24px;">
+        <tr>
+          <td style="text-align: center;">
+            ${ctaButton('View Event Details', ticketUrl)}
+          </td>
+        </tr>
+      </table>
+      ${p(`If you've already bought your ticket, there's nothing you need to do — just mark your calendar for Friday. We can't wait to see you there.`)}
+      ${muted(`Sorry again for the mix-up. Questions? Just reply to this email.`)}
+    `, preview),
+    text:
+      `Quick correction, ${firstName}\n\n` +
+      `Our last email about the 2026 Rotaract NYC Gala listed the wrong date — apologies for any confusion. Here are the CORRECT details:\n\n` +
+      `THE 2026 ROTARACT NYC GALA\n` +
+      `When:   ${date} · ${time}\n` +
+      `Where:  ${venue}\n\n` +
+      `Please note: the gala is on FRIDAY, June 5 — NOT Saturday, June 6.\n\n` +
+      `View event details: ${ticketUrl}\n\n` +
+      `If you've already bought your ticket, there's nothing you need to do — just mark your calendar for Friday.\n\n` +
+      `Sorry again for the mix-up. Questions? Just reply to this email.\n\n` +
+      `--\n${SITE.name}\n${SITE.address}`,
+  };
+}
