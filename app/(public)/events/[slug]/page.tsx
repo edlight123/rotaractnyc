@@ -231,9 +231,11 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
                 <h3 className="font-display font-bold text-gray-900 dark:text-white mb-4">Pricing</h3>
 
                 {event.pricing.tiers?.length ? (
-                  /* ── Tier cards ── */
+                  /* ── Tier cards (expired tiers hidden from the public) ── */
                   <div className="space-y-3">
-                    {[...event.pricing.tiers].sort((a, b) => a.sortOrder - b.sortOrder).map((tier) => {
+                    {[...event.pricing.tiers]
+                      .filter((tier) => !(tier.deadline && new Date(tier.deadline) < new Date()))
+                      .sort((a, b) => a.sortOrder - b.sortOrder).map((tier) => {
                       const expired = tier.deadline && new Date(tier.deadline) < new Date();
                       const soldOut = tier.capacity != null && (tier.soldCount ?? 0) >= tier.capacity;
                       const spots = tier.capacity != null ? Math.max(0, tier.capacity - (tier.soldCount ?? 0)) : null;
