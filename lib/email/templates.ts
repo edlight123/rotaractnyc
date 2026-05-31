@@ -1398,3 +1398,69 @@ export function galaInviteMemberEmail(
       `--\n${SITE.name}\n${SITE.address}`,
   };
 }
+
+/**
+ * Final-stretch reminder for alumni who haven't bought a ticket yet.
+ *
+ * Same event as the invite templates, but with time-sensitive urgency
+ * framing ("just days away / seats filling up") to convert fence-sitters.
+ *
+ * Pre-suppression of 2026 ticket buyers must happen BEFORE this is sent
+ * (handled by scripts/send-gala-invites.ts).
+ */
+export function galaReminderEmail(
+  params: GalaInviteParams & {
+    /** If true, uses warmer "alumni" framing. Defaults to true for this send. */
+    alumni?: boolean;
+  },
+): { subject: string; html: string; text: string } {
+  const firstName = params.firstName?.trim() || 'there';
+  const safeName = escapeHtml(firstName.split(' ')[0]);
+  const date = params.eventDate ?? GALA_DEFAULTS.eventDate;
+  const time = params.eventTime ?? GALA_DEFAULTS.eventTime;
+  const venue = params.eventVenue ?? GALA_DEFAULTS.eventVenue;
+  const ticketUrl = params.ticketUrl;
+  const donateUrl = params.donateUrl ?? `${SITE.url}/donate`;
+
+  const subject = `${safeName}, just days until the Rotaract NYC Gala — seats are going fast`;
+  const preview =
+    `Saturday, June 6 is almost here. A few seats are left — reserve yours before they're gone.`;
+
+  return {
+    subject,
+    html: wrapTemplate(`
+      ${h1(`${safeName}, the gala is almost here.`)}
+      ${p(`A quick nudge — the <strong>2026 Rotaract NYC Gala</strong> is just days away, and we'd hate for you to miss it. We're celebrating <strong>30 years</strong> of the Rotaract Club at the United Nations, and the alumni who built this club belong in the room.`)}
+      ${p(`A handful of seats are still open, but they're filling up quickly. If you've been meaning to grab yours, now's the moment.`)}
+      ${galaDetailsCard(date, time, venue)}
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 8px 0 24px;">
+        <tr>
+          <td style="text-align: center;">
+            ${ctaButton('Reserve Your Seat', ticketUrl)}
+          </td>
+        </tr>
+      </table>
+      ${p(`Bringing a friend or two? Even better — they're welcome to grab their own ticket at the same link above. Every seat filled is another dollar toward our service work across NYC.`)}
+      ${goldBox(`
+        <p style="margin: 0 0 6px; font-size: 13px; font-weight: 700; color: ${TEXT_DARK};">Can't make it?</p>
+        <p style="margin: 0; font-size: 13px; color: ${TEXT_BODY};">
+          You can still <a href="${donateUrl}" style="color: ${CRIMSON}; font-weight: 600; text-decoration: none;">donate or sponsor a guest's ticket</a> — every contribution funds our community programs.
+        </p>
+      `)}
+      ${muted(`Already grabbed your ticket? Please ignore this — and we can't wait to see you there.<br/>Questions? Just reply to this email.`)}
+    `, preview),
+    text:
+      `${firstName}, the gala is almost here.\n\n` +
+      `A quick nudge — the 2026 Rotaract NYC Gala is just days away, and we'd hate for you to miss it. We're celebrating 30 years of the Rotaract Club at the United Nations, and the alumni who built this club belong in the room.\n\n` +
+      `A handful of seats are still open, but they're filling up quickly. If you've been meaning to grab yours, now's the moment.\n\n` +
+      `THE 2026 ROTARACT NYC GALA\n` +
+      `When:   ${date} · ${time}\n` +
+      `Where:  ${venue}\n` +
+      `Tickets: A few seats left — reserve now\n\n` +
+      `Reserve your seat: ${ticketUrl}\n\n` +
+      `Bringing a friend or two? They're welcome to grab their own ticket at the same link above.\n\n` +
+      `Can't make it? You can still donate or sponsor a guest: ${donateUrl}\n\n` +
+      `Already grabbed your ticket? Please ignore this — and we can't wait to see you there.\n\n` +
+      `--\n${SITE.name}\n${SITE.address}`,
+  };
+}

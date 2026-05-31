@@ -47,6 +47,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import {
   galaInvitePastAttendeeEmail,
   galaInviteMemberEmail,
+  galaReminderEmail,
 } from '../lib/email/templates';
 import { sendEmail } from '../lib/email/send';
 import { SITE } from '../lib/constants';
@@ -354,6 +355,7 @@ function resolveSegment<T extends { email: string }>(
 
 async function main() {
   const send = hasFlag('send');
+  const reminder = hasFlag('reminder');
   const listArg = (parseArg('list', 'both') || 'both') as 'past' | 'members' | 'both';
   const slug = parseArg('slug', DEFAULT_GALA_SLUG)!;
   const testEmail = parseArg('test');
@@ -363,7 +365,7 @@ async function main() {
 
   console.log('\n── Rotaract NYC Gala 2026 — Invite Sender ──');
   console.log(`Mode:        ${send ? '🟢 LIVE SEND' : '🟡 dry run (no emails sent)'}`);
-  console.log(`Segment(s):  ${listArg}`);
+  console.log(`Segment(s):  ${reminder ? 'alumni reminder' : listArg}`);
   console.log(`Event slug:  ${slug}`);
   console.log(`Ticket URL:  ${ticketUrl}`);
   if (testEmail) console.log(`Test only:   ${testEmail}`);
@@ -390,6 +392,85 @@ async function main() {
     `🛑 Suppression list: ${suppression.size} email${suppression.size === 1 ? '' : 's'} ` +
       `already purchased 2026 tickets${eventId ? ` (eventId: ${eventId})` : ''}`,
   );
+
+  // ── Reminder mode ───────────────────────────────────────────────────────
+  // Sends the time-sensitive reminder template to the ALUMNI segment only
+  // (members & past attendees are excluded). Ticket buyers stay suppressed.
+  if (reminder) {
+    const alumni = MEMBERS_AND_ALUMNI.filter((r) => r.audience === 'alumni');
+    const seg = resolveSegment('Alumni reminder', alumni, suppression);
+    printSegmentSummary(seg);
+
+    const buildReminder = (firstName: string) =>
+      galaReminderEmail({
+        firstName,
+        ticketUrl,
+        donateUrl,
+        eventDate: DEFAULT_EVENT_DATE,
+        eventTime: DEFAULT_EVENT_TIME,
+        eventVenue: DEFAULT_EVENT_VENUE,
+        alumni: true,
+      });
+
+    if (testEmail) {
+      if (!send) {
+        console.log(`\n💡 --test provided without --send. Add --send to fire the test reminder.`);
+        return;
+      }
+      console.log(`\n📨 Sending TEST reminder to ${testEmail}…`);
+      const built = buildReminder('Friend');
+      const r = await sendEmail({
+        to: testEmail,
+        subject: `[TEST · reminder] ${built.subject}`,
+        html: built.html,
+        text: built.text,
+        attachments: posterAttachment ? [posterAttachment] : undefined,
+      });
+      console.log(`   reminder: ${r.success ? `✅ ${r.id}` : `❌ ${r.error}`}`);
+      return;
+    }
+
+    if (!send) {
+      console.log(`\n💡 Dry run complete. Re-run with --reminder --send to deliver these reminders.`);
+      return;
+    }
+
+    console.log(`\n📨 Sending "${seg.label}" → ${seg.recipients.length} recipients…`);
+    let sent = 0;
+    let failed = 0;
+    for (let i = 0; i < seg.recipients.length; i += CHUNK_SIZE) {
+      const chunk = seg.recipients.slice(i, i + CHUNK_SIZE);
+      const results = await Promise.allSettled(
+        chunk.map((r) => {
+          const built = buildReminder(r.firstName);
+          return sendEmail({
+            to: r.email,
+            subject: built.subject,
+            html: built.html,
+            text: built.text,
+            attachments: posterAttachment ? [posterAttachment] : undefined,
+          }).then((res) => ({ res, email: r.email }));
+        }),
+      );
+      for (const settled of results) {
+        if (settled.status === 'fulfilled' && settled.value.res.success) {
+          sent++;
+          console.log(`   ✅ ${settled.value.email}`);
+        } else {
+          failed++;
+          const reason =
+            settled.status === 'fulfilled' ? settled.value.res.error : String(settled.reason);
+          const who = settled.status === 'fulfilled' ? settled.value.email : '(unknown)';
+          console.log(`   ❌ ${who} — ${reason}`);
+        }
+      }
+      if (i + CHUNK_SIZE < seg.recipients.length) {
+        await new Promise((r) => setTimeout(r, CHUNK_DELAY_MS));
+      }
+    }
+    console.log(`   → done: ${sent} sent, ${failed} failed`);
+    return;
+  }
 
   // Resolve both segments
   const pastSegment = resolveSegment('Past attendees (2023/2025)', PAST_ATTENDEES, suppression);
