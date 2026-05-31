@@ -356,7 +356,7 @@ function resolveSegment<T extends { email: string }>(
 async function main() {
   const send = hasFlag('send');
   const reminder = hasFlag('reminder');
-  const listArg = (parseArg('list', 'both') || 'both') as 'past' | 'members' | 'both';
+  const listArg = (parseArg('list', 'both') || 'both') as 'past' | 'members' | 'current' | 'both';
   const slug = parseArg('slug', DEFAULT_GALA_SLUG)!;
   const testEmail = parseArg('test');
   const ticketUrlOverride = parseArg('ticket-url');
@@ -397,8 +397,9 @@ async function main() {
   // Sends the time-sensitive reminder template. Target is controlled by
   // --list:
   //   --list=members (default) → alumni from the members/alumni roster
+  //   --list=current           → current members (audience === 'member')
   //   --list=past              → prior 2023/2025 gala attendees
-  //   --list=both              → both of the above
+  //   --list=both              → past attendees + alumni
   // Ticket buyers are always suppressed (live from Firestore).
   if (reminder) {
     const buildReminder = (firstName: string, isPastAttendee: boolean) =>
@@ -419,6 +420,11 @@ async function main() {
       isPast: boolean;
     }> = [];
 
+    if ((listArg as string) === 'current') {
+      const members = MEMBERS_AND_ALUMNI.filter((r) => r.audience === 'member');
+      const seg = resolveSegment('Current members reminder', members, suppression);
+      reminderSegments.push({ seg, isPast: false });
+    }
     if (listArg === 'past' || listArg === 'both') {
       const past = resolveSegment('Past attendees reminder', PAST_ATTENDEES, suppression);
       reminderSegments.push({ seg: past, isPast: true });
