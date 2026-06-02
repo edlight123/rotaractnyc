@@ -304,14 +304,15 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
                         </p>
                       </div>
                     </div>
-                    {event.pricing.earlyBirdPrice != null && event.pricing.earlyBirdDeadline && (
+                    {event.pricing.earlyBirdPrice != null &&
+                      event.pricing.earlyBirdDeadline &&
+                      new Date(event.pricing.earlyBirdDeadline) > new Date() && (
                       <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
                         <p className="text-sm font-semibold text-green-800 dark:text-green-300">
                           🐦 Early Bird: {formatCurrency(event.pricing.earlyBirdPrice)}
                         </p>
                         <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                           Available until {formatDate(event.pricing.earlyBirdDeadline)}
-                          {new Date(event.pricing.earlyBirdDeadline) < new Date() && ' — expired'}
                         </p>
                       </div>
                     )}
