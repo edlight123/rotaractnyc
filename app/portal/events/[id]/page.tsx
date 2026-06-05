@@ -429,7 +429,7 @@ export default function PortalEventDetailPage() {
               )}
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-display font-bold text-gray-900 dark:text-white leading-tight">{event.title}</h1>
+            <h1 className="text-2xl sm:text-3xl font-display font-bold text-gray-900 dark:text-white leading-tight break-words">{event.title}</h1>
 
             {/* ── Action Bar: Calendar, Share, Directions ── */}
             <EventActionBar event={event} onCopied={() => toast('Link copied to clipboard!')} />

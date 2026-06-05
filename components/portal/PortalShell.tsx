@@ -498,7 +498,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
         </button>
 
         {/* Page content */}
-        <main id="main-content" tabIndex={-1} {...pullBind()} className="p-4 lg:pt-8 lg:p-8 pb-bottom-nav">
+        <main id="main-content" tabIndex={-1} {...pullBind()} className="p-4 lg:pt-8 lg:p-8 pb-bottom-nav overflow-x-clip">
           {/* Pull-to-refresh indicator */}
           <div style={indicatorStyle} className="lg:hidden">
             {(pullDistance > 0 || isPullRefreshing) && (

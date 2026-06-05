@@ -241,10 +241,10 @@ export default function EventDescription({ text, className }: Props) {
 
   return (
     <div
-      className={
+      className={`break-words ${
         className ??
         'prose prose-lg dark:prose-invert max-w-none text-gray-700 dark:text-gray-300'
-      }
+      }`}
     >
       {blocks.map((block, bi) => {
         if (block.type === 'list') {

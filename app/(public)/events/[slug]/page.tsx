@@ -121,7 +121,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
                 <Badge variant="gold">🎟️ {formatCurrency(event.pricing.guestPrice)}</Badge>
               )}
             </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold">{event.title}</h1>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold break-words">{event.title}</h1>
 
             {/* Action buttons: Calendar, Share, Directions */}
             <div className="mt-6">
