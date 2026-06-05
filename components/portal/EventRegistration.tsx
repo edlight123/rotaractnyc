@@ -7,6 +7,7 @@ import Card from '@/components/ui/Card';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
 import { hasTiers, getAvailableTiers, getAllTiers, isTierAvailable, tierSpotsLeft } from '@/lib/utils/pricing';
 import { SITE } from '@/lib/constants';
+import TicketScarcity from '@/components/public/TicketScarcity';
 import type { RotaractEvent } from '@/types';
 
 interface EventRegistrationProps {
@@ -206,6 +207,9 @@ export default function EventRegistration({
                 </div>
               )}
 
+              {/* ── Scarcity / urgency nudge — escalates as the event fills ── */}
+              <TicketScarcity capacity={event.capacity} ticketsSold={attendeeCount} />
+
               {/* ── Current RSVP status ── */}
               {currentRSVP && (
                 <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2">
@@ -373,6 +377,7 @@ export default function EventRegistration({
       {!isPast && (
         <div className="lg:hidden fixed bottom-above-nav left-0 right-0 z-40 p-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)]">
           <div className="max-w-lg mx-auto">
+            <TicketScarcity capacity={event.capacity} ticketsSold={attendeeCount} variant="inline" urgentOnly className="mb-2" />
             {tierPricing && alreadyGoing ? (
               <Button className="w-full" variant="secondary" size="lg" disabled>
                 ✓ Ticket Purchased

@@ -12,6 +12,7 @@ import PublicEventActions from '@/components/public/PublicEventActions';
 import EventWaitlistForm from '@/components/public/EventWaitlistForm';
 import EventDescription from '@/components/public/EventDescription';
 import EventDonateSection from '@/components/public/EventDonateSection';
+import TicketScarcity from '@/components/public/TicketScarcity';
 
 export const revalidate = 120; // 2 min — event details change more frequently
 
@@ -46,6 +47,14 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
     (event as any).image ||
     (event as any).coverImage ||
     null;
+
+  // Tickets sold for the scarcity nudge: prefer the event-level counter but
+  // fall back to summing tier soldCounts if it's higher (the event counter can
+  // briefly lag tier totals during high-volume sales).
+  const ticketsSold = Math.max(
+    (event as any).attendeeCount ?? 0,
+    (event.pricing?.tiers ?? []).reduce((sum: number, t: any) => sum + (t.soldCount ?? 0), 0),
+  );
 
   const eventJsonLd = {
     '@context': 'https://schema.org',
@@ -237,6 +246,9 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
               );
             })()}
 
+            {/* ── Tickets-left urgency nudge (hidden once sold out) ── */}
+            <TicketScarcity capacity={event.capacity} ticketsSold={ticketsSold} className="mt-10" />
+
             {/* Pricing */}
             {event.pricing && (event.type === 'paid' || event.type === 'hybrid') && (
               <div className="mt-10 p-6 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
@@ -343,7 +355,11 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
                     (t.deadline && new Date(t.deadline) < now) ||
                     (t.capacity != null && (t.soldCount ?? 0) >= t.capacity),
                 );
-              if (allTiersSoldOrExpired) return null;
+              // Also hide the registration form once the event hits its overall
+              // capacity (e.g. the gala's 80-ticket cap), not just when tiers
+              // sell out — otherwise legacy-priced events could oversell.
+              const eventFull = event.capacity != null && ticketsSold >= event.capacity;
+              if (allTiersSoldOrExpired || eventFull) return null;
               return (
                 <>
                   <GuestRsvpForm
