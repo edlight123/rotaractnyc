@@ -91,12 +91,24 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
       >
         {heroImage ? (
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {/* Blurred fill so the hero spans the full width even when the
+                source is a portrait flyer or an unusual aspect ratio. */}
+            <Image
+              src={heroImage}
+              alt=""
+              aria-hidden="true"
+              fill
+              sizes="100vw"
+              className="object-cover scale-110 blur-2xl"
+              priority
+            />
+            {/* The full image, contained so nothing important is cropped out. */}
             <Image
               src={heroImage}
               alt={event.title}
               fill
               sizes="100vw"
-              className="object-cover"
+              className="object-contain"
               priority
             />
             {/* Gradient: dark at the bottom so text stays legible, lighter at top */}

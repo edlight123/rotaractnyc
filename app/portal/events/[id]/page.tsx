@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/auth';
 import { apiGet, apiPost, apiDelete, useRsvps, useGuestRsvps } from '@/hooks/useFirestore';
@@ -313,7 +314,7 @@ export default function PortalEventDetailPage() {
       <div className="h-4 w-28 bg-gray-200 dark:bg-gray-800 rounded" />
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-5">
-          <div className="h-52 bg-gray-200 dark:bg-gray-800 rounded-2xl" />
+          <div className="aspect-[16/9] bg-gray-200 dark:bg-gray-800 rounded-2xl" />
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 space-y-4">
             <div className="flex gap-2">
               <div className="h-6 w-16 bg-gray-200 dark:bg-gray-800 rounded-full" />
@@ -385,13 +386,33 @@ export default function PortalEventDetailPage() {
       <div className="grid lg:grid-cols-3 gap-6 items-start">
         {/* ── Main ── */}
         <div className="lg:col-span-2 space-y-5">
-          {/* Hero banner */}
-          <div className="rounded-2xl overflow-hidden shadow-sm">
+          {/* Hero banner — fixed aspect ratio with a blurred backdrop so the
+              full image is always visible (object-contain) and never awkwardly
+              cropped, whether it's a wide photo or a portrait event flyer. */}
+          <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden shadow-sm bg-gray-100 dark:bg-gray-800">
             {event.imageURL ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={event.imageURL} alt={event.title} className="w-full h-56 sm:h-72 object-cover" />
+              <>
+                {/* Blurred fill behind the contained image */}
+                <Image
+                  src={event.imageURL}
+                  alt=""
+                  aria-hidden="true"
+                  fill
+                  sizes="(min-width: 1024px) 680px, 100vw"
+                  className="object-cover scale-110 blur-2xl opacity-50 dark:opacity-40"
+                />
+                {/* Full image, centered and never cropped */}
+                <Image
+                  src={event.imageURL}
+                  alt={event.title}
+                  fill
+                  sizes="(min-width: 1024px) 680px, 100vw"
+                  className="object-contain"
+                  priority
+                />
+              </>
             ) : (
-              <div className={`h-40 sm:h-52 bg-gradient-to-br ${typeGradients[event.type] || typeGradients.free} relative flex items-end`}>
+              <div className={`absolute inset-0 bg-gradient-to-br ${typeGradients[event.type] || typeGradients.free} flex items-end`}>
                 <div
                   className="absolute inset-0 opacity-[0.08]"
                   style={{ backgroundImage: 'radial-gradient(circle, white 1.5px, transparent 0)', backgroundSize: '28px 28px' }}
