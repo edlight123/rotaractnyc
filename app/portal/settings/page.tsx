@@ -27,7 +27,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8 page-enter">
+    <div className="max-w-3xl mx-auto space-y-8 page-enter">
       <div>
         <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">
           Settings

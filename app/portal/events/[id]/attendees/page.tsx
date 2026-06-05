@@ -265,7 +265,7 @@ export default function EventAttendeesPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 page-enter pb-20">
+    <div className="max-w-5xl mx-auto space-y-6 page-enter pb-20">
       {/* Back */}
       <button
         onClick={() => router.push(`/portal/events/${id}`)}

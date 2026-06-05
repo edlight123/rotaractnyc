@@ -292,6 +292,17 @@
       padding-bottom: 0;
     }
   }
+  /* Anchor a fixed action bar directly above the mobile bottom-nav
+     (nav = h-16 / 4rem + safe-area inset) so the two stack cleanly
+     instead of overlapping. Resets to the viewport edge on desktop. */
+  .bottom-above-nav {
+    bottom: calc(env(safe-area-inset-bottom) + 4rem);
+  }
+  @media (min-width: 1024px) {
+    .bottom-above-nav {
+      bottom: 0;
+    }
+  }
   /* When installed as a PWA, hide UI bits that only make sense in a browser */
   @media (display-mode: standalone) {
     .hide-in-standalone {

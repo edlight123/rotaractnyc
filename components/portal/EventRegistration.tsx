@@ -368,9 +368,10 @@ export default function EventRegistration({
         </div>
       </Card>
 
-      {/* Mobile sticky CTA */}
+      {/* Mobile sticky CTA — sits directly above the bottom tab bar (see
+          .bottom-above-nav) so it no longer overlaps/hides the portal nav. */}
       {!isPast && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800">
+        <div className="lg:hidden fixed bottom-above-nav left-0 right-0 z-40 p-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)]">
           <div className="max-w-lg mx-auto">
             {tierPricing && alreadyGoing ? (
               <Button className="w-full" variant="secondary" size="lg" disabled>

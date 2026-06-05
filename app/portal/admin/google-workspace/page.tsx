@@ -278,7 +278,7 @@ export default function GoogleWorkspacePage() {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 page-enter">
+    <div className="max-w-5xl mx-auto space-y-6 page-enter">
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">

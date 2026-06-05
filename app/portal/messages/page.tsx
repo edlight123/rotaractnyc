@@ -130,7 +130,7 @@ export default function MessagesPage() {
   }, [activeTab, toast]);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 page-enter">
+    <div className="max-w-5xl mx-auto space-y-8 page-enter">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Messages</h1>

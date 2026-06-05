@@ -515,7 +515,7 @@ export default function ScanPage() {
   // ─── Main UI ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+    <div className="max-w-2xl mx-auto space-y-4">
       {/* Header */}
       <div>
         <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Event Check-in</p>

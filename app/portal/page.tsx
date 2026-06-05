@@ -133,7 +133,7 @@ export default function PortalDashboard() {
 
   return (
     <>
-    <div className="max-w-[1400px] mx-auto space-y-6 page-enter">
+    <div className="max-w-7xl mx-auto space-y-6 page-enter">
 
       {/* ═══════ MOBILE VIEW TABS (sm:hidden) ═══════ */}
       <div className="sm:hidden">

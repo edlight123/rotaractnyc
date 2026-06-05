@@ -250,7 +250,7 @@ export default function AnalyticsDashboard() {
   const maxContributorHours = topContributors.length > 0 ? Math.max(...topContributors.map((c) => c.hours)) : 1;
 
   return (
-    <div className="space-y-8 p-4 md:p-6 max-w-7xl mx-auto">
+    <div className="space-y-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
