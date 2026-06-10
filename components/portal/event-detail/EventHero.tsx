@@ -14,7 +14,7 @@ interface EventHeroProps {
  */
 export default function EventHero({ event }: EventHeroProps) {
   return (
-    <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden shadow-sm bg-gray-100 dark:bg-gray-800">
+    <div className="relative w-full min-w-0 aspect-[16/9] rounded-2xl overflow-hidden shadow-sm bg-gray-100 dark:bg-gray-800">
       {event.imageURL ? (
         <>
           {/* Blurred fill behind the contained image */}

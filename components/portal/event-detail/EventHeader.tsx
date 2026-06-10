@@ -57,8 +57,8 @@ export default function EventHeader({
   ];
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 sm:p-8 space-y-5">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-5 overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant={colorFor(event.type)} className="capitalize">{event.type}</Badge>
           {(event as RotaractEvent & { isFeatured?: boolean }).isFeatured && <Badge variant="gold">⭐ Featured</Badge>}
@@ -68,21 +68,22 @@ export default function EventHeader({
           {event.recurrenceParentId && <Badge variant="azure">🔁 Series #{(event.occurrenceIndex ?? 0) + 1}</Badge>}
         </div>
         {canManageEvents && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto">
             <Button size="sm" variant="secondary" onClick={onEdit}>
               <svg className="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
               Edit
             </Button>
             <Button size="sm" variant="ghost" onClick={onDuplicate} title="Duplicate this event">
-              <svg className="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-              Duplicate
+              <svg className="w-3.5 h-3.5 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+              <span className="hidden sm:inline">Duplicate</span>
+              <span className="sm:hidden">Copy</span>
             </Button>
             <Button size="sm" variant="ghost" onClick={onDelete} className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">Delete</Button>
           </div>
         )}
       </div>
 
-      <h1 className="text-2xl sm:text-3xl font-display font-bold text-gray-900 dark:text-white leading-tight break-words">{event.title}</h1>
+      <h1 className="text-xl sm:text-2xl lg:text-3xl font-display font-bold text-gray-900 dark:text-white leading-tight break-words">{event.title}</h1>
 
       {/* ── Action Bar: Calendar, Share, Directions ── */}
       <EventActionBar event={event} onCopied={onCopiedLink} />

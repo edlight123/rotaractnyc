@@ -41,7 +41,7 @@ export default function PortalEventDetailPage() {
 
   return (
     <>
-      <div className="max-w-5xl mx-auto space-y-6 page-enter pb-32 lg:pb-6">
+      <div className="max-w-5xl mx-auto space-y-6 page-enter pb-32 lg:pb-6 overflow-hidden">
         {/* Back */}
         <button onClick={ev.goBack} className="group text-sm text-gray-500 hover:text-cranberry transition-colors flex items-center gap-1.5">
           <svg aria-hidden="true" className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
@@ -50,7 +50,7 @@ export default function PortalEventDetailPage() {
 
         <div className="grid lg:grid-cols-3 gap-6 items-start">
           {/* ── Main ── */}
-          <div className="lg:col-span-2 space-y-5">
+          <div className="lg:col-span-2 space-y-5 min-w-0">
             <EventHero event={event} />
 
             <EventHeader
