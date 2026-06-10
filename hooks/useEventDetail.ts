@@ -399,6 +399,7 @@ export function useEventDetail() {
     onDuplicateSaved,
     // handlers
     fetchEvent,
+    refreshPurchasers,
     notifyLinkCopied,
     handleRSVP,
     handlePurchaseTicket,

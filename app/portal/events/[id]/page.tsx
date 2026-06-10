@@ -80,6 +80,7 @@ export default function PortalEventDetailPage() {
                   eventId={ev.id}
                   purchasers={ev.purchasers}
                   summary={ev.purchaserSummary}
+                  onRefresh={ev.refreshPurchasers}
                 />
                 <EventDonationsPanel
                   acceptsDonations={event.acceptsDonations}
