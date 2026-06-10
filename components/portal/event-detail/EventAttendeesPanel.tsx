@@ -23,38 +23,36 @@ export default function EventAttendeesPanel({
   if (distinctAttendeeCount <= 0) return null;
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6">
-      <h3 className="font-display font-semibold text-gray-900 dark:text-white mb-4 text-lg">
-        Attendees <span className="text-gray-400 dark:text-gray-500 font-normal text-base">({distinctAttendeeCount})</span>
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-4 sm:p-6">
+      <h3 className="font-display font-semibold text-gray-900 dark:text-white mb-3 text-base">
+        Attendees <span className="text-gray-400 dark:text-gray-500 font-normal text-sm">({distinctAttendeeCount})</span>
         {goingCount > distinctAttendeeCount && (
-          <span className="text-gray-400 dark:text-gray-500 font-normal text-sm ml-1">
+          <span className="text-gray-400 dark:text-gray-500 font-normal text-xs ml-1">
             · {goingCount} ticket{goingCount !== 1 ? 's' : ''}
           </span>
         )}
       </h3>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {rsvps
           .filter((r) => r.status === 'going')
           .map((r) => (
-            <div key={r.id} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-full pl-1 pr-3 py-1 border border-gray-100 dark:border-gray-700 group/attendee relative">
+            <div key={r.id} className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300">
               <Avatar src={r.memberPhoto} alt={r.memberName} size="sm" />
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{r.memberName}</span>
+              <span className="font-medium">{r.memberName}</span>
               {r.checkedIn && (
-                <span className="flex items-center justify-center w-4 h-4 rounded-full bg-emerald-100 dark:bg-emerald-900/40" title={`Checked in${r.checkedInAt ? ` at ${new Date(r.checkedInAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : ''}`}>
-                  <svg className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                </span>
+                <svg className="w-3 h-3 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3} aria-label="Checked in">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
               )}
             </div>
           ))}
         {guestRsvps
           .filter((r) => r.status === 'going')
           .map((r) => (
-            <div key={r.id} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-full pl-1 pr-3 py-1 border border-gray-100 dark:border-gray-700">
+            <div key={r.id} className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300">
               <Avatar src={undefined} alt={r.name} size="sm" />
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{r.name}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md text-azure-700 bg-azure-50 dark:bg-azure-900/20">guest</span>
+              <span className="font-medium">{r.name}</span>
+              <span className="w-4 h-4 rounded-full bg-azure-50 dark:bg-azure-900/30 text-azure-700 dark:text-azure-400 text-[9px] font-bold flex items-center justify-center" title="Guest">G</span>
             </div>
           ))}
       </div>

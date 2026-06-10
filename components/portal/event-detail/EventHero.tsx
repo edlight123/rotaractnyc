@@ -14,28 +14,16 @@ interface EventHeroProps {
  */
 export default function EventHero({ event }: EventHeroProps) {
   return (
-    <div className="relative w-full min-w-0 aspect-[16/9] rounded-2xl overflow-hidden shadow-sm bg-gray-100 dark:bg-gray-800">
+    <div className="relative w-full min-w-0 -mx-4 sm:mx-0 sm:rounded-2xl aspect-[16/9] overflow-hidden shadow-sm bg-gray-100 dark:bg-gray-800">
       {event.imageURL ? (
-        <>
-          {/* Blurred fill behind the contained image */}
-          <Image
-            src={event.imageURL}
-            alt=""
-            aria-hidden="true"
-            fill
-            sizes="(min-width: 1024px) 680px, 100vw"
-            className="object-cover scale-110 blur-2xl opacity-50 dark:opacity-40"
-          />
-          {/* Full image, centered and never cropped */}
-          <Image
-            src={event.imageURL}
-            alt={event.title}
-            fill
-            sizes="(min-width: 1024px) 680px, 100vw"
-            className="object-contain"
-            priority
-          />
-        </>
+        <Image
+          src={event.imageURL}
+          alt={event.title}
+          fill
+          sizes="(min-width: 1024px) 680px, 100vw"
+          className="object-cover"
+          priority
+        />
       ) : (
         <div className={`absolute inset-0 bg-gradient-to-br ${gradientFor(event.type)} flex items-end`}>
           <div
