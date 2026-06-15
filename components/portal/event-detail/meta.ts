@@ -1,4 +1,5 @@
 import type { EventType } from '@/types';
+import { PartyPopper, Ticket, HandHeart, Sparkles, CalendarDays, type LucideIcon } from 'lucide-react';
 
 /** Badge colour per event type. */
 export const typeColors: Record<string, 'green' | 'cranberry' | 'azure' | 'gold' | 'gray'> = {
@@ -16,15 +17,15 @@ export const typeGradients: Record<string, string> = {
   hybrid: 'from-cranberry to-cranberry-800',
 };
 
-/** Emoji shown on the gradient hero fallback. */
-export const typeIcons: Record<string, string> = {
-  free: '🎉',
-  paid: '🎟',
-  service: '🤝',
-  hybrid: '✨',
+/** Lucide icon shown on the gradient hero fallback. */
+export const typeIconComponents: Record<string, LucideIcon> = {
+  free: PartyPopper,
+  paid: Ticket,
+  service: HandHeart,
+  hybrid: Sparkles,
 };
 
 /** Safe lookups that fall back to the `free`/default styling. */
 export const gradientFor = (type: EventType) => typeGradients[type] || typeGradients.free;
-export const iconFor = (type: EventType) => typeIcons[type] || '📅';
+export const iconFor = (type: EventType): LucideIcon => typeIconComponents[type] || CalendarDays;
 export const colorFor = (type: EventType) => typeColors[type] || 'gray';

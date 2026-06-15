@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Check, X } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
 import { apiPost } from '@/hooks/useFirestore';
 import Button from '@/components/ui/Button';
@@ -185,17 +186,18 @@ export default function EventPurchasersPanel({ eventId, purchasers, summary, onR
                     <div className="flex items-center gap-1 ml-1">
                       <button
                         onClick={() => { setMarkingPaid(p.id); setConfirmRemove(null); }}
-                        className="text-[10px] font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
+                        className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
                         title="Mark as paid"
                       >
-                        ✓ Paid
+                        <Check className="w-3 h-3" />
+                        Paid
                       </button>
                       <button
                         onClick={() => { setConfirmRemove(p.id); setMarkingPaid(null); }}
-                        className="text-[10px] font-semibold text-red-500 hover:text-red-600 dark:text-red-400"
+                        className="text-red-500 hover:text-red-600 dark:text-red-400"
                         title="Remove ticket"
                       >
-                        ✕
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   )}

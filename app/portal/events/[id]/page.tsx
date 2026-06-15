@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { ChevronLeft } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { useEventDetail } from '@/hooks/useEventDetail';
 import EventDetailSkeleton from '@/components/portal/event-detail/EventDetailSkeleton';
@@ -43,8 +44,8 @@ export default function PortalEventDetailPage() {
     <>
       <div className="max-w-5xl mx-auto space-y-6 page-enter pb-32 lg:pb-6 overflow-hidden">
         {/* Back */}
-        <button onClick={ev.goBack} className="group text-sm text-gray-500 hover:text-cranberry transition-colors flex items-center gap-1.5">
-          <svg aria-hidden="true" className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+        <button onClick={ev.goBack} className="group inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-cranberry dark:text-gray-400 dark:hover:text-cranberry-400 transition-colors">
+          <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
           Back to events
         </button>
 

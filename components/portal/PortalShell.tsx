@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/firebase/auth';
 import { useDues } from '@/hooks/useDues';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useUnreadCounts } from '@/hooks/useUnreadCounts';
+import { usePendingMembers } from '@/hooks/useFirestore';
 import Avatar from '@/components/ui/Avatar';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import DuesBanner from '@/components/portal/DuesBanner';
@@ -211,6 +212,9 @@ export default function PortalShell({ children }: { children: React.ReactNode })
   const { member, signOut, loading } = useAuth();
   const { status: duesStatus } = useDues();
   const unread = useUnreadCounts(!!member);
+  const isAdmin = member?.role === 'board' || member?.role === 'president' || member?.role === 'treasurer';
+  const { data: pendingMembers } = usePendingMembers(!!member && isAdmin);
+  const pendingCount = pendingMembers?.length ?? 0;
   const sidebarRef = useRef<HTMLElement>(null);
   const signOutDialogRef = useRef<HTMLDivElement>(null);
   const signOutTriggerRef = useRef<HTMLButtonElement>(null);
@@ -402,7 +406,15 @@ export default function PortalShell({ children }: { children: React.ReactNode })
                       )}>
                         {item.icon}
                       </span>
-                      {item.label}
+                      <span className="flex-1 truncate">{item.label}</span>
+                      {item.href === '/portal/directory' && pendingCount > 0 && (
+                        <span
+                          className="shrink-0 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-cranberry text-white text-[11px] font-bold tabular-nums"
+                          aria-label={`${pendingCount} member${pendingCount !== 1 ? 's' : ''} pending approval`}
+                        >
+                          {pendingCount > 99 ? '99+' : pendingCount}
+                        </span>
+                      )}
                     </Link>
                   ))}
                 </div>

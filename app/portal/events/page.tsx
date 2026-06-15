@@ -1,38 +1,33 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
+import { Plus, CalendarDays } from 'lucide-react';
 import { useAuth } from '@/lib/firebase/auth';
 import { usePortalEvents, useMemberRsvps, apiGet, apiPost } from '@/hooks/useFirestore';
 import { useToast } from '@/components/ui/Toast';
-import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Tabs from '@/components/ui/Tabs';
 import SearchInput from '@/components/ui/SearchInput';
-import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
+import { CardGridSkeleton, ListSkeleton } from '@/components/ui/Skeleton';
 import CreateEventModal from '@/components/portal/CreateEventModal';
 import EventCheckoutModal from '@/components/portal/EventCheckoutModal';
+import EventCard from '@/components/portal/EventCard';
+import CalendarView from '@/components/portal/CalendarView';
+import PageHeader from '@/components/portal/PageHeader';
+import PageContainer from '@/components/portal/PageContainer';
+import FilterBar, { FilterSelect } from '@/components/portal/FilterBar';
+import DataView, { ViewToggle, type ViewMode } from '@/components/portal/DataView';
 import { defaultEvents } from '@/lib/defaults/data';
-import { formatCurrency } from '@/lib/utils/format';
 import type { RotaractEvent, RSVPStatus, EventType, PaymentSettings } from '@/types';
 
-/* Gradient placeholder colours per event type */
-const typeGradients: Record<EventType, string> = {
-  free: 'from-emerald-500/80 to-teal-600/80',
-  paid: 'from-amber-500/80 to-orange-600/80',
-  service: 'from-azure to-azure-800',
-  hybrid: 'from-cranberry to-cranberry-800',
-};
-const typeIcons: Record<EventType, string> = { free: '', paid: '', service: '', hybrid: '' };
-
-/* RSVP status label + color */
-const rsvpDisplay: Record<string, { label: string; color: string; icon: string }> = {
-  going: { label: 'Going', color: 'text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/30', icon: '✓' },
-  maybe: { label: 'Maybe', color: 'text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/30', icon: '?' },
-  not_going: { label: 'Not going', color: 'text-gray-500 bg-gray-100 dark:text-gray-400 dark:bg-gray-800', icon: '✕' },
-};
+const TYPE_FILTERS = [
+  { value: 'all', label: 'All types' },
+  { value: 'free', label: 'Free' },
+  { value: 'paid', label: 'Ticketed' },
+  { value: 'service', label: 'Service' },
+  { value: 'hybrid', label: 'Hybrid' },
+];
 
 export default function PortalEventsPage() {
   const { user, member } = useAuth();
@@ -42,6 +37,7 @@ export default function PortalEventsPage() {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('upcoming');
   const [typeFilter, setTypeFilter] = useState<EventType | 'all'>('all');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [rsvpLoading, setRsvpLoading] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   // Optimistic RSVP state: eventId → status
@@ -111,6 +107,15 @@ export default function PortalEventsPage() {
         : new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
 
+  // Calendar view spans whole months, so it ignores the upcoming/past split.
+  const calendarEvents = allEvents.filter((e) => {
+    const q = search.toLowerCase();
+    const matchSearch =
+      (e.title || '').toLowerCase().includes(q) || (e.description || '').toLowerCase().includes(q);
+    const matchType = typeFilter === 'all' || e.type === typeFilter;
+    return matchSearch && matchType;
+  });
+
   const handleRSVP = async (eventId: string, status: RSVPStatus) => {
     if (!user) return;
     // Optimistic update — show the status immediately
@@ -119,7 +124,7 @@ export default function PortalEventsPage() {
     setRsvpLoading(eventId);
     try {
       await apiPost('/api/portal/events/rsvp', { eventId, status });
-      toast(status === 'going' ? "You're going! 🎉" : status === 'maybe' ? 'Marked as maybe' : 'RSVP updated');
+      toast(status === 'going' ? "You're going!" : status === 'maybe' ? 'Marked as maybe' : 'RSVP updated');
     } catch (err: any) {
       // Revert optimistic update on error
       setOptimisticRsvps((prev) => {
@@ -217,387 +222,94 @@ export default function PortalEventsPage() {
     }
   };
 
-  /* ---- Helpers ---- */
-  const isPaid = (e: RotaractEvent) => (e.type === 'paid' || e.type === 'hybrid') && e.pricing;
-
-  const formatEventDay = (d: string) => ({
-    month: new Date(d).toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
-    day: new Date(d).getDate(),
-    weekday: new Date(d).toLocaleDateString('en-US', { weekday: 'short' }),
-  });
-
-  const spotsLeft = (e: RotaractEvent) =>
-    e.capacity ? Math.max(0, e.capacity - (e.attendeeCount ?? 0)) : null;
+  const views: ViewMode[] = ['list', 'grid', 'calendar'];
+  const isCalendar = viewMode === 'calendar';
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
-      {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Events</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">RSVP to upcoming events and track your attendance.</p>
-        </div>
-        {canManageEvents && (
-          <Button onClick={() => setShowCreateModal(true)} className="shrink-0">
-            <svg aria-hidden="true" className="w-4 h-4 -ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            Create Event
-          </Button>
-        )}
-      </div>
-
-      {/* ── Search & Tabs ── */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search events..." className="sm:max-w-xs" />
-        <Tabs
-          tabs={[
-            { id: 'upcoming', label: 'Upcoming' },
-            { id: 'past', label: 'Past' },
-          ]}
-          activeTab={activeTab}
-          onChange={setActiveTab}
+    <>
+      <PageContainer width="default">
+        <PageHeader
+          title="Events"
+          subtitle="RSVP to upcoming events and track your attendance."
+          actions={
+            canManageEvents && (
+              <Button onClick={() => setShowCreateModal(true)}>
+                <Plus className="w-4 h-4 -ml-0.5" />
+                Create Event
+              </Button>
+            )
+          }
         />
-      </div>
 
-      {/* ── Type filter chips ── */}
-      <div className="flex flex-wrap gap-2">
-        {(
-          [
-            ['all', 'All'],
-            ['free', 'Free'],
-            ['paid', 'Ticketed'],
-            ['service', 'Service'],
-            ['hybrid', 'Hybrid'],
-          ] as const
-        ).map(([value, label]) => (
-          <button
-            key={value}
-            onClick={() => setTypeFilter(value as EventType | 'all')}
-            className={`px-3 py-2.5 rounded-full text-xs font-medium transition-colors ${
-              typeFilter === value
-                ? 'bg-cranberry text-white shadow-sm'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
+        {/* Toolbar */}
+        <FilterBar trailing={<ViewToggle value={viewMode} onChange={setViewMode} views={views} />}>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search events…"
+            className="w-full sm:max-w-xs"
+          />
+          {!isCalendar && (
+            <Tabs
+              tabs={[
+                { id: 'upcoming', label: 'Upcoming' },
+                { id: 'past', label: 'Past' },
+              ]}
+              activeTab={activeTab}
+              onChange={setActiveTab}
+            />
+          )}
+          <FilterSelect
+            label="Filter by type"
+            value={typeFilter}
+            onChange={(v) => setTypeFilter(v as EventType | 'all')}
+            options={TYPE_FILTERS}
+          />
+        </FilterBar>
+
+        {/* ── Event list ── */}
+        {isCalendar ? (
+          loading ? (
+            <div className="h-[32rem] rounded-2xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+          ) : (
+            <CalendarView events={calendarEvents} />
+          )
+        ) : (
+          <DataView
+            loading={loading}
+            isEmpty={events.length === 0}
+            skeleton={viewMode === 'grid' ? <CardGridSkeleton count={4} /> : <ListSkeleton rows={3} />}
+            empty={
+              <EmptyState
+                icon={<CalendarDays className="w-7 h-7" />}
+                title={activeTab === 'upcoming' ? 'No upcoming events' : 'No past events found'}
+                description="Check back soon for new events."
+              />
+            }
+            count={events.length}
+            itemLabel="event"
           >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Event list ── */}
-      {loading ? (
-        <div className="grid gap-5">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 overflow-hidden animate-pulse">
-              <div className="h-1 bg-gray-200 dark:bg-gray-700" />
-              <div className="flex flex-col md:flex-row">
-                <div className="md:w-52 h-32 md:h-full min-h-[8rem] bg-gray-200 dark:bg-gray-800" />
-                <div className="flex-1 p-5 md:p-6 space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <div className="h-6 w-32 bg-gray-200 dark:bg-gray-800 rounded" />
-                      <div className="h-6 w-16 bg-gray-200 dark:bg-gray-800 rounded-full" />
-                    </div>
-                    <div className="h-4 w-full bg-gray-200 dark:bg-gray-800 rounded" />
-                    <div className="h-4 w-2/3 bg-gray-200 dark:bg-gray-800 rounded" />
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="h-4 w-24 bg-gray-200 dark:bg-gray-800 rounded" />
-                    <div className="h-4 w-28 bg-gray-200 dark:bg-gray-800 rounded" />
-                  </div>
-                  <div className="flex gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-                    <div className="h-9 w-24 bg-gray-200 dark:bg-gray-800 rounded-lg" />
-                    <div className="h-9 w-16 bg-gray-200 dark:bg-gray-800 rounded-lg" />
-                  </div>
-                </div>
-              </div>
+            <div className={viewMode === 'grid' ? 'grid sm:grid-cols-2 gap-5' : 'grid gap-5'}>
+              {events.map((event, index) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  variant={viewMode === 'grid' ? 'grid' : 'list'}
+                  index={index}
+                  myRsvp={getMyRsvp(event.id)}
+                  ticketLocked={isTicketLocked(event.id)}
+                  loading={rsvpLoading === event.id}
+                  anyLoading={!!rsvpLoading}
+                  isPast={new Date(event.date) < now}
+                  onRSVP={(status) => handleRSVP(event.id, status)}
+                  onPurchase={(ticketType) => handleTicketPurchase(event, ticketType)}
+                />
+              ))}
             </div>
-          ))}
-        </div>
-      ) : events.length === 0 ? (
-        <EmptyState
-          icon={<svg aria-hidden="true" className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
-          title={activeTab === 'upcoming' ? 'No upcoming events' : 'No past events found'}
-          description="Check back soon for new events."
-        />
-      ) : (
-        <div className="grid gap-5">
-          {events.map((event, index) => {
-            const d = formatEventDay(event.date);
-            const paid = isPaid(event);
-            const spots = spotsLeft(event);
-            const isFuture = new Date(event.date) >= now;
-            const hasEarlyBird =
-              event.pricing?.earlyBirdPrice != null &&
-              event.pricing?.earlyBirdDeadline &&
-              new Date(event.pricing.earlyBirdDeadline) > now;
-            const myRsvp = getMyRsvp(event.id);
-            const ticketLocked = isTicketLocked(event.id);
+          </DataView>
+        )}
+      </PageContainer>
 
-            return (
-              <div
-                key={event.id}
-                className="group relative bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden animate-in fade-in slide-in-from-bottom-2"
-                style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'both' }}
-              >
-                {/* Coloured top accent bar */}
-                <div className={`h-1 bg-gradient-to-r ${typeGradients[event.type]}`} />
-
-                <div className="flex flex-col md:flex-row">
-                  {/* ── Left: Image / Date block ── */}
-                  <Link
-                    href={`/portal/events/${event.id}`}
-                    className="relative md:w-52 shrink-0 overflow-hidden"
-                  >
-                    {event.imageURL ? (
-                      <div className="relative h-40 md:h-full w-full">
-                        <Image
-                          src={event.imageURL}
-                          alt={event.title}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        {/* Date overlay on image */}
-                        <div className="absolute top-3 left-3 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-xl px-3 py-2 text-center shadow-sm">
-                          <p className="text-[10px] font-bold text-cranberry leading-none">{d.month}</p>
-                          <p className="text-xl font-display font-bold text-gray-900 dark:text-white leading-tight">{d.day}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      /* No-image placeholder with date centred */
-                      <div
-                        className={`h-32 md:h-full min-h-[8rem] bg-gradient-to-br ${typeGradients[event.type]} flex flex-col items-center justify-center gap-0.5 text-white`}
-                      >
-                        <p className="text-xs font-bold uppercase tracking-wider opacity-90">{d.weekday}</p>
-                        <p className="text-4xl font-display font-extrabold leading-none">{d.day}</p>
-                        <p className="text-xs font-semibold uppercase tracking-wider opacity-90">{d.month}</p>
-                      </div>
-                    )}
-                    {/* Type badge */}
-                    <span className="absolute bottom-3 right-3 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm text-xs font-semibold rounded-full px-2.5 py-1 shadow-sm capitalize text-gray-700 dark:text-gray-300">
-                      {event.type}
-                    </span>
-                  </Link>
-
-                  {/* ── Right: Content ── */}
-                  <div className="flex-1 p-5 md:p-6 flex flex-col justify-between gap-4">
-                    <div>
-                      {/* Title row */}
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <Link
-                          href={`/portal/events/${event.id}`}
-                          className="text-lg font-display font-bold text-gray-900 dark:text-white group-hover:text-cranberry dark:group-hover:text-cranberry-400 transition-colors"
-                        >
-                          {event.title}
-                        </Link>
-                        <Badge variant={event.type === 'service' ? 'azure' : event.type === 'paid' ? 'gold' : event.type === 'hybrid' ? 'cranberry' : 'green'}>
-                          {event.type}
-                        </Badge>
-                        {event.isRecurring && !event.recurrenceParentId && (
-                          <Badge variant="azure">
-                            🔁 Recurring
-                          </Badge>
-                        )}
-                        {event.recurrenceParentId && (
-                          <Badge variant="azure">
-                            🔁 Series #{(event.occurrenceIndex ?? 0) + 1}
-                          </Badge>
-                        )}
-                        {event.status === 'draft' && <Badge variant="gray">Draft</Badge>}
-                        {event.status === 'cancelled' && <Badge variant="red">Cancelled</Badge>}
-                        {/* Your RSVP status */}
-                        {myRsvp && rsvpDisplay[myRsvp] && (
-                          <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full transition-all duration-300 ${rsvpDisplay[myRsvp].color}`}>
-                            {rsvpDisplay[myRsvp].icon} {rsvpDisplay[myRsvp].label}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Description */}
-                      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">{event.description}</p>
-
-                      {/* Meta row */}
-                      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-3 text-sm text-gray-500 dark:text-gray-400">
-                        <span className="inline-flex items-center gap-1.5">
-                          <svg aria-hidden="true" className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                          {event.time}{event.endTime ? ` – ${event.endTime}` : ''}
-                        </span>
-                        <span className="inline-flex items-center gap-1.5">
-                          <svg aria-hidden="true" className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                          {event.location?.split(',')[0]}
-                        </span>
-                        {spots !== null && (
-                          <span className={`inline-flex items-center gap-1.5 font-medium ${spots <= 5 ? 'text-red-500' : spots <= 15 ? 'text-amber-500' : 'text-gray-500 dark:text-gray-400'}`}>
-                            <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                            {spots === 0 ? 'Sold out' : `${spots} spot${spots !== 1 ? 's' : ''} left`}
-                          </span>
-                        )}
-                        {(event.isRecurring || event.recurrenceParentId) && event.recurrence && (
-                          <span className="inline-flex items-center gap-1.5 text-azure-600 dark:text-azure-400">
-                            <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                            {event.recurrence.frequency === 'daily' && 'Daily'}
-                            {event.recurrence.frequency === 'weekly' && 'Weekly'}
-                            {event.recurrence.frequency === 'biweekly' && 'Biweekly'}
-                            {event.recurrence.frequency === 'monthly' && 'Monthly'}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* ── Bottom row: Pricing + Actions ── */}
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                      {/* Pricing block */}
-                      {paid && event.pricing ? (
-                        event.pricing.tiers?.length ? (
-                          /* ── Tier-based price summary ── */
-                          <div className="flex flex-wrap items-center gap-2">
-                            {[...event.pricing.tiers].sort((a, b) => a.sortOrder - b.sortOrder).map((tier) => {
-                              const expired = tier.deadline && new Date(tier.deadline) < new Date();
-                              const soldOut = tier.capacity != null && (tier.soldCount ?? 0) >= tier.capacity;
-                              return (
-                                <span
-                                  key={tier.id}
-                                  className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-lg text-sm font-semibold ${
-                                    expired || soldOut
-                                      ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 line-through'
-                                      : 'bg-cranberry-50 dark:bg-cranberry-900/30 text-cranberry-700 dark:text-cranberry-300'
-                                  }`}
-                                >
-                                  {tier.memberPrice === 0 ? 'Free' : formatCurrency(tier.memberPrice)}
-                                  <span className="text-[10px] uppercase font-semibold opacity-70">{tier.label}</span>
-                                </span>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                        <div className="flex flex-wrap items-center gap-2">
-                          <div className="inline-flex items-center gap-1.5 bg-cranberry-50 dark:bg-cranberry-900/30 text-cranberry-700 dark:text-cranberry-300 pl-1.5 pr-2.5 py-1 rounded-lg">
-                            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-cranberry-100 dark:bg-cranberry-800/50"><svg aria-hidden="true" className="w-3 h-3 text-cranberry-600 dark:text-cranberry-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></span>
-                            <span className="text-sm font-bold">
-                              {event.pricing.memberPrice === 0 ? 'Free' : formatCurrency(event.pricing.memberPrice)}
-                            </span>
-                            <span className="text-[10px] uppercase font-semibold text-cranberry-500 dark:text-cranberry-400">Member</span>
-                          </div>
-                          <div className="inline-flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 pl-1.5 pr-2.5 py-1 rounded-lg">
-                            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700"><svg aria-hidden="true" className="w-3 h-3 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" /></svg></span>
-                            <span className="text-sm font-bold">{formatCurrency(event.pricing.guestPrice)}</span>
-                            <span className="text-[10px] uppercase font-semibold">Guest</span>
-                          </div>
-                          {hasEarlyBird && event.pricing.earlyBirdPrice != null && (
-                            <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-lg animate-pulse">
-                              Early bird {formatCurrency(event.pricing.earlyBirdPrice)}
-                            </span>
-                          )}
-                        </div>
-                        )
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400 font-semibold">
-                          <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                          Free event
-                        </span>
-                      )}
-
-                      {/* Action buttons */}
-                      {isFuture ? (
-                        <div className="flex gap-2 w-full sm:w-auto">
-                          {paid && event.pricing && event.pricing.memberPrice > 0 ? (
-                            <>
-                              <Button
-                                size="sm"
-                                variant={myRsvp === 'going' ? 'secondary' : 'gold'}
-                                loading={rsvpLoading === event.id}
-                                onClick={() => {
-                                  if (myRsvp === 'going') {
-                                    if (ticketLocked) {
-                                      // Already have a paid ticket — open
-                                      // checkout again so they can buy more.
-                                      handleTicketPurchase(event, 'member');
-                                      return;
-                                    }
-                                    handleRSVP(event.id, 'not_going');
-                                  } else {
-                                    handleTicketPurchase(event, 'member');
-                                  }
-                                }}
-                                className="flex-1 sm:flex-initial"
-                              >
-                                {myRsvp === 'going'
-                                  ? (ticketLocked ? '+ Buy Another Ticket' : '✓ Ticket Purchased')
-                                  : `Buy Ticket · ${formatCurrency(event.pricing.memberPrice)}`}
-                              </Button>
-                              {myRsvp !== 'going' && (
-                                <Button size="sm" variant={myRsvp === 'maybe' ? 'secondary' : 'ghost'} disabled={!!rsvpLoading} onClick={() => handleRSVP(event.id, myRsvp === 'maybe' ? 'not_going' : 'maybe')}>
-                                  {myRsvp === 'maybe' ? '? Maybe' : 'Maybe'}
-                                </Button>
-                              )}
-                              {myRsvp === 'going' && ticketLocked && (
-                                <Link
-                                  href={`/portal/events/${event.id}`}
-                                  className="text-xs text-gray-500 hover:text-cranberry self-center underline-offset-2 hover:underline"
-                                >
-                                  Manage
-                                </Link>
-                              )}
-                            </>
-                          ) : paid && event.pricing && event.pricing.memberPrice === 0 ? (
-                            <>
-                              <Button
-                                size="sm"
-                                variant={myRsvp === 'going' ? 'secondary' : 'primary'}
-                                loading={rsvpLoading === event.id}
-                                disabled={myRsvp === 'going' && ticketLocked}
-                                onClick={() => {
-                                  if (myRsvp === 'going') {
-                                    if (ticketLocked) return;
-                                    handleRSVP(event.id, 'not_going');
-                                  } else {
-                                    handleTicketPurchase(event, 'member');
-                                  }
-                                }}
-                                className="flex-1 sm:flex-initial"
-                              >
-                                {myRsvp === 'going' ? '✓ Registered' : 'Get Free Ticket'}
-                              </Button>
-                              {myRsvp !== 'going' && (
-                                <Button size="sm" variant={myRsvp === 'maybe' ? 'secondary' : 'ghost'} disabled={!!rsvpLoading} onClick={() => handleRSVP(event.id, myRsvp === 'maybe' ? 'not_going' : 'maybe')}>
-                                  {myRsvp === 'maybe' ? '? Maybe' : 'Maybe'}
-                                </Button>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              <Button
-                                size="sm"
-                                variant={myRsvp === 'going' ? 'secondary' : 'primary'}
-                                loading={rsvpLoading === event.id}
-                                onClick={() => handleRSVP(event.id, myRsvp === 'going' ? 'not_going' : 'going')}
-                                className="flex-1 sm:flex-initial"
-                              >
-                                {myRsvp === 'going' ? '✓ Going' : "I'm Going"}
-                              </Button>
-                              <Button size="sm" variant={myRsvp === 'maybe' ? 'secondary' : 'ghost'} disabled={!!rsvpLoading} onClick={() => handleRSVP(event.id, myRsvp === 'maybe' ? 'not_going' : 'maybe')}>
-                                {myRsvp === 'maybe' ? '? Maybe' : 'Maybe'}
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      ) : (
-                        <Link
-                          href={`/portal/events/${event.id}`}
-                          className="text-sm font-medium text-cranberry hover:text-cranberry-700 dark:text-cranberry-400 dark:hover:text-cranberry-300 transition-colors"
-                        >
-                          View recap →
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
 
       {/* Ticket Checkout Modal */}
       {checkoutEvent && (
@@ -624,6 +336,6 @@ export default function PortalEventsPage() {
           toast('Event saved!');
         }}
       />
-    </div>
+    </>
   );
 }

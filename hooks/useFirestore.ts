@@ -181,6 +181,16 @@ export function useAllMembers() {
   return useCollection('members', [orderBy('displayName')]);
 }
 
+/**
+ * usePendingMembers — members awaiting approval (status === 'pending').
+ *
+ * Gated by `enabled` so only admins subscribe; powers the Directory nav
+ * count badge and the pinned pending-approvals banner.
+ */
+export function usePendingMembers(enabled = true) {
+  return useCollection('members', [where('status', '==', 'pending')], enabled);
+}
+
 export function useServiceHours(memberId: string | null) {
   return useCollection(
     'serviceHours',

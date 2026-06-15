@@ -4,6 +4,7 @@ import EventActionBar from '@/components/portal/EventActionBar';
 import { formatDate } from '@/lib/utils/format';
 import type { RotaractEvent } from '@/types';
 import { colorFor } from './meta';
+import { Star, Repeat, Pencil, Copy } from 'lucide-react';
 
 interface EventHeaderProps {
   event: RotaractEvent;
@@ -61,20 +62,20 @@ export default function EventHeader({
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant={colorFor(event.type)} className="capitalize">{event.type}</Badge>
-          {(event as RotaractEvent & { isFeatured?: boolean }).isFeatured && <Badge variant="gold">⭐ Featured</Badge>}
+          {(event as RotaractEvent & { isFeatured?: boolean }).isFeatured && <Badge variant="gold"><Star className="w-3 h-3 mr-1 inline" />Featured</Badge>}
           {event.status === 'draft' && <Badge variant="gray">Draft</Badge>}
           {event.status === 'cancelled' && <Badge variant="cranberry">Cancelled</Badge>}
-          {event.isRecurring && !event.recurrenceParentId && <Badge variant="azure">🔁 Recurring</Badge>}
-          {event.recurrenceParentId && <Badge variant="azure">🔁 Series #{(event.occurrenceIndex ?? 0) + 1}</Badge>}
+          {event.isRecurring && !event.recurrenceParentId && <Badge variant="azure"><Repeat className="w-3 h-3 mr-1 inline" />Recurring</Badge>}
+          {event.recurrenceParentId && <Badge variant="azure"><Repeat className="w-3 h-3 mr-1 inline" />Series #{(event.occurrenceIndex ?? 0) + 1}</Badge>}
         </div>
         {canManageEvents && (
           <div className="flex items-center gap-2 overflow-x-auto">
             <Button size="sm" variant="secondary" onClick={onEdit}>
-              <svg className="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+              <Pencil className="w-3.5 h-3.5 mr-1" />
               Edit
             </Button>
             <Button size="sm" variant="ghost" onClick={onDuplicate} title="Duplicate this event">
-              <svg className="w-3.5 h-3.5 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+              <Copy className="w-3.5 h-3.5 mr-1 shrink-0" />
               <span className="hidden sm:inline">Duplicate</span>
               <span className="sm:hidden">Copy</span>
             </Button>

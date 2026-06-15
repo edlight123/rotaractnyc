@@ -1,9 +1,27 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { apiGet, apiPost, apiPatch } from '@/hooks/useFirestore';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Camera,
+  Pencil,
+  Mail,
+  Phone,
+  Building2,
+  Briefcase,
+  Cake,
+  MapPin,
+  CalendarDays,
+  GraduationCap,
+  IdCard,
+  MessageCircle,
+  Linkedin,
+  Users,
+} from 'lucide-react';
+import { apiGet, apiPost, apiPatch, useAllMembers } from '@/hooks/useFirestore';
 import { useAuth } from '@/lib/firebase/auth';
 import { uploadFile, validateFile } from '@/lib/firebase/upload';
 import { useToast } from '@/components/ui/Toast';
@@ -16,6 +34,10 @@ import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
 import PhoneInput from '@/components/ui/PhoneInput';
 import MessageModal from '@/components/portal/MessageModal';
+import MemberCard from '@/components/portal/MemberCard';
+import PageContainer from '@/components/portal/PageContainer';
+import PageHeader from '@/components/portal/PageHeader';
+import { DetailSkeleton } from '@/components/ui/Skeleton';
 import type { Member, MemberRole, MemberStatus } from '@/types';
 
 const roleColors: Record<string, 'cranberry' | 'gold' | 'azure' | 'gray'> = {
@@ -46,6 +68,63 @@ function fmtDate(iso?: string | null): string | null {
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+/** A single Notion-style property row: icon + label on the left, value on the right. */
+function PropertyRow({
+  icon: Icon,
+  label,
+  children,
+  adminOnly = false,
+  href,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  children: React.ReactNode;
+  adminOnly?: boolean;
+  href?: string;
+}) {
+  const value = href ? (
+    <a
+      href={href}
+      target={href.startsWith('http') ? '_blank' : undefined}
+      rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
+      className="text-gray-900 dark:text-white hover:text-cranberry dark:hover:text-cranberry-400 transition-colors break-words"
+    >
+      {children}
+    </a>
+  ) : (
+    <span className="text-gray-900 dark:text-white break-words">{children}</span>
+  );
+
+  return (
+    <div className="flex items-start gap-3 py-2.5">
+      <span className="mt-0.5 shrink-0 text-gray-400 dark:text-gray-500">
+        <Icon className="w-4 h-4" />
+      </span>
+      <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
+        <dt className="w-36 shrink-0 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+          {label}
+          {adminOnly && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gold-100 text-gold-700 dark:bg-gold-900/30 dark:text-gold-400 uppercase tracking-wide">
+              Admin
+            </span>
+          )}
+        </dt>
+        <dd className="min-w-0 text-sm">{value}</dd>
+      </div>
+    </div>
+  );
+}
+
+/** A grouped card of property rows with a section title. */
+function PropertySection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6">
+      <h3 className="font-display font-bold text-gray-900 dark:text-white mb-2">{title}</h3>
+      <dl className="divide-y divide-gray-100 dark:divide-gray-800">{children}</dl>
+    </div>
+  );
+}
+
 export default function PortalMemberDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -59,6 +138,38 @@ export default function PortalMemberDetailPage() {
   const isBoard = ['president', 'board', 'treasurer'].includes(currentMember?.role || '');
   const isPresident = currentMember?.role === 'president';
   const isSelf = currentMember?.id === id;
+
+  // Full roster (for prev/next navigation + "more from committee")
+  const { data: allMembers } = useAllMembers();
+
+  // Directory order = active + alumni, sorted A–Z by name (matches the index default).
+  const directoryList = useMemo(() => {
+    return ((allMembers as Member[] | undefined) || [])
+      .filter((m) => m.status === 'active' || m.status === 'alumni')
+      .sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
+  }, [allMembers]);
+
+  const neighborIndex = directoryList.findIndex((m) => m.id === id);
+  const prevMember = neighborIndex > 0 ? directoryList[neighborIndex - 1] : null;
+  const nextMember =
+    neighborIndex >= 0 && neighborIndex < directoryList.length - 1
+      ? directoryList[neighborIndex + 1]
+      : null;
+
+  // Other active members on the same committee (encourage connection).
+  const sameCommittee = useMemo(() => {
+    const committee = member?.committee?.trim();
+    if (!committee) return [] as Member[];
+    return ((allMembers as Member[] | undefined) || [])
+      .filter(
+        (m) =>
+          m.id !== member?.id &&
+          m.status === 'active' &&
+          (m.committee || '').trim().toLowerCase() === committee.toLowerCase()
+      )
+      .sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''))
+      .slice(0, 6);
+  }, [allMembers, member]);
 
   // Admin-edit form state (role/status/boardTitle)
   const [adminForm, setAdminForm] = useState({
@@ -206,20 +317,22 @@ export default function PortalMemberDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-20">
-        <Spinner size="lg" />
-      </div>
+      <PageContainer width="narrow">
+        <DetailSkeleton />
+      </PageContainer>
     );
   }
 
   if (!member) {
     return (
-      <div className="text-center py-20">
-        <p className="text-gray-500 mb-4">Member not found.</p>
-        <Button variant="secondary" onClick={() => router.push('/portal/directory')}>
-          Back to Directory
-        </Button>
-      </div>
+      <PageContainer width="narrow">
+        <div className="text-center py-20">
+          <p className="text-gray-500 mb-4">Member not found.</p>
+          <Button variant="secondary" onClick={() => router.push('/portal/directory')}>
+            Back to Directory
+          </Button>
+        </div>
+      </PageContainer>
     );
   }
 
@@ -229,16 +342,47 @@ export default function PortalMemberDetailPage() {
   const birthday = fmtDate(member.birthday);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 page-enter">
-      <button
-        onClick={() => router.back()}
-        className="group text-sm text-gray-500 hover:text-cranberry transition-colors flex items-center gap-1.5"
-      >
-        <svg aria-hidden="true" className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-        Back to directory
-      </button>
+    <PageContainer width="narrow">
+      {/* Top bar: back to directory + prev/next member */}
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          href="/portal/directory"
+          className="group inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-cranberry dark:text-gray-400 dark:hover:text-cranberry-400 transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+          Directory
+        </Link>
+        <div className="flex items-center gap-1.5">
+          {prevMember ? (
+            <Link
+              href={`/portal/directory/${prevMember.id}`}
+              title={`Previous: ${prevMember.displayName}`}
+              className="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-800 px-2.5 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:border-cranberry/40 hover:text-cranberry dark:hover:text-cranberry-400 transition-colors max-w-[9rem]"
+            >
+              <ChevronLeft className="w-4 h-4 shrink-0" />
+              <span className="truncate">{prevMember.displayName}</span>
+            </Link>
+          ) : (
+            <span className="inline-flex items-center rounded-lg border border-gray-100 dark:border-gray-800/60 px-2.5 py-1.5 text-gray-300 dark:text-gray-700">
+              <ChevronLeft className="w-4 h-4" />
+            </span>
+          )}
+          {nextMember ? (
+            <Link
+              href={`/portal/directory/${nextMember.id}`}
+              title={`Next: ${nextMember.displayName}`}
+              className="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-800 px-2.5 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:border-cranberry/40 hover:text-cranberry dark:hover:text-cranberry-400 transition-colors max-w-[9rem]"
+            >
+              <span className="truncate">{nextMember.displayName}</span>
+              <ChevronRight className="w-4 h-4 shrink-0" />
+            </Link>
+          ) : (
+            <span className="inline-flex items-center rounded-lg border border-gray-100 dark:border-gray-800/60 px-2.5 py-1.5 text-gray-300 dark:text-gray-700">
+              <ChevronRight className="w-4 h-4" />
+            </span>
+          )}
+        </div>
+      </div>
 
       {/* Profile Header */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 sm:p-8">
@@ -262,14 +406,7 @@ export default function PortalMemberDetailPage() {
                   title={isSelf ? 'Change your photo' : 'Change member photo (admin)'}
                   className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-cranberry text-white shadow-lg ring-2 ring-white dark:ring-gray-900 flex items-center justify-center hover:bg-cranberry-700 transition-colors disabled:opacity-60"
                 >
-                  {uploadingPhoto ? (
-                    <Spinner size="sm" />
-                  ) : (
-                    <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  )}
+                  {uploadingPhoto ? <Spinner size="sm" /> : <Camera className="w-4 h-4" />}
                 </button>
               </>
             )}
@@ -296,12 +433,16 @@ export default function PortalMemberDetailPage() {
             <div className="flex flex-wrap gap-3 mt-4">
               {!isSelf && (
                 <Button size="sm" onClick={() => setMsgOpen(true)}>
+                  <MessageCircle className="w-4 h-4 mr-1.5 inline" />
                   Message
                 </Button>
               )}
               {isSelf && (
                 <Link href="/portal/profile">
-                  <Button size="sm">Edit My Profile</Button>
+                  <Button size="sm">
+                    <Pencil className="w-4 h-4 mr-1.5 inline" />
+                    Edit My Profile
+                  </Button>
                 </Link>
               )}
               {isBoard && phoneDigits && (
@@ -322,6 +463,7 @@ export default function PortalMemberDetailPage() {
               {member.linkedIn && (
                 <a href={member.linkedIn} target="_blank" rel="noopener noreferrer">
                   <Button size="sm" variant="secondary">
+                    <Linkedin className="w-4 h-4 mr-1.5 inline" />
                     LinkedIn
                   </Button>
                 </a>
@@ -329,6 +471,7 @@ export default function PortalMemberDetailPage() {
               {(isBoard || isSelf) && member.email && (
                 <a href={`mailto:${member.email}`}>
                   <Button size="sm" variant="ghost">
+                    <Mail className="w-4 h-4 mr-1.5 inline" />
                     Email
                   </Button>
                 </a>
@@ -338,82 +481,87 @@ export default function PortalMemberDetailPage() {
         </div>
       </div>
 
-      {/* Details */}
+      {/* Details — grouped property sections */}
       <div className="grid sm:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6">
-          <h3 className="font-display font-bold text-gray-900 dark:text-white mb-4">Information</h3>
-          <dl className="space-y-3 text-sm">
+        {/* Contact */}
+        {(member.email ||
+          (member.roleEmail && (isBoard || isSelf)) ||
+          (member.phone && (isBoard || isSelf)) ||
+          (member.address && (isBoard || isSelf))) && (
+          <PropertySection title="Contact">
             {member.email && (
-              <div>
-                <dt className="text-gray-500">Personal Email</dt>
-                <dd className="text-gray-900 dark:text-white break-all">{member.email}</dd>
-              </div>
+              <PropertyRow icon={Mail} label="Email" href={`mailto:${member.email}`}>
+                {member.email}
+              </PropertyRow>
             )}
             {member.roleEmail && (isBoard || isSelf) && (
-              <div>
-                <dt className="text-gray-500 flex items-center gap-1.5">
-                  Role Email
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gold-100 text-gold-700 dark:bg-gold-900/30 dark:text-gold-400 uppercase tracking-wide">
-                    Admin
-                  </span>
-                </dt>
-                <dd className="text-gray-900 dark:text-white break-all">{member.roleEmail}</dd>
-              </div>
+              <PropertyRow icon={Mail} label="Role Email" adminOnly href={`mailto:${member.roleEmail}`}>
+                {member.roleEmail}
+              </PropertyRow>
             )}
             {member.phone && (isBoard || isSelf) && (
-              <div>
-                <dt className="text-gray-500">Phone</dt>
-                <dd className="text-gray-900 dark:text-white">{member.phone}</dd>
-              </div>
-            )}
-            {member.committee && (
-              <div>
-                <dt className="text-gray-500">Committee</dt>
-                <dd className="text-gray-900 dark:text-white">{member.committee}</dd>
-              </div>
-            )}
-            {member.occupation && (
-              <div>
-                <dt className="text-gray-500">Occupation</dt>
-                <dd className="text-gray-900 dark:text-white">
-                  {member.occupation}
-                  {member.employer ? ` at ${member.employer}` : ''}
-                </dd>
-              </div>
-            )}
-            {member.memberType && (
-              <div>
-                <dt className="text-gray-500">Membership Type</dt>
-                <dd className="text-gray-900 dark:text-white capitalize">{member.memberType}</dd>
-              </div>
-            )}
-            {birthday && (isBoard || isSelf) && (
-              <div>
-                <dt className="text-gray-500">Birthday</dt>
-                <dd className="text-gray-900 dark:text-white">{birthday}</dd>
-              </div>
+              <PropertyRow icon={Phone} label="Phone" href={`tel:${member.phone.replace(/\s/g, '')}`}>
+                {member.phone}
+              </PropertyRow>
             )}
             {member.address && (isBoard || isSelf) && (
-              <div>
-                <dt className="text-gray-500">Address</dt>
-                <dd className="text-gray-900 dark:text-white whitespace-pre-line">{member.address}</dd>
-              </div>
+              <PropertyRow icon={MapPin} label="Address">
+                <span className="whitespace-pre-line">{member.address}</span>
+              </PropertyRow>
+            )}
+          </PropertySection>
+        )}
+
+        {/* Professional */}
+        {(member.occupation || member.employer || member.committee || member.linkedIn) && (
+          <PropertySection title="Professional">
+            {(member.occupation || member.employer) && (
+              <PropertyRow icon={Briefcase} label="Occupation">
+                {member.occupation}
+                {member.occupation && member.employer ? ' \u00b7 ' : ''}
+                {member.employer}
+              </PropertyRow>
+            )}
+            {member.committee && (
+              <PropertyRow icon={Building2} label="Committee">
+                {member.committee}
+              </PropertyRow>
+            )}
+            {member.linkedIn && (
+              <PropertyRow icon={Linkedin} label="LinkedIn" href={member.linkedIn}>
+                View profile
+              </PropertyRow>
+            )}
+          </PropertySection>
+        )}
+
+        {/* Membership */}
+        {(member.memberType || (birthday && (isBoard || isSelf)) || joined || alumniSince) && (
+          <PropertySection title="Membership">
+            {member.memberType && (
+              <PropertyRow icon={IdCard} label="Type">
+                <span className="capitalize">{member.memberType}</span>
+              </PropertyRow>
+            )}
+            {birthday && (isBoard || isSelf) && (
+              <PropertyRow icon={Cake} label="Birthday" adminOnly>
+                {birthday}
+              </PropertyRow>
             )}
             {joined && (
-              <div>
-                <dt className="text-gray-500">Joined</dt>
-                <dd className="text-gray-900 dark:text-white">{joined}</dd>
-              </div>
+              <PropertyRow icon={CalendarDays} label="Joined">
+                {joined}
+              </PropertyRow>
             )}
             {alumniSince && (
-              <div>
-                <dt className="text-gray-500">Alumni Since</dt>
-                <dd className="text-gray-900 dark:text-white">{alumniSince}</dd>
-              </div>
+              <PropertyRow icon={GraduationCap} label="Alumni Since">
+                {alumniSince}
+              </PropertyRow>
             )}
-          </dl>
-        </div>
+          </PropertySection>
+        )}
 
+        {/* Interests */}
         {member.interests && member.interests.length > 0 && (
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6">
             <h3 className="font-display font-bold text-gray-900 dark:text-white mb-4">Interests</h3>
@@ -432,9 +580,7 @@ export default function PortalMemberDetailPage() {
       {isSelf && (
         <div className="bg-gradient-to-br from-cranberry-50 to-gold-50 dark:from-cranberry-900/20 dark:to-gold-900/10 border border-cranberry-100 dark:border-cranberry-900/40 rounded-2xl p-5 flex items-start gap-4">
           <div className="shrink-0 w-10 h-10 rounded-full bg-white/70 dark:bg-gray-900/40 flex items-center justify-center">
-            <svg aria-hidden="true" className="w-5 h-5 text-cranberry" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
+            <Pencil className="w-5 h-5 text-cranberry" />
           </div>
           <div className="flex-1">
             <p className="font-semibold text-gray-900 dark:text-white">This is your profile</p>
@@ -605,6 +751,23 @@ export default function PortalMemberDetailPage() {
         </div>
       )}
 
+      {/* More from the same committee */}
+      {sameCommittee.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-gray-400" />
+            <h3 className="font-display font-bold text-gray-900 dark:text-white">
+              More from {member.committee}
+            </h3>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {sameCommittee.map((cm) => (
+              <MemberCard key={cm.id} member={cm} viewerRole={currentMember?.role} variant="compact" />
+            ))}
+          </div>
+        </div>
+      )}
+
       <MessageModal
         open={msgOpen}
         onClose={() => setMsgOpen(false)}
@@ -612,6 +775,6 @@ export default function PortalMemberDetailPage() {
         recipientId={member.id}
         onSend={handleSendMessage}
       />
-    </div>
+    </PageContainer>
   );
 }

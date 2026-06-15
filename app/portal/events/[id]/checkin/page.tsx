@@ -230,7 +230,7 @@ export default function EventCheckinPage() {
               </svg>
             </div>
             <h1 className="text-3xl font-display font-bold text-gray-900 dark:text-white">
-              You&apos;re checked in! 🎉
+              You&apos;re checked in!
             </h1>
             {result.ticketNumber && (
               <p className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-semibold">
