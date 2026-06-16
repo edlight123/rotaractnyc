@@ -209,7 +209,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { member, signOut, loading } = useAuth();
+  const { user, member, signOut, loading } = useAuth();
   const { status: duesStatus } = useDues();
   const unread = useUnreadCounts(!!member);
   const isAdmin = member?.role === 'board' || member?.role === 'president' || member?.role === 'treasurer';
@@ -287,6 +287,16 @@ export default function PortalShell({ children }: { children: React.ReactNode })
   }
 
   if (!member) {
+    // A signed-in user without a member doc is a supporter — send them to the
+    // public account hub instead of the members-only portal.
+    if (user) {
+      router.replace('/account');
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-gray-300 border-t-cranberry" />
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
         <div className="text-center max-w-sm">

@@ -45,6 +45,23 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Any signed-in user has an account identity doc (supporter or member).
+    function hasAccount() {
+      return isAuthenticated()
+             && exists(/databases/$(database)/documents/accounts/$(request.auth.uid));
+    }
+
+    // True only when the Firebase token's email is verified.
+    function emailVerified() {
+      return isAuthenticated() && request.auth.token.email_verified == true;
+    }
+
+    // True when the caller's verified token email matches the given email.
+    // Used to let a supporter read their own guest tickets / donation history.
+    function ownsEmail(email) {
+      return emailVerified() && request.auth.token.email == email;
+    }
+
     // ───────────────────────────────────────
     // Members
     // ───────────────────────────────────────
@@ -65,6 +82,52 @@ service cloud.firestore {
       allow update: if isBoard();
 
       // Only president can delete members
+      allow delete: if isPresident();
+    }
+
+    // ───────────────────────────────────────
+    // Accounts (public / supporter identity — every signed-in user)
+    // ───────────────────────────────────────
+    match /accounts/{uid} {
+      // A user reads their own account; board can read any (CRM / approvals).
+      allow read: if isOwner(uid) || isBoard();
+
+      // A user may create their own account, but only as a 'supporter'.
+      // Promotion to 'member' happens server-side via the Admin SDK.
+      allow create: if isOwner(uid)
+                    && request.resource.data.accountType == 'supporter';
+
+      // A user may update their own account but NOT privileged fields
+      // (accountType, stripeCustomerId, memberSince are server-managed).
+      allow update: if isOwner(uid)
+                    && !request.resource.data.diff(resource.data).affectedKeys()
+                        .hasAny(['accountType', 'stripeCustomerId', 'memberSince']);
+
+      // Board+ can update any account (promotion, CRM fields).
+      allow update: if isBoard();
+
+      allow delete: if isPresident();
+    }
+
+    // ───────────────────────────────────────
+    // Membership Applications (Supporter → Member pipeline)
+    // ───────────────────────────────────────
+    match /membershipApplications/{appId} {
+      // Board reviews all; an applicant can read their own.
+      allow read: if isBoard()
+                  || (hasAccount() && resource.data.accountUid == request.auth.uid);
+
+      // A supporter submits their own application.
+      allow create: if hasAccount()
+                    && request.resource.data.accountUid == request.auth.uid
+                    && request.resource.data.status == 'submitted';
+
+      // Board can review/update; an applicant may withdraw their own.
+      allow update: if isBoard()
+                    || (hasAccount()
+                        && resource.data.accountUid == request.auth.uid
+                        && request.resource.data.status == 'withdrawn');
+
       allow delete: if isPresident();
     }
 
@@ -102,10 +165,23 @@ service cloud.firestore {
     // Guest RSVPs (managed server-side only)
     // ───────────────────────────────────────
     match /guest_rsvps/{rsvpId} {
-      // Board+ can read guest RSVPs (for event management)
-      allow read: if isBoard();
+      // Board+ can read all guest RSVPs; a verified owner can read their own
+      // (by exact verified-email match) so they appear in the /account hub.
+      allow read: if isBoard() || ownsEmail(resource.data.email);
 
       // All writes go through Admin SDK (checkout routes, webhooks)
+      allow write: if false;
+    }
+
+    // ───────────────────────────────────────
+    // Donors (CRM — managed server-side only)
+    // ───────────────────────────────────────
+    match /donors/{donorId} {
+      // Board+ can read all donor records; a verified owner can read their own
+      // donation history (doc id is the lowercased email).
+      allow read: if isBoard() || ownsEmail(resource.data.email);
+
+      // All writes go through Admin SDK (Stripe webhooks)
       allow write: if false;
     }
 

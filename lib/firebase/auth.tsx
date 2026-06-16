@@ -10,12 +10,13 @@ import {
   GoogleAuthProvider,
   type User,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { auth as getAuth, db as getDb } from './client';
-import type { Member } from '@/types';
+import type { Account, Member } from '@/types';
 
 interface AuthContextType {
   user: User | null;
+  account: Account | null;
   member: Member | null;
   loading: boolean;
   sessionReady: boolean;
@@ -25,6 +26,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  account: null,
   member: null,
   loading: true,
   sessionReady: false,
@@ -34,6 +36,7 @@ const AuthContext = createContext<AuthContextType>({
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [account, setAccount] = useState<Account | null>(null);
   const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionReady, setSessionReady] = useState(false);
@@ -48,6 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(firebaseUser);
       if (firebaseUser) {
         let resolvedMember: Member | null = null;
+        let resolvedAccount: Account | null = null;
         let idToken: string | null = null;
 
         // Step 1: Get the ID token (we'll need it for the session cookie)
@@ -90,7 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         // Step 3: Fetch the member profile (now that any invite migration
-        // has been applied server-side).
+        // has been applied server-side). Supporters have no member doc — that
+        // is expected, and `member` stays null for them.
         try {
           const memberRef = doc(getDb(), 'members', firebaseUser.uid);
           const memberSnap = await getDoc(memberRef);
@@ -101,32 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error('Auth: Failed to fetch member profile:', err);
         }
 
-        // Step 4: Create a brand-new pending member if no doc exists yet.
-        // (Only reached when the user has never been invited — the create
-        // rule allows status='pending' for self-owned docs.)
-        if (!resolvedMember) {
-          try {
-            const memberRef = doc(getDb(), 'members', firebaseUser.uid);
-            const newMember: Omit<Member, 'id'> = {
-              email: firebaseUser.email || '',
-              displayName: firebaseUser.displayName || '',
-              firstName: firebaseUser.displayName?.split(' ')[0] || '',
-              lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
-              photoURL: firebaseUser.photoURL || '',
-              role: 'member',
-              status: 'pending',
-              onboardingComplete: false,
-              joinedAt: new Date().toISOString(),
-            };
-            await setDoc(memberRef, { ...newMember, createdAt: serverTimestamp() });
-            resolvedMember = { id: firebaseUser.uid, ...newMember };
-          } catch (err) {
-            console.error('Auth: Failed to create new member record:', err);
-          }
-        }
-
-        // Step 5: If the server flipped the user's status (admin auto-approve
-        // or invite migration), make sure we have the freshest copy.
+        // Step 4: If the server flipped the user's status (admin auto-approve
+        // or invite migration), make sure we have the freshest member copy.
         if (serverAutoApproved) {
           try {
             const memberRef = doc(getDb(), 'members', firebaseUser.uid);
@@ -139,10 +120,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
 
+        // Step 5: Fetch the account identity doc. The session route ensures an
+        // `accounts/{uid}` doc exists for every signed-in user (supporter or
+        // member), so this should be present. Supporters live entirely in this
+        // collection; members additionally have a `members/{uid}` doc.
+        try {
+          const accountRef = doc(getDb(), 'accounts', firebaseUser.uid);
+          const accountSnap = await getDoc(accountRef);
+          if (accountSnap.exists()) {
+            resolvedAccount = { id: accountSnap.id, ...accountSnap.data() } as Account;
+          }
+        } catch (err) {
+          console.error('Auth: Failed to fetch account profile:', err);
+        }
+
         setMember(resolvedMember);
+        setAccount(resolvedAccount);
         setLoading(false);
       } else {
         setMember(null);
+        setAccount(null);
         setSessionReady(false);
         setLoading(false);
       }
@@ -176,11 +173,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetch('/api/portal/auth/session', { method: 'DELETE' });
     await firebaseSignOut(getAuth());
     setMember(null);
+    setAccount(null);
     setSessionReady(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, member, loading, sessionReady, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, account, member, loading, sessionReady, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );

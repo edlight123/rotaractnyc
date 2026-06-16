@@ -1,11 +1,21 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { SESSION_COOKIE_NAME } from '@/lib/constants';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Protect portal routes (except login)
-  if (pathname.startsWith('/portal') && !pathname.startsWith('/portal/login')) {
-    const session = request.cookies.get('rotaract_portal_session');
+  // Protect the member portal (except its login) and the supporter account hub
+  // (except its public auth pages). Both share the same Firebase session cookie.
+  const isProtectedPortal =
+    pathname.startsWith('/portal') && !pathname.startsWith('/portal/login');
+  const isProtectedAccount =
+    pathname.startsWith('/account') &&
+    !pathname.startsWith('/account/login') &&
+    !pathname.startsWith('/account/signup') &&
+    !pathname.startsWith('/account/verify');
+
+  if (isProtectedPortal || isProtectedAccount) {
+    const session = request.cookies.get(SESSION_COOKIE_NAME);
 
     // Check cookie exists and has a non-empty value
     if (!session?.value) {
@@ -22,7 +32,7 @@ export function middleware(request: NextRequest) {
       const loginUrl = new URL('/portal/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       const response = NextResponse.redirect(loginUrl);
-      response.cookies.delete('rotaract_portal_session');
+      response.cookies.delete(SESSION_COOKIE_NAME);
       return response;
     }
 
@@ -75,7 +85,7 @@ export function middleware(request: NextRequest) {
       const loginUrl = new URL('/portal/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       const response = NextResponse.redirect(loginUrl);
-      response.cookies.delete('rotaract_portal_session');
+      response.cookies.delete(SESSION_COOKIE_NAME);
       return response;
     }
   }
@@ -86,5 +96,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/portal/:path*'],
+  matcher: ['/portal/:path*', '/account/:path*'],
 };

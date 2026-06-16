@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { cookies } from 'next/headers';
 import { rateLimit, getRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
+import { SESSION_COOKIE_NAME } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
 
     const cookieStore = await cookies();
-    cookieStore.set('rotaract_portal_session', sessionCookie, {
+    cookieStore.set(SESSION_COOKIE_NAME, sessionCookie, {
       maxAge: expiresIn / 1000,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -132,7 +133,70 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, autoApproved, migratedFromInvite });
+    // ── Ensure account identity doc + custom claims (accounts model) ──
+    // Every signed-in user gets an `accounts/{uid}` doc. A user who also has
+    // an active `members/{uid}` doc is typed as a 'member'; everyone else is a
+    // 'supporter'. Custom claims mirror this as a fast path for rules/UI, but
+    // Firestore remains the source of truth (rules fall back to get()).
+    let accountType: 'supporter' | 'member' = 'supporter';
+    let resolvedRole: string | null = null;
+    try {
+      const memberRef = adminDb.collection('members').doc(decoded.uid);
+      const memberSnap = await memberRef.get();
+      if (memberSnap.exists && memberSnap.data()?.status === 'active') {
+        accountType = 'member';
+        resolvedRole = memberSnap.data()?.role || 'member';
+      }
+
+      const nowIso = new Date().toISOString();
+      const accountRef = adminDb.collection('accounts').doc(decoded.uid);
+      const accountSnap = await accountRef.get();
+
+      if (!accountSnap.exists) {
+        const providerId = (decoded.firebase as any)?.sign_in_provider || 'password';
+        const authProvider =
+          providerId === 'google.com'
+            ? 'google'
+            : providerId === 'emailLink'
+              ? 'emailLink'
+              : 'password';
+        await accountRef.set({
+          email: (decoded.email || '').toLowerCase(),
+          emailVerified: !!decoded.email_verified,
+          displayName: decoded.name || '',
+          photoURL: decoded.picture || '',
+          accountType,
+          authProviders: [authProvider],
+          subscriptions: { newsletter: false, volunteer: false, eventReminders: true },
+          createdAt: nowIso,
+          updatedAt: nowIso,
+          lastLoginAt: nowIso,
+        });
+      } else {
+        const existing = accountSnap.data() || {};
+        const update: Record<string, any> = { lastLoginAt: nowIso, updatedAt: nowIso };
+        if (existing.accountType !== accountType) update.accountType = accountType;
+        if (decoded.email_verified && !existing.emailVerified) update.emailVerified = true;
+        await accountRef.update(update);
+      }
+
+      // Refresh custom claims only when they would change (avoids needless
+      // churn). Claims take effect on the user's next token refresh.
+      const currentClaims = (decoded as any) || {};
+      const desiredRole = resolvedRole || null;
+      if (
+        currentClaims.accountType !== accountType ||
+        (currentClaims.role || null) !== desiredRole
+      ) {
+        const claims: Record<string, any> = { accountType };
+        if (desiredRole) claims.role = desiredRole;
+        await adminAuth.setCustomUserClaims(decoded.uid, claims);
+      }
+    } catch (e) {
+      console.warn('Account ensure / claims update failed (non-blocking):', e);
+    }
+
+    return NextResponse.json({ success: true, autoApproved, migratedFromInvite, accountType });
   } catch (error: any) {
     const message = error?.message || String(error);
     console.error('Session creation error:', message);
@@ -151,6 +215,6 @@ export async function POST(request: Request) {
 // DELETE: Clear session cookie
 export async function DELETE() {
   const cookieStore = await cookies();
-  cookieStore.delete('rotaract_portal_session');
+  cookieStore.delete(SESSION_COOKIE_NAME);
   return NextResponse.json({ success: true });
 }

@@ -65,6 +65,14 @@ export const SERVICE_HOURS_GOAL = 40;
 /** Session cookie max age in seconds (14 days). */
 export const SESSION_MAX_AGE_SECONDS = 14 * 24 * 60 * 60;
 
+/**
+ * Name of the Firebase session cookie shared by the member portal (`/portal`)
+ * and the public supporter hub (`/account`). Centralized here so a future
+ * rename is a single-line change. Kept as `rotaract_portal_session` to avoid
+ * forcing existing members to re-authenticate.
+ */
+export const SESSION_COOKIE_NAME = 'rotaract_portal_session';
+
 /** Default page size for collection queries. */
 export const DEFAULT_PAGE_SIZE = 30;
 

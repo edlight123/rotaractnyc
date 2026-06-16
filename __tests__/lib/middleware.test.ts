@@ -71,8 +71,12 @@ describe('Middleware configuration', () => {
     expect(config.matcher).toContain('/portal/:path*');
   });
 
-  it('matcher has exactly one pattern (portal routes only)', () => {
-    expect(config.matcher).toHaveLength(1);
+  it('matcher targets /account/:path* routes', () => {
+    expect(config.matcher).toContain('/account/:path*');
+  });
+
+  it('matcher has exactly two patterns (portal + account routes)', () => {
+    expect(config.matcher).toHaveLength(2);
   });
 });
 

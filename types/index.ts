@@ -47,6 +47,77 @@ export interface Member {
   updatedAt?: string;
 }
 
+// ----- Accounts (public / supporter identity) -----
+// Every authenticated user (supporter OR member) has an `accounts/{uid}` doc.
+// A member is an account that ALSO has a `members/{uid}` doc with status 'active'.
+export type AccountType = 'supporter' | 'member';
+export type AuthProviderId = 'google' | 'password' | 'emailLink';
+
+export interface AccountSubscriptions {
+  newsletter?: boolean;
+  volunteer?: boolean;
+  eventReminders?: boolean;
+}
+
+export interface Account {
+  id: string;                 // == Firebase Auth uid
+  email: string;
+  emailVerified: boolean;
+  displayName: string;
+  firstName?: string;
+  lastName?: string;
+  photoURL?: string;
+  phone?: string;
+  accountType: AccountType;   // 'supporter' until promoted to 'member'
+  authProviders: AuthProviderId[];
+  // Relationship / pipeline
+  membershipApplicationId?: string;   // set when an application is in flight
+  memberSince?: string;               // ISO when promoted to member
+  // Payments
+  stripeCustomerId?: string;          // created lazily on first save/purchase
+  // Preferences
+  subscriptions?: AccountSubscriptions;
+  // Audit
+  createdAt: string;
+  updatedAt?: string;
+  lastLoginAt?: string;
+}
+
+export type MembershipApplicationStatus =
+  | 'submitted'
+  | 'in_review'
+  | 'approved'
+  | 'rejected'
+  | 'withdrawn';
+
+export interface MembershipApplication {
+  id: string;
+  accountUid: string;          // accounts/{uid}
+  email: string;
+  name: string;
+  memberType: 'professional' | 'student';
+  occupation?: string;
+  employer?: string;
+  reason?: string;             // why they want to join
+  referredBy?: string;
+  status: MembershipApplicationStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNotes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface NewsletterSubscriber {
+  email: string;
+  name?: string;
+  source: 'footer' | 'event' | 'donate' | 'account';
+  accountUid?: string;
+  confirmed: boolean;          // double opt-in
+  createdAt: string;
+  unsubscribedAt?: string;
+}
+
 // ----- Event -----
 export type RecurrenceFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly';
 
