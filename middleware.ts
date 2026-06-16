@@ -17,9 +17,13 @@ export function middleware(request: NextRequest) {
   if (isProtectedPortal || isProtectedAccount) {
     const session = request.cookies.get(SESSION_COOKIE_NAME);
 
+    // Send unauthenticated visitors to the matching sign-in surface:
+    // supporters → /account/login, members → /portal/login.
+    const loginPath = isProtectedAccount ? '/account/login' : '/portal/login';
+
     // Check cookie exists and has a non-empty value
     if (!session?.value) {
-      const loginUrl = new URL('/portal/login', request.url);
+      const loginUrl = new URL(loginPath, request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
@@ -29,7 +33,7 @@ export function middleware(request: NextRequest) {
     const parts = session.value.split('.');
     if (parts.length !== 3) {
       // Malformed token — clear it and redirect to login
-      const loginUrl = new URL('/portal/login', request.url);
+      const loginUrl = new URL(loginPath, request.url);
       loginUrl.searchParams.set('redirect', pathname);
       const response = NextResponse.redirect(loginUrl);
       response.cookies.delete(SESSION_COOKIE_NAME);
@@ -82,7 +86,7 @@ export function middleware(request: NextRequest) {
       }
     } catch {
       // Any check failure — clear the cookie and redirect to login
-      const loginUrl = new URL('/portal/login', request.url);
+      const loginUrl = new URL(loginPath, request.url);
       loginUrl.searchParams.set('redirect', pathname);
       const response = NextResponse.redirect(loginUrl);
       response.cookies.delete(SESSION_COOKIE_NAME);

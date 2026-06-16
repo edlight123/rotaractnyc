@@ -177,6 +177,11 @@ export async function POST(request: Request) {
         const update: Record<string, any> = { lastLoginAt: nowIso, updatedAt: nowIso };
         if (existing.accountType !== accountType) update.accountType = accountType;
         if (decoded.email_verified && !existing.emailVerified) update.emailVerified = true;
+        // Backfill identity fields that may have been empty at first creation
+        // (e.g. email/password signup creates the user before the displayName
+        // is set, then re-establishes the session with a named token).
+        if (!existing.displayName && decoded.name) update.displayName = decoded.name;
+        if (!existing.photoURL && decoded.picture) update.photoURL = decoded.picture;
         await accountRef.update(update);
       }
 

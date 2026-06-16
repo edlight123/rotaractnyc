@@ -1,6 +1,6 @@
 # Public Accounts & Member Portal — Implementation Plan
 
-**Status:** Phase 0 (Foundations) implemented — Phases 1–6 proposed
+**Status:** Phases 0–1 implemented — Phases 2–6 proposed
 **Author:** Engineering
 **Last updated:** 2026-06-16
 
@@ -474,7 +474,7 @@ Each phase is independently shippable and leaves members unaffected until cut ov
 | Phase | Scope | Key files |
 | --- | --- | --- |
 | **0 — Foundations** ✅ | `accounts` collection + types + rules predicates; `SESSION_COOKIE_NAME` constant; custom claims `{accountType, role}` on account create; auth context creates `accounts` (not pending members); **auto-convert** existing `status:'pending'` self-signups to supporter accounts + draft application; portal redirects non-members to `/account` (+ minimal `/account` hub). | `types/index.ts`, `lib/constants.ts`, `lib/firebase/auth.tsx`, `app/api/portal/auth/session/route.ts`, `firestore.rules`, `app/portal/layout.tsx`, `components/portal/PortalShell.tsx`, `middleware.ts`, `app/account/*`, `scripts/migrate-pending-members.ts` |
-| **1 — Auth methods** | Email/password + magic link; `/account/login`, `/account/signup`, `/account/verify`. | `lib/firebase/auth.tsx`, `app/account/login`, `app/account/signup`, `app/account/verify` |
+| **1 — Auth methods** ✅ | Email/password + magic link + password reset; `/account/login`, `/account/signup`, `/account/verify`; middleware routes `/account` → `/account/login`. | `lib/firebase/auth.tsx`, `lib/firebase/authErrors.ts`, `components/account/authUi.tsx`, `app/account/login`, `app/account/signup`, `app/account/verify`, `middleware.ts`, `app/api/portal/auth/session/route.ts` |
 | **2 — Supporter hub (read-only)** | `/account` shell + dashboard, tickets, receipts, donations, profile. | `components/account/AccountShell.tsx`, `app/account/*` |
 | **3 — Claim flow** | Post-checkout activation CTA + `/api/account/claim`; `guest_rsvps.accountUid`. | `lib/stripe/webhooks.ts`, `lib/email/templates`, `app/api/account/claim/route.ts`, `app/api/events/checkout/route.ts` |
 | **4 — Saved payments** | Stripe Customer + billing portal + reuse in checkout/donate. | `app/api/account/billing/*`, `app/api/events/checkout/route.ts`, `app/api/donate/route.ts`, `lib/stripe/webhooks.ts` |

@@ -22,8 +22,8 @@ export default function AccountHubPage() {
     );
   }
 
-  // Not signed in — point to the existing sign-in. A dedicated /account/login
-  // (Google + email/password + magic link) arrives in Phase 1.
+  // Not signed in — point to the supporter sign-in (Google + email/password +
+  // magic link). Note: middleware normally redirects here before this renders.
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
@@ -34,9 +34,14 @@ export default function AccountHubPage() {
           <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">
             Sign in to manage your tickets, RSVPs, and donations.
           </p>
-          <Link href="/portal/login" className="btn-md btn-primary">
-            Sign In
-          </Link>
+          <div className="flex items-center justify-center gap-3">
+            <Link href="/account/login" className="btn-md btn-primary">
+              Sign In
+            </Link>
+            <Link href="/account/signup" className="btn-md btn-secondary">
+              Create account
+            </Link>
+          </div>
         </div>
       </div>
     );

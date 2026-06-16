@@ -8,11 +8,23 @@ import {
   getRedirectResult,
   signOut as firebaseSignOut,
   GoogleAuthProvider,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendEmailVerification,
+  updateProfile,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
+  sendPasswordResetEmail,
   type User,
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth as getAuth, db as getDb } from './client';
 import type { Account, Member } from '@/types';
+
+// localStorage key used to remember the email between requesting a magic link
+// and completing sign-in on the same device (Firebase email-link requirement).
+const MAGIC_LINK_EMAIL_KEY = 'rotaract_emailForSignIn';
 
 interface AuthContextType {
   user: User | null;
@@ -21,6 +33,11 @@ interface AuthContextType {
   loading: boolean;
   sessionReady: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string, name: string) => Promise<void>;
+  sendMagicLink: (email: string, redirectPath?: string) => Promise<void>;
+  completeMagicLink: (emailOverride?: string) => Promise<boolean>;
+  sendPasswordReset: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -31,6 +48,11 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   sessionReady: false,
   signInWithGoogle: async () => {},
+  signInWithEmail: async () => {},
+  signUpWithEmail: async () => {},
+  sendMagicLink: async () => {},
+  completeMagicLink: async () => false,
+  sendPasswordReset: async () => {},
   signOut: async () => {},
 });
 
@@ -169,6 +191,96 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // ── Email + password ──────────────────────────────────────────────────
+  const signInWithEmail = async (email: string, password: string) => {
+    await signInWithEmailAndPassword(getAuth(), email, password);
+    // onAuthStateChanged establishes the session cookie + account doc.
+  };
+
+  const signUpWithEmail = async (email: string, password: string, name: string) => {
+    const cred = await createUserWithEmailAndPassword(getAuth(), email, password);
+    const displayName = name.trim();
+    if (displayName) {
+      try {
+        await updateProfile(cred.user, { displayName });
+      } catch (err) {
+        console.warn('Auth: updateProfile after signup failed:', err);
+      }
+    }
+    // Re-establish the session with a fresh token that now carries the
+    // displayName, so the server-side account doc is created/backfilled with
+    // the correct name (the automatic onAuthStateChanged POST may have fired
+    // before updateProfile resolved). The session route is idempotent.
+    try {
+      const freshToken = await cred.user.getIdToken(true);
+      await fetch('/api/portal/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: freshToken }),
+      });
+    } catch (err) {
+      console.warn('Auth: session refresh after signup failed:', err);
+    }
+    // Fire-and-forget verification email (non-blocking).
+    try {
+      await sendEmailVerification(cred.user, {
+        url: `${window.location.origin}/account?verified=1`,
+      });
+    } catch (err) {
+      console.warn('Auth: verification email failed:', err);
+    }
+  };
+
+  const sendPasswordReset = async (email: string) => {
+    await sendPasswordResetEmail(getAuth(), email, {
+      url: `${window.location.origin}/account/login`,
+    });
+  };
+
+  // ── Passwordless email link (magic link) ──────────────────────────────
+  const sendMagicLink = async (email: string, redirectPath?: string) => {
+    const verifyUrl = new URL('/account/verify', window.location.origin);
+    if (redirectPath && redirectPath !== '/account') {
+      verifyUrl.searchParams.set('redirect', redirectPath);
+    }
+    await sendSignInLinkToEmail(getAuth(), email, {
+      url: verifyUrl.toString(),
+      handleCodeInApp: true,
+    });
+    try {
+      window.localStorage.setItem(MAGIC_LINK_EMAIL_KEY, email);
+    } catch {
+      /* localStorage unavailable — verify page will prompt for the email */
+    }
+  };
+
+  /**
+   * Completes a magic-link sign-in if the current URL is a Firebase email
+   * sign-in link. Returns true when sign-in was initiated, false when the URL
+   * is not a sign-in link. Throws `Error('EMAIL_REQUIRED')` when the email
+   * cannot be recovered from storage and the caller must prompt for it.
+   */
+  const completeMagicLink = async (emailOverride?: string): Promise<boolean> => {
+    const auth = getAuth();
+    if (!isSignInWithEmailLink(auth, window.location.href)) return false;
+    let email = emailOverride?.trim() || null;
+    if (!email) {
+      try {
+        email = window.localStorage.getItem(MAGIC_LINK_EMAIL_KEY);
+      } catch {
+        email = null;
+      }
+    }
+    if (!email) throw new Error('EMAIL_REQUIRED');
+    await signInWithEmailLink(auth, email, window.location.href);
+    try {
+      window.localStorage.removeItem(MAGIC_LINK_EMAIL_KEY);
+    } catch {
+      /* ignore */
+    }
+    return true;
+  };
+
   const signOut = async () => {
     await fetch('/api/portal/auth/session', { method: 'DELETE' });
     await firebaseSignOut(getAuth());
@@ -178,7 +290,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, account, member, loading, sessionReady, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, account, member, loading, sessionReady, signInWithGoogle, signInWithEmail, signUpWithEmail, sendMagicLink, completeMagicLink, sendPasswordReset, signOut }}>
       {children}
     </AuthContext.Provider>
   );
