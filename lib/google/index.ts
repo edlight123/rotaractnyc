@@ -55,3 +55,21 @@ export {
   type CreateWorkspaceUserResult,
   type DirectoryConnectionStatus,
 } from './directory';
+
+export {
+  isGroupsConfigured,
+  committeeGroupEmail,
+  groupExists,
+  getGroup,
+  createGroup,
+  ensureGroup,
+  deleteGroup,
+  addGroupMember,
+  removeGroupMember,
+  listGroupMembers,
+  checkGroupsConnection,
+  type GroupInfo,
+  type CreateGroupInput,
+  type GroupMemberRole,
+  type GroupsConnectionStatus,
+} from './groups';

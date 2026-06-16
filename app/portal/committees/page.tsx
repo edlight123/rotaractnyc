@@ -11,7 +11,8 @@ import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import { cn } from '@/lib/utils/cn';
 import type { Committee } from '@/types';
-import { Users, Plus, Lock, Clock, ChevronRight, Pencil, EyeOff } from 'lucide-react';
+import { Users, Plus, Lock, Clock, ChevronRight, Pencil, EyeOff, Mail } from 'lucide-react';
+import CommitteeGroupEmailsModal from '@/components/portal/CommitteeGroupEmailsModal';
 
 // ─── Create Committee Modal ───────────────────────────────────────────────────
 
@@ -306,6 +307,7 @@ export default function CommitteesPage() {
   const { member } = useAuth();
   const { data: committees, loading } = useCommittees();
   const [showCreate, setShowCreate] = useState(false);
+  const [showGroupEmails, setShowGroupEmails] = useState(false);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [showInactive, setShowInactive] = useState(false);
   const { toast } = useToast();
@@ -406,6 +408,12 @@ export default function CommitteesPage() {
               </button>
             )}
             <Button
+              variant="secondary"
+              onClick={() => setShowGroupEmails(true)}
+            >
+              <Mail className="w-4 h-4" /> Group emails
+            </Button>
+            <Button
               variant="primary"
               onClick={() => setShowCreate(true)}
             >
@@ -455,6 +463,12 @@ export default function CommitteesPage() {
         open={showCreate}
         onClose={() => setShowCreate(false)}
         onCreated={() => router.refresh()}
+      />
+
+      <CommitteeGroupEmailsModal
+        open={showGroupEmails}
+        onClose={() => setShowGroupEmails(false)}
+        onProvisioned={() => router.refresh()}
       />
     </div>
   );

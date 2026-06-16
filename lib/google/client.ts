@@ -197,6 +197,53 @@ export function getDirectoryAuth() {
   return _directoryAuth;
 }
 
+// ─── Workspace Groups Auth (Domain-Wide Delegation) ───
+//
+// Deliberately a SEPARATE JWT from getDirectoryAuth(). DWD token requests fail
+// entirely (`unauthorized_client`) if they ask for any scope the client isn't
+// authorized for — so bundling group scopes onto the user JWT would break the
+// already-working user provisioning until the group scopes are authorized.
+// Keeping them apart lets groups come online independently (and fail softly).
+
+let _groupsAuth: InstanceType<typeof google.auth.JWT> | null = null;
+
+/** Group provisioning shares the same key/domain/admin as user provisioning. */
+export function isGroupsConfigured(): boolean {
+  return isDirectoryConfigured();
+}
+
+/**
+ * Authorized JWT client for managing Google Groups (committee group emails)
+ * via the Admin SDK Directory API, impersonating the super-admin via DWD.
+ * Requires the group + group.member scopes to be authorized for the service
+ * account's client ID in the Admin console.
+ */
+export function getGroupsAuth() {
+  if (!isGroupsConfigured()) {
+    throw new Error(
+      'Workspace group management is not configured. Set GOOGLE_SERVICE_ACCOUNT_KEY ' +
+        '(or reuse FIREBASE_SERVICE_ACCOUNT), GOOGLE_WORKSPACE_DOMAIN, and ' +
+        'GOOGLE_WORKSPACE_ADMIN_EMAIL, and authorize the service account for the ' +
+        'admin.directory.group and admin.directory.group.member scopes.',
+    );
+  }
+
+  if (_groupsAuth) return _groupsAuth;
+
+  const credentials = parseServiceAccountKey(PROVISIONING_SA_KEY);
+  _groupsAuth = new google.auth.JWT({
+    email: credentials.client_email,
+    key: credentials.private_key,
+    scopes: [
+      'https://www.googleapis.com/auth/admin.directory.group',
+      'https://www.googleapis.com/auth/admin.directory.group.member',
+    ],
+    subject: WORKSPACE_ADMIN_EMAIL,
+  });
+
+  return _groupsAuth;
+}
+
 // ─── OAuth2 Client (per-user) ───
 
 export function getOAuth2Client() {

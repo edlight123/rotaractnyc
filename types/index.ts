@@ -666,6 +666,7 @@ export interface Committee {
   waitlistIds: string[];
   pendingMemberIds?: string[];  // awaiting board approval for 3rd+ committee
   driveURL?: string;     // Google Workspace Shared Drive link
+  groupEmail?: string;   // Google Group address (e.g. events@rotaractnyc.org) — set once the group is provisioned
   meetingCadence?: string; // e.g. "Every 2nd Monday, 6:30 PM"
   termHistory: CommitteeTermHistory[];
   lastRefreshedYear?: number;
