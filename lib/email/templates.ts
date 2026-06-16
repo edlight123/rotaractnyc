@@ -302,6 +302,14 @@ function qrCodeBlock(qr: string | string[] | undefined): string {
           ${cards}
         </td>
       </tr>
+      <tr>
+        <td style="text-align: center; padding-top: 6px;">
+          <p style="color: ${TEXT_MUTED}; font-size: 12px; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+            Can't see the ${total === 1 ? 'code' : 'codes'} above?
+            <a href="${SITE.url}/account/tickets" style="color: ${CRIMSON}; font-weight: 600; text-decoration: underline;">View your ${total === 1 ? 'ticket' : 'tickets'} online</a>.
+          </p>
+        </td>
+      </tr>
     </table>`;
 }
 

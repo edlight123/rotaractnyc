@@ -94,21 +94,25 @@ export default function AccountHubPage() {
         )}
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          <PlaceholderCard
+          <HubCard
+            href="/account/tickets"
             title="My tickets"
-            desc="Tickets and receipts from events you've registered for."
+            desc="Tickets, QR codes, and receipts from events you've registered for."
           />
-          <PlaceholderCard
+          <HubCard
+            href="/account/donations"
             title="Donation history"
-            desc="Your past donations and tax receipts."
+            desc="Your past donations and giving summary."
           />
-          <PlaceholderCard
-            title="RSVPs & waitlists"
-            desc="Manage your event RSVPs and waitlist spots."
-          />
-          <PlaceholderCard
+          <HubCard
+            href="/account/profile"
             title="Profile & preferences"
             desc="Update your details and email subscriptions."
+          />
+          <HubCard
+            href="/events"
+            title="Browse events"
+            desc="Find upcoming events and RSVP or buy tickets."
           />
         </div>
 
@@ -131,14 +135,19 @@ export default function AccountHubPage() {
   );
 }
 
-function PlaceholderCard({ title, desc }: { title: string; desc: string }) {
+function HubCard({ href, title, desc }: { href: string; title: string; desc: string }) {
   return (
-    <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5">
-      <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
+    <Link
+      href={href}
+      className="group rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 transition-colors hover:border-cranberry/50 hover:bg-cranberry-50/30 dark:hover:bg-cranberry-900/10"
+    >
+      <div className="flex items-start justify-between">
+        <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
+        <span className="text-gray-300 transition-transform group-hover:translate-x-0.5 group-hover:text-cranberry">
+          →
+        </span>
+      </div>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{desc}</p>
-      <span className="mt-3 inline-block text-xs font-medium text-gray-400">
-        Coming soon
-      </span>
-    </div>
+    </Link>
   );
 }

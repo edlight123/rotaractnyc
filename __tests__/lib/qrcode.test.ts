@@ -110,13 +110,14 @@ describe('QR Code utilities', () => {
       expect(verifyCheckInSignature('event-1', 'member-TAMPERED', t, sig)).toBe(false);
     });
 
-    it('returns false for an expired timestamp (>24 hours old)', () => {
-      // Generate a URL, then rewind the timestamp by 25 hours
+    it('returns false for a signature older than the ticket window (>180 days)', () => {
+      // Tickets stay valid long enough to cover advance sales, but not forever.
+      // Rewind the timestamp past the 180-day window and re-sign it.
       const url = generateCheckInUrl('event-1', 'member-1');
       const parsed = new URL(url);
 
       const originalTs = parsed.searchParams.get('t')!;
-      const expiredTs = String(Number(originalTs) - 25 * 60 * 60 * 1000);
+      const expiredTs = String(Number(originalTs) - 181 * 24 * 60 * 60 * 1000);
 
       // Re-sign with the expired timestamp using the same HMAC logic
       const crypto = require('crypto');
@@ -128,9 +129,11 @@ describe('QR Code utilities', () => {
       expect(verifyCheckInSignature('event-1', 'member-1', expiredTs, expiredSig)).toBe(false);
     });
 
-    it('returns true for a recent timestamp within 24 hours', () => {
-      // Generate a URL, then set the timestamp to 23 hours ago
-      const recentTs = String(Date.now() - 23 * 60 * 60 * 1000);
+    it('returns true for a ticket issued weeks before the event (within 180 days)', () => {
+      // A ticket purchased 30 days before the event must still validate — this
+      // is the gala placeholder regression: advance-issued QR codes were
+      // expiring after 24 hours.
+      const recentTs = String(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
       const crypto = require('crypto');
       const recentSig = crypto

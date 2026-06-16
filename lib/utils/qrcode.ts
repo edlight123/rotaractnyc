@@ -2,7 +2,23 @@ import crypto from 'crypto';
 import QRCode from 'qrcode';
 import { SITE } from '@/lib/constants';
 
-const SIGNATURE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+/**
+ * How long a ticket check-in signature stays valid.
+ *
+ * Tickets are emailed at *purchase* time, which can be days or weeks before an
+ * event. The signed timestamp `t` is the issuance time, so this window must be
+ * long enough to cover advance ticket sales. With the old 24-hour window, the
+ * QR `<img>` in a confirmation email 403'd as soon as the recipient (or an
+ * email client's image proxy, e.g. Gmail) loaded it more than a day after
+ * purchase — showing a broken-image placeholder — and the scan itself failed
+ * at the door. (This is exactly what happened to many 2026 gala tickets.)
+ *
+ * 180 days comfortably covers any realistic advance-sale window. Security is
+ * unaffected: the HMAC still authenticates each (event, member, ticket), and
+ * check-in is idempotent (a second scan reports "already checked in"), so a
+ * longer validity window enables neither forgery nor double-entry.
+ */
+const TICKET_SIGNATURE_TTL_MS = 180 * 24 * 60 * 60 * 1000; // 180 days
 
 function getSecret(): string {
   const secret = process.env.CRON_SECRET;
@@ -43,7 +59,8 @@ export function generateCheckInUrl(
 }
 
 /**
- * Verify that a check-in signature is valid and not expired (24-hour window).
+ * Verify that a check-in signature is valid and not expired (see
+ * TICKET_SIGNATURE_TTL_MS — long enough to cover advance ticket sales).
  *
  * When `ticketNumber` is supplied the verification uses the ticket-specific
  * HMAC payload (`eventId:memberId:timestamp:ticketNumber`), matching the
@@ -69,7 +86,7 @@ export function verifyCheckInSignature(
   }
   const ts = Number(timestamp);
   if (Number.isNaN(ts)) return false;
-  return Date.now() - ts < SIGNATURE_TTL_MS;
+  return Date.now() - ts < TICKET_SIGNATURE_TTL_MS;
 }
 
 /**
