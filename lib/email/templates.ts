@@ -463,6 +463,68 @@ export function inviteEmail(name: string): { subject: string; html: string; text
   };
 }
 
+/**
+ * Sent to a new member's PERSONAL email once their @{domain} Workspace account
+ * has been provisioned. Carries the new org email + temporary password and the
+ * one-time steps to reach the portal and Slack. This is the only message we
+ * send to the personal address — everything afterward uses the org account.
+ */
+export function memberWorkspaceWelcomeEmail(
+  name: string,
+  orgEmail: string,
+  temporaryPassword: string,
+  slackInviteUrl?: string,
+): { subject: string; html: string; text: string } {
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(orgEmail);
+  const safePassword = escapeHtml(temporaryPassword);
+  const safeSlack = slackInviteUrl ? escapeHtml(slackInviteUrl) : '';
+
+  const credentials = `
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 20px 0; border-radius: 8px; overflow: hidden; border: 1px solid ${GRAY_BORDER};">
+      <tr>
+        <td width="4" style="background-color: ${CRIMSON};"></td>
+        <td style="background-color: #FAFAFA; padding: 18px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+          <p style="color: ${TEXT_MUTED}; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 4px;">Your new email</p>
+          <p style="color: ${TEXT_DARK}; font-size: 16px; font-weight: 700; margin: 0 0 16px; font-family: 'SF Mono', Menlo, Consolas, monospace;">${safeEmail}</p>
+          <p style="color: ${TEXT_MUTED}; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 4px;">Temporary password</p>
+          <p style="color: ${TEXT_DARK}; font-size: 16px; font-weight: 700; margin: 0; font-family: 'SF Mono', Menlo, Consolas, monospace; letter-spacing: 0.5px;">${safePassword}</p>
+        </td>
+      </tr>
+    </table>`;
+
+  const slackSection = safeSlack
+    ? p(`<strong>Join us on Slack.</strong> After your first sign-in, <a href="${safeSlack}" target="_blank" style="color: ${CRIMSON}; font-weight: 600;">join the club Slack</a> — choose &ldquo;Sign in with Google&rdquo; and pick your new ${safeEmail} address.`)
+    : '';
+
+  return {
+    subject: `Your ${SITE.shortName} account is ready`,
+    html: wrapTemplate(`
+      ${h1(`Welcome aboard, ${safeName}!`)}
+      ${p(`We've created your official <strong>${SITE.name}</strong> account. Use the credentials below to sign in — this is the email you'll use for the member portal, club Slack, and everything else.`)}
+      ${credentials}
+      <p style="color: ${TEXT_MUTED}; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin: 24px 0 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">Getting started</p>
+      ${infoCard(`
+        <table role="presentation" cellpadding="0" cellspacing="0">
+          ${listItem('user', 'Sign in', `at the member portal using &ldquo;Sign in with Google&rdquo; and the address above.`)}
+          ${listItem('hash', 'Set your password', `— you&rsquo;ll be prompted to choose a new one on first login.`)}
+          ${slackInviteUrl ? listItem('ticket', 'Join Slack', `with the same Google account (link below).`) : listItem('calendar', 'Explore the portal', `— events, committees, directory, and dues.`)}
+        </table>
+      `)}
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 28px 0 0;">
+        <tr>
+          <td style="text-align: center;">
+            ${ctaButton('Sign In to the Portal', `${SITE.url}/portal/login`)}
+          </td>
+        </tr>
+      </table>
+      ${slackSection}
+      ${muted(`For your security, you&rsquo;ll be asked to change this temporary password the first time you sign in. If you didn&rsquo;t expect this email, please contact ${SITE.email}.`)}
+    `, `Your ${SITE.shortName} account is ready`),
+    text: `Welcome aboard, ${name}!\n\nWe've created your official ${SITE.name} account.\n\nEmail: ${orgEmail}\nTemporary password: ${temporaryPassword}\n\nGetting started:\n1. Sign in at ${SITE.url}/portal/login using "Sign in with Google" and the address above.\n2. You'll be prompted to set a new password on first login.\n${slackInviteUrl ? `3. Join the club Slack: ${slackInviteUrl}\n` : ''}\nFor your security, you'll change this temporary password at first sign-in. If you didn't expect this email, contact ${SITE.email}.\n\n--\n${SITE.name}\n${SITE.address}`,
+  };
+}
+
 export function boardInviteEmail(
   name: string,
   title: string,

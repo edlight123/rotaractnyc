@@ -40,11 +40,29 @@ export interface Member {
   whatsAppSameAsPhone?: boolean;
   /** Org role-alias email (e.g. treasurer@rotaractnyc.org). Never shown in the public directory — separate from the personal login email. */
   roleEmail?: string;
+  /** Personal email captured at provisioning time — where the Workspace welcome (org email + temp password) was sent. The `email` field holds the org login email. */
+  personalEmail?: string;
+  /** Workspace/Slack provisioning status, set when an org account is auto-created on invite. */
+  provisioning?: MemberProvisioning;
   onboardingComplete?: boolean;
   invitedAt?: string;
   joinedAt: string;
   alumniSince?: string;            // ISO date when member became alumni
   updatedAt?: string;
+}
+
+/** Provisioning state for an auto-created org account (Workspace + Slack). */
+export interface MemberProvisioning {
+  /** 'created' once the Workspace user exists; 'failed' if the API call errored; 'skipped' when not requested. */
+  workspace: 'created' | 'failed' | 'skipped';
+  /** 'invited' when a Slack invite link was included; 'self-serve' for domain self-join; 'skipped' otherwise. */
+  slack: 'invited' | 'self-serve' | 'skipped';
+  /** The org login email that was created, if any. */
+  orgEmail?: string;
+  /** ISO timestamp of the provisioning attempt. */
+  provisionedAt?: string;
+  /** Error detail when workspace === 'failed' (admin-only diagnostics). */
+  error?: string;
 }
 
 // ----- Accounts (public / supporter identity) -----

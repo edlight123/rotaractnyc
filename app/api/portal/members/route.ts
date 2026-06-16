@@ -126,6 +126,7 @@ export async function POST(request: NextRequest) {
       employer,
       linkedIn,
       bio,
+      provisionWorkspace = false,
     } = body;
 
     // Validation
@@ -136,13 +137,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check for duplicate email
-    const existing = await adminDb
-      .collection('members')
-      .where('email', '==', email.toLowerCase().trim())
-      .limit(1)
-      .get();
-    if (!existing.empty) {
+    // Check for duplicates — match either the login email or a previously
+    // stored personal email (so re-provisioning the same person is caught).
+    const lowerEmail = email.toLowerCase().trim();
+    const [byEmail, byPersonal] = await Promise.all([
+      adminDb.collection('members').where('email', '==', lowerEmail).limit(1).get(),
+      adminDb.collection('members').where('personalEmail', '==', lowerEmail).limit(1).get(),
+    ]);
+    if (!byEmail.empty || !byPersonal.empty) {
       return NextResponse.json(
         { error: 'A member with this email already exists' },
         { status: 409 },
@@ -152,11 +154,57 @@ export async function POST(request: NextRequest) {
     const displayName = `${firstName.trim()} ${lastName.trim()}`;
     const now = new Date().toISOString();
 
+    // ── Optional: provision a Google Workspace org account ──
+    // When requested, the provided `email` is the member's PERSONAL address.
+    // We mint a first.last@domain Workspace account, use the org email as the
+    // login `email` (members sign in with that Google account), keep the
+    // personal address as `personalEmail`, and send the welcome there.
+    let loginEmail = lowerEmail;
+    let personalEmail: string | null = null;
+    let provisioning: Record<string, any> | null = null;
+    let workspaceCreds: { orgEmail: string; temporaryPassword: string } | null = null;
+    const slackInviteUrl = process.env.SLACK_INVITE_URL || '';
+
+    if (provisionWorkspace === true) {
+      const { isDirectoryConfigured, createWorkspaceUser } = await import('@/lib/google/directory');
+      if (!isDirectoryConfigured()) {
+        return NextResponse.json(
+          { error: 'Workspace provisioning is not configured on the server.' },
+          { status: 503 },
+        );
+      }
+      personalEmail = lowerEmail;
+      try {
+        const created = await createWorkspaceUser({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          recoveryEmail: personalEmail || undefined,
+        });
+        workspaceCreds = {
+          orgEmail: created.orgEmail,
+          temporaryPassword: created.temporaryPassword,
+        };
+        loginEmail = created.orgEmail.toLowerCase();
+        provisioning = {
+          workspace: 'created',
+          slack: slackInviteUrl ? 'invited' : 'self-serve',
+          orgEmail: created.orgEmail,
+          provisionedAt: now,
+        };
+      } catch (provErr: any) {
+        console.error('Workspace provisioning failed:', provErr);
+        return NextResponse.json(
+          { error: `Workspace account creation failed: ${provErr?.message || 'unknown error'}` },
+          { status: 502 },
+        );
+      }
+    }
+
     const memberData: Record<string, any> = {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       displayName,
-      email: email.toLowerCase().trim(),
+      email: loginEmail,
       role: memberRole,
       status: 'pending',
       onboardingComplete: false,
@@ -165,6 +213,8 @@ export async function POST(request: NextRequest) {
       updatedAt: now,
       invitedAt: now,
     };
+    if (personalEmail) memberData.personalEmail = personalEmail;
+    if (provisioning) memberData.provisioning = provisioning;
 
     // Optional fields — only include if provided
     if (memberType) memberData.memberType = memberType;
@@ -178,24 +228,43 @@ export async function POST(request: NextRequest) {
 
     const docRef = await adminDb.collection('members').add(memberData);
 
-    // Send invitation email
+    // Send the onboarding email. When we provisioned an org account, send the
+    // Workspace welcome (org email + temp password) to the PERSONAL inbox;
+    // otherwise send the standard portal invite to the login email.
     try {
       const { sendEmail } = await import('@/lib/email/send');
-      const { inviteEmail } = await import('@/lib/email/templates');
-      const template = inviteEmail(firstName.trim());
-      await sendEmail({
-        to: email.toLowerCase().trim(),
-        subject: template.subject,
-        html: template.html,
-        text: template.text,
-      });
+      if (workspaceCreds && personalEmail) {
+        const { memberWorkspaceWelcomeEmail } = await import('@/lib/email/templates');
+        const template = memberWorkspaceWelcomeEmail(
+          firstName.trim(),
+          workspaceCreds.orgEmail,
+          workspaceCreds.temporaryPassword,
+          slackInviteUrl || undefined,
+        );
+        await sendEmail({
+          to: personalEmail,
+          subject: template.subject,
+          html: template.html,
+          text: template.text,
+        });
+      } else {
+        const { inviteEmail } = await import('@/lib/email/templates');
+        const template = inviteEmail(firstName.trim());
+        await sendEmail({
+          to: loginEmail,
+          subject: template.subject,
+          html: template.html,
+          text: template.text,
+        });
+      }
     } catch (emailErr) {
-      console.error('Invitation email failed (non-blocking):', emailErr);
+      console.error('Onboarding email failed (non-blocking):', emailErr);
     }
 
     // If the new member is a board officer, refresh the public Leadership page
     if (BOARD_ROLES.includes(memberRole as any)) revalidateMemberPages();
 
+    // Never echo the temporary password back in the API response.
     return NextResponse.json(
       { id: docRef.id, ...memberData },
       { status: 201 },

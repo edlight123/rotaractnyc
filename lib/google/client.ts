@@ -27,6 +27,15 @@ const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/google/callback`;
 
+// ─── Google Workspace user provisioning (Admin SDK Directory API) ───
+// Creating @rotaractnyc.org accounts requires the service account to have
+// **Domain-Wide Delegation** authorized for the directory scope, plus a
+// super-admin to impersonate (a service account cannot manage users on its
+// own). Both are optional — when unset, provisioning features stay disabled
+// and the rest of the Google integration is unaffected.
+const WORKSPACE_DOMAIN = process.env.GOOGLE_WORKSPACE_DOMAIN;            // e.g. rotaractnyc.org
+const WORKSPACE_ADMIN_EMAIL = process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL; // super-admin to impersonate
+
 // ─── Settings Collection ───
 
 const SETTINGS_DOC = 'settings';
@@ -78,6 +87,21 @@ export async function updateGoogleSettings(
 
 let _saAuth: InstanceType<typeof google.auth.GoogleAuth> | null = null;
 
+/** Parse the service-account JSON key, tolerating un-escaped newlines. */
+function parseServiceAccountKey(): Record<string, any> {
+  if (!SA_KEY) {
+    throw new Error(
+      'GOOGLE_SERVICE_ACCOUNT_KEY is not configured. ' +
+        'Set it in your environment variables to enable Google Workspace integration.',
+    );
+  }
+  try {
+    return JSON.parse(SA_KEY);
+  } catch {
+    return JSON.parse(SA_KEY.replace(/\n/g, '\\n'));
+  }
+}
+
 /**
  * Return an authorized GoogleAuth client using the service account.
  * Scopes cover Calendar, Sheets and Drive.
@@ -92,12 +116,7 @@ export function getServiceAccountAuth() {
 
   if (_saAuth) return _saAuth;
 
-  let credentials: Record<string, any>;
-  try {
-    credentials = JSON.parse(SA_KEY);
-  } catch {
-    credentials = JSON.parse(SA_KEY.replace(/\n/g, '\\n'));
-  }
+  const credentials = parseServiceAccountKey();
 
   _saAuth = new google.auth.GoogleAuth({
     credentials,
@@ -114,6 +133,57 @@ export function getServiceAccountAuth() {
 /** Check whether service-account credentials are configured. */
 export function isServiceAccountConfigured(): boolean {
   return !!SA_KEY;
+}
+
+// ─── Workspace Directory Auth (Domain-Wide Delegation) ───
+
+let _directoryAuth: InstanceType<typeof google.auth.JWT> | null = null;
+
+/** The Workspace primary domain new member accounts are created under. */
+export function getWorkspaceDomain(): string | undefined {
+  return WORKSPACE_DOMAIN;
+}
+
+/** The super-admin the service account impersonates for directory writes. */
+export function getWorkspaceAdminEmail(): string | undefined {
+  return WORKSPACE_ADMIN_EMAIL;
+}
+
+/**
+ * Whether Workspace user provisioning is fully configured: a service-account
+ * key, a target domain, and a super-admin to impersonate via Domain-Wide
+ * Delegation.
+ */
+export function isDirectoryConfigured(): boolean {
+  return !!(SA_KEY && WORKSPACE_DOMAIN && WORKSPACE_ADMIN_EMAIL);
+}
+
+/**
+ * Authorized JWT client for the Admin SDK **Directory API**, impersonating a
+ * Workspace super-admin via Domain-Wide Delegation. Unlike `getServiceAccountAuth`
+ * (server-to-server, shared-resource access), creating/suspending users *must*
+ * act as a real admin, which DWD's `subject` impersonation provides.
+ */
+export function getDirectoryAuth() {
+  if (!isDirectoryConfigured()) {
+    throw new Error(
+      'Workspace user provisioning is not configured. Set GOOGLE_SERVICE_ACCOUNT_KEY, ' +
+        'GOOGLE_WORKSPACE_DOMAIN, and GOOGLE_WORKSPACE_ADMIN_EMAIL, and authorize the ' +
+        'service account for the admin.directory.user scope in the Admin console.',
+    );
+  }
+
+  if (_directoryAuth) return _directoryAuth;
+
+  const credentials = parseServiceAccountKey();
+  _directoryAuth = new google.auth.JWT({
+    email: credentials.client_email,
+    key: credentials.private_key,
+    scopes: ['https://www.googleapis.com/auth/admin.directory.user'],
+    subject: WORKSPACE_ADMIN_EMAIL, // impersonate the super-admin (DWD)
+  });
+
+  return _directoryAuth;
 }
 
 // ─── OAuth2 Client (per-user) ───

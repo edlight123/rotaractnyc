@@ -41,3 +41,17 @@ export {
   type DriveFile,
   type DriveFolder,
 } from './drive';
+
+export {
+  isDirectoryConfigured,
+  suggestOrgEmail,
+  generateOrgEmail,
+  emailExists,
+  generateTemporaryPassword,
+  createWorkspaceUser,
+  suspendWorkspaceUser,
+  checkDirectoryConnection,
+  type CreateWorkspaceUserInput,
+  type CreateWorkspaceUserResult,
+  type DirectoryConnectionStatus,
+} from './directory';
