@@ -36,6 +36,17 @@ const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || `${process.env.NEXT_PUBL
 const WORKSPACE_DOMAIN = process.env.GOOGLE_WORKSPACE_DOMAIN;            // e.g. rotaractnyc.org
 const WORKSPACE_ADMIN_EMAIL = process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL; // super-admin to impersonate
 
+// The Directory API can reuse the Firebase Admin service account (same GCP
+// project) — its client ID is the one authorized for Domain-Wide Delegation.
+// This means production only needs the two non-secret vars above set; the
+// secret JSON is already present as FIREBASE_SERVICE_ACCOUNT(_KEY). The
+// Calendar/Sheets/Drive path (getServiceAccountAuth) is intentionally NOT
+// changed — it still uses GOOGLE_SERVICE_ACCOUNT_KEY only.
+const PROVISIONING_SA_KEY =
+  process.env.GOOGLE_SERVICE_ACCOUNT_KEY ||
+  process.env.FIREBASE_SERVICE_ACCOUNT_KEY ||
+  process.env.FIREBASE_SERVICE_ACCOUNT;
+
 // ─── Settings Collection ───
 
 const SETTINGS_DOC = 'settings';
@@ -87,18 +98,18 @@ export async function updateGoogleSettings(
 
 let _saAuth: InstanceType<typeof google.auth.GoogleAuth> | null = null;
 
-/** Parse the service-account JSON key, tolerating un-escaped newlines. */
-function parseServiceAccountKey(): Record<string, any> {
-  if (!SA_KEY) {
+/** Parse a service-account JSON key string, tolerating un-escaped newlines. */
+function parseServiceAccountKey(raw: string | undefined = SA_KEY): Record<string, any> {
+  if (!raw) {
     throw new Error(
       'GOOGLE_SERVICE_ACCOUNT_KEY is not configured. ' +
         'Set it in your environment variables to enable Google Workspace integration.',
     );
   }
   try {
-    return JSON.parse(SA_KEY);
+    return JSON.parse(raw);
   } catch {
-    return JSON.parse(SA_KEY.replace(/\n/g, '\\n'));
+    return JSON.parse(raw.replace(/\n/g, '\\n'));
   }
 }
 
@@ -151,11 +162,11 @@ export function getWorkspaceAdminEmail(): string | undefined {
 
 /**
  * Whether Workspace user provisioning is fully configured: a service-account
- * key, a target domain, and a super-admin to impersonate via Domain-Wide
- * Delegation.
+ * key (reusing the Firebase one if GOOGLE_SERVICE_ACCOUNT_KEY is unset), a
+ * target domain, and a super-admin to impersonate via Domain-Wide Delegation.
  */
 export function isDirectoryConfigured(): boolean {
-  return !!(SA_KEY && WORKSPACE_DOMAIN && WORKSPACE_ADMIN_EMAIL);
+  return !!(PROVISIONING_SA_KEY && WORKSPACE_DOMAIN && WORKSPACE_ADMIN_EMAIL);
 }
 
 /**
@@ -175,7 +186,7 @@ export function getDirectoryAuth() {
 
   if (_directoryAuth) return _directoryAuth;
 
-  const credentials = parseServiceAccountKey();
+  const credentials = parseServiceAccountKey(PROVISIONING_SA_KEY);
   _directoryAuth = new google.auth.JWT({
     email: credentials.client_email,
     key: credentials.private_key,
