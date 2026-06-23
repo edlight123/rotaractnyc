@@ -1,0 +1,76 @@
+name: Send Gala Photos Email
+
+# Emails every 2026 gala participant the "photos are ready" message, linking to
+# the album on the website + the Google Photos album.
+#
+# Recipients are resolved LIVE from Firestore by scripts/send-gala-photos.ts
+# (rsvps "going" members + guest_rsvps for the gala event), deduped by email.
+#
+# A Firestore marker (system_flags/galaPhotosSent) prevents a double-send if the
+# workflow is ever re-triggered. This is a ONE-OFF send — delete this workflow
+# (or disable the schedule) once it has run.
+on:
+  # 12:15 UTC on June 24, 2026 == 08:15 America/New_York (EDT, UTC-4).
+  schedule:
+    - cron: '15 12 24 6 *'
+  # Manual trigger for testing. Defaults to a safe dry run; set dry_run=false to
+  # actually send, or provide a test_email to send a single sample.
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run — resolve recipients but send nothing (true / false)'
+        required: false
+        default: 'true'
+      test_email:
+        description: 'Send a single test to this address instead of everyone'
+        required: false
+        default: ''
+      force:
+        description: 'Override the double-send guard (true / false)'
+        required: false
+        default: 'false'
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Send gala photos email
+        env:
+          # Firebase (read participants) — same secrets as import-album.yml
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          # Resend (send the email)
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM: ${{ secrets.RESEND_FROM }}
+          # Trigger context
+          GH_EVENT: ${{ github.event_name }}
+          GH_DRY_RUN: ${{ github.event.inputs.dry_run }}
+          GH_TEST_EMAIL: ${{ github.event.inputs.test_email }}
+          GH_FORCE: ${{ github.event.inputs.force }}
+        run: |
+          # Build args safely — no eval, no injection risk.
+          args=()
+          if [ "$GH_EVENT" = "schedule" ]; then
+            # The scheduled run is the real one.
+            args+=(--send)
+          elif [ "$GH_DRY_RUN" = "false" ]; then
+            args+=(--send)
+          fi
+          if [ -n "$GH_TEST_EMAIL" ]; then
+            args+=(--send "--test=$GH_TEST_EMAIL")
+          fi
+          [ "$GH_FORCE" = "true" ] && args+=(--force)
+          echo "Running: scripts/send-gala-photos.ts ${args[*]:-(dry run)}"
+          node_modules/.bin/tsx scripts/send-gala-photos.ts "${args[@]}"

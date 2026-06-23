@@ -91,6 +91,7 @@ const JOB_ID = args.includes('--job-id') ? args[args.indexOf('--job-id') + 1] : 
 
 const ALBUM_CONTEXT_TAGS: Record<string, string[]> = {
   'pickleball-2025':        ['sport', 'fellowship', 'outdoor', 'social'],
+  'gala-2026':              ['gala', 'formal', 'fellowship', 'fundraiser'],
   'gala-2025':              ['gala', 'formal', 'fellowship', 'fundraiser'],
   'penta-fundraiser-2024':  ['gala', 'formal', 'fellowship', 'fundraiser'],
   'rotaract-reception-2022':['fellowship', 'formal', 'reception'],

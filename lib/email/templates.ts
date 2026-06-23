@@ -1602,3 +1602,105 @@ export function galaCorrectionEmail(
       `--\n${SITE.name}\n${SITE.address}`,
   };
 }
+
+/**
+ * Post-event "the photos are ready" email for everyone who attended the gala.
+ *
+ * Sent to the gala participants (members + guests who held a ticket). Warm
+ * thank-you framing with a primary CTA to the public album on the website and
+ * an optional secondary link to the full-resolution Google Photos album.
+ *
+ * The recipient list is resolved live from Firestore by
+ * scripts/send-gala-photos.ts (rsvps "going" members + guest_rsvps).
+ */
+export function galaPhotosEmail(params: {
+  /** Recipient first name. Used in the greeting. */
+  firstName: string;
+  /** Public album page on rotaractnyc.org (e.g. /gallery/gala-2026). */
+  galleryUrl: string;
+  /** Optional direct Google Photos shared-album link for full-res downloads. */
+  googlePhotosUrl?: string;
+  /** Optional donation URL for the soft "support our work" line. */
+  donateUrl?: string;
+  /** Optional hero image (album cover) rendered at the top of the email. */
+  coverImageUrl?: string;
+}): { subject: string; html: string; text: string } {
+  const firstName = params.firstName?.trim() || 'there';
+  const safeName = escapeHtml(firstName.split(' ')[0]);
+  const galleryUrl = params.galleryUrl;
+  const googlePhotosUrl = params.googlePhotosUrl;
+  const donateUrl = params.donateUrl ?? `${SITE.url}/donate`;
+  const coverImageUrl = params.coverImageUrl;
+
+  const subject = `The gala photos are here — thank you for celebrating 30 years with us`;
+  const preview =
+    `Relive the night — every photo from our 30th anniversary gala is ready to view and download.`;
+
+  const heroBlock = coverImageUrl
+    ? `
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 0 0 24px;">
+        <tr>
+          <td style="text-align: center;">
+            <img src="${escapeHtml(coverImageUrl)}" alt="Rotaract NYC Gala 2026 — 30th Year Celebration"
+                 width="520"
+                 style="display: block; width: 100%; max-width: 520px; height: auto; border-radius: 12px; border: 1px solid ${GRAY_BORDER};" />
+          </td>
+        </tr>
+        <tr>
+          <td style="padding-top: 12px;">
+            <div style="height: 2px; background: linear-gradient(90deg, transparent, ${GOLD}, transparent);"></div>
+          </td>
+        </tr>
+      </table>`
+    : '';
+
+  const googlePhotosBlockHtml = googlePhotosUrl
+    ? `
+      ${p(`Want the full-resolution originals to download, print, or share? Every shot from the night is in our Google Photos album:`)}
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 0 0 24px;">
+        <tr>
+          <td style="text-align: center;">
+            ${ctaButton('Open the Google Photos Album', googlePhotosUrl, true)}
+          </td>
+        </tr>
+      </table>`
+    : '';
+
+  const googlePhotosBlockText = googlePhotosUrl
+    ? `Want the full-resolution originals to download, print, or share? They're all in our Google Photos album:\n${googlePhotosUrl}\n\n`
+    : '';
+
+  return {
+    subject,
+    html: wrapTemplate(`
+      ${h1(`Hi ${safeName} — what a night.`)}
+      ${heroBlock}
+      ${p(`Thank you for joining us at the <strong>2026 Rotaract NYC Gala</strong> as we celebrated <strong>30 years</strong> of the Rotaract Club at the United Nations. The room was full of the people who make this club what it is — and we captured it all.`)}
+      ${p(`The photo gallery is ready. Find yourself, your friends, and your favorite moments from the evening:`)}
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 8px 0 24px;">
+        <tr>
+          <td style="text-align: center;">
+            ${ctaButton('View the Photo Gallery', galleryUrl)}
+          </td>
+        </tr>
+      </table>
+      ${googlePhotosBlockHtml}
+      ${goldBox(`
+        <p style="margin: 0 0 6px; font-size: 13px; font-weight: 700; color: ${TEXT_DARK};">Share the love</p>
+        <p style="margin: 0; font-size: 13px; color: ${TEXT_BODY};">
+          Post your favorites and tag <a href="${SITE.social.instagram}" style="color: ${CRIMSON}; font-weight: 600; text-decoration: none;">@rotaractnyc</a> so we can reshare. And if the night moved you, you can still <a href="${donateUrl}" style="color: ${CRIMSON}; font-weight: 600; text-decoration: none;">support our service work</a> across the city.
+        </p>
+      `)}
+      ${muted(`Thank you for being part of 30 years.<br/>Questions — or a photo you'd like removed? Just reply to this email.`)}
+    `, preview),
+    text:
+      `Hi ${firstName} — what a night.\n\n` +
+      `Thank you for joining us at the 2026 Rotaract NYC Gala as we celebrated 30 years of the Rotaract Club at the United Nations. The room was full of the people who make this club what it is — and we captured it all.\n\n` +
+      `The photo gallery is ready. Find yourself, your friends, and your favorite moments from the evening:\n` +
+      `${galleryUrl}\n\n` +
+      googlePhotosBlockText +
+      `Share the love: post your favorites and tag @rotaractnyc so we can reshare. And if the night moved you, you can still support our service work: ${donateUrl}\n\n` +
+      `Thank you for being part of 30 years. Questions — or a photo you'd like removed? Just reply to this email.\n\n` +
+      `--\n${SITE.name}\n${SITE.address}`,
+  };
+}
