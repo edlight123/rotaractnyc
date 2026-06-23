@@ -1,20 +1,23 @@
 name: Send Gala Photos Email
 
 # Emails every 2026 gala participant the "photos are ready" message, linking to
-# the album on the website + the Google Photos album.
+# the album on the website + the full-resolution Google Photos album.
 #
-# Recipients are resolved LIVE from Firestore by scripts/send-gala-photos.ts
-# (rsvps "going" members + guest_rsvps for the gala event), deduped by email.
+# This calls an authenticated endpoint on the live site
+# (POST /api/admin/gala/send-photos) so it reuses the production Resend +
+# Firebase Admin credentials — exactly like the dues-automation workflow.
+# Recipients are resolved LIVE from Firestore and the send is idempotent via a
+# Firestore guard (system_flags/galaPhotosSent), so a re-trigger can't email
+# anyone twice.
 #
-# A Firestore marker (system_flags/galaPhotosSent) prevents a double-send if the
-# workflow is ever re-triggered. This is a ONE-OFF send — delete this workflow
-# (or disable the schedule) once it has run.
+# This is a ONE-OFF send — disable the schedule (or delete this workflow) once
+# it has run.
 on:
   # 12:15 UTC on June 24, 2026 == 08:15 America/New_York (EDT, UTC-4).
   schedule:
     - cron: '15 12 24 6 *'
-  # Manual trigger for testing. Defaults to a safe dry run; set dry_run=false to
-  # actually send, or provide a test_email to send a single sample.
+  # Manual trigger. Defaults to a SAFE DRY RUN. Set dry_run=false to actually
+  # send to everyone, or provide a test_email to send a single sample.
   workflow_dispatch:
     inputs:
       dry_run:
@@ -22,7 +25,7 @@ on:
         required: false
         default: 'true'
       test_email:
-        description: 'Send a single test to this address instead of everyone'
+        description: 'Send a single test to this address (forces a real send to just this one)'
         required: false
         default: ''
       force:
@@ -33,44 +36,60 @@ on:
 jobs:
   send:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
       - name: Send gala photos email
         env:
-          # Firebase (read participants) — same secrets as import-album.yml
-          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
-          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
-          # Resend (send the email)
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          RESEND_FROM: ${{ secrets.RESEND_FROM }}
-          # Trigger context
+          BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL }}
+          API_KEY: ${{ secrets.AUTOMATION_API_KEY }}
           GH_EVENT: ${{ github.event_name }}
-          GH_DRY_RUN: ${{ github.event.inputs.dry_run }}
-          GH_TEST_EMAIL: ${{ github.event.inputs.test_email }}
-          GH_FORCE: ${{ github.event.inputs.force }}
+          IN_DRY_RUN: ${{ github.event.inputs.dry_run }}
+          IN_TEST_EMAIL: ${{ github.event.inputs.test_email }}
+          IN_FORCE: ${{ github.event.inputs.force }}
         run: |
-          # Build args safely — no eval, no injection risk.
-          args=()
+          set -euo pipefail
+
+          # Decide the request body based on the trigger.
           if [ "$GH_EVENT" = "schedule" ]; then
-            # The scheduled run is the real one.
-            args+=(--send)
-          elif [ "$GH_DRY_RUN" = "false" ]; then
-            args+=(--send)
+            # The scheduled run is the real, full send.
+            DRY_RUN=false
+            TEST_EMAIL=""
+            FORCE=false
+          else
+            # Manual dispatch — default to a safe dry run.
+            DRY_RUN="${IN_DRY_RUN:-true}"
+            TEST_EMAIL="${IN_TEST_EMAIL:-}"
+            FORCE="${IN_FORCE:-false}"
+            # A provided test email implies a real (single) send.
+            if [ -n "$TEST_EMAIL" ]; then DRY_RUN=false; fi
+            # Normalize anything that isn't exactly "false" to a boolean.
+            [ "$DRY_RUN" = "false" ] || DRY_RUN=true
+            [ "$FORCE" = "true" ] || FORCE=false
           fi
-          if [ -n "$GH_TEST_EMAIL" ]; then
-            args+=(--send "--test=$GH_TEST_EMAIL")
+
+          # Build the JSON body safely with jq (no string-injection risk).
+          BODY=$(jq -nc \
+            --argjson dryRun "$DRY_RUN" \
+            --argjson force "$FORCE" \
+            --arg testEmail "$TEST_EMAIL" \
+            '{dryRun: $dryRun, force: $force} + (if $testEmail == "" then {} else {testEmail: $testEmail} end)')
+
+          echo "Trigger: $GH_EVENT"
+          echo "Request: $BODY"
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/api/admin/gala/send-photos" \
+            -H "Authorization: Bearer $API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$BODY")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+          PAYLOAD=$(echo "$RESPONSE" | head -n -1)
+
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $PAYLOAD"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Gala photos send failed"
+            exit 1
           fi
-          [ "$GH_FORCE" = "true" ] && args+=(--force)
-          echo "Running: scripts/send-gala-photos.ts ${args[*]:-(dry run)}"
-          node_modules/.bin/tsx scripts/send-gala-photos.ts "${args[@]}"
+          echo "✓ Gala photos request completed"
