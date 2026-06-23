@@ -15,7 +15,7 @@ jest.mock('@/lib/constants', () => ({
     shortName: 'Rotaract NYC',
     domain: 'rotaractnyc.org',
     url: 'https://rotaractnyc.org',
-    email: 'rotaractnewyorkcity@gmail.com',
+    email: 'info@rotaractnyc.org',
     address: '216 East 45th Street, New York, NY 10017',
     meetingSchedule: 'Every 2nd & 4th Thursday, 7:00–8:00 PM',
     motto: 'Service Above Self',
@@ -23,7 +23,7 @@ jest.mock('@/lib/constants', () => ({
     dues: { professional: 8500, student: 6500 },
     social: {
       instagram: 'https://instagram.com/rotaractnyc',
-      linkedin: 'https://linkedin.com/company/rotaract-at-the-un-nyc',
+      linkedin: 'https://www.linkedin.com/company/rotaractnyc',
       facebook: 'https://facebook.com/RotaractNewYorkCity',
     },
   },

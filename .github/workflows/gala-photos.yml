@@ -10,14 +10,12 @@ name: Send Gala Photos Email
 # Firestore guard (system_flags/galaPhotosSent), so a re-trigger can't email
 # anyone twice.
 #
-# This is a ONE-OFF send — disable the schedule (or delete this workflow) once
-# it has run.
+# This is a ONE-OFF, MANUALLY triggered send (no schedule). Run it from the
+# Actions tab: leave dry_run=true to preview the recipient count, or set
+# dry_run=false to send to everyone once greenlit.
 on:
-  # 12:15 UTC on June 24, 2026 == 08:15 America/New_York (EDT, UTC-4).
-  schedule:
-    - cron: '15 12 24 6 *'
-  # Manual trigger. Defaults to a SAFE DRY RUN. Set dry_run=false to actually
-  # send to everyone, or provide a test_email to send a single sample.
+  # Manual trigger only. Defaults to a SAFE DRY RUN. Set dry_run=false to
+  # actually send to everyone, or provide a test_email to send a single sample.
   workflow_dispatch:
     inputs:
       dry_run:

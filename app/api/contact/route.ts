@@ -6,7 +6,7 @@ import { isValidEmail } from '@/lib/utils/sanitize';
 
 export const dynamic = 'force-dynamic';
 
-const TO_EMAIL = process.env.RESEND_TO_EMAIL || 'rotaractnewyorkcity@gmail.com';
+const TO_EMAIL = process.env.RESEND_TO_EMAIL || 'info@rotaractnyc.org';
 
 export async function POST(request: Request) {
   // Rate limit: 5 submissions per 60 s per IP

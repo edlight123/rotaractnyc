@@ -76,7 +76,7 @@ describe('Footer component', () => {
     );
     expect(screen.getByLabelText('LinkedIn')).toHaveAttribute(
       'href',
-      'https://linkedin.com/company/rotaract-at-the-un-nyc'
+      'https://www.linkedin.com/company/rotaractnyc'
     );
     expect(screen.getByLabelText('Facebook')).toHaveAttribute(
       'href',

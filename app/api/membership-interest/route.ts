@@ -7,7 +7,7 @@ import { notifyAdminsMembershipInterest } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
-const TO_EMAIL = process.env.RESEND_TO_EMAIL || 'rotaractnewyorkcity@gmail.com';
+const TO_EMAIL = process.env.RESEND_TO_EMAIL || 'info@rotaractnyc.org';
 
 export async function POST(request: Request) {
   // Rate limit: 3 submissions per 60 s per IP
