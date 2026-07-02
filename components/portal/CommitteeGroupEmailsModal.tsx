@@ -81,6 +81,39 @@ export default function CommitteeGroupEmailsModal({
     }
   }
 
+  const [syncing, setSyncing] = useState(false);
+  const [syncSummary, setSyncSummary] = useState<string | null>(null);
+
+  async function handleSyncMembers() {
+    setSyncing(true);
+    setSyncSummary(null);
+    try {
+      const res = await fetch('/api/portal/committees/groups/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to sync members');
+      const { added, removed, unchanged, failed } = data.summary;
+      const detailErrors = (data.results || [])
+        .flatMap((r: any) => (r.errors || []).map((e: string) => `${r.name}: ${e}`))
+        .slice(0, 4);
+      setSyncSummary(
+        `Added ${added}, removed ${removed}, ${unchanged} already in sync` +
+          (failed ? ` — ${failed} committee(s) had errors: ${detailErrors.join('; ')}` : '.'),
+      );
+      toast(
+        failed ? 'Member sync finished with some errors.' : 'Group members synced with committee rosters.',
+        failed ? 'error' : 'success',
+      );
+    } catch (err: any) {
+      toast(err.message, 'error');
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   const provisionedCount = status?.committees.filter((c) => c.groupEmail).length ?? 0;
   const totalActive = status?.committees.filter((c) => c.status === 'active').length ?? 0;
 
@@ -156,12 +189,25 @@ export default function CommitteeGroupEmailsModal({
             </div>
 
             <p className="text-xs text-gray-400">
-              Creating groups provisions empty distribution lists. Members are not added
-              automatically yet.
+              &ldquo;Sync members&rdquo; makes each group mirror its committee roster —
+              roster members are added silently (no invitation email), chairs become group
+              managers, and portal members who left the committee are removed. Addresses
+              added by hand in Google Admin are never touched.
             </p>
+
+            {syncSummary && (
+              <div className="rounded-xl border border-azure-200 dark:border-azure-800 bg-azure-50 dark:bg-azure-900/20 px-4 py-2.5 text-xs text-azure-800 dark:text-azure-300">
+                {syncSummary}
+              </div>
+            )}
 
             <div className="flex justify-end gap-3 pt-1">
               <Button type="button" variant="ghost" onClick={onClose}>Close</Button>
+              {provisionedCount > 0 && (
+                <Button type="button" variant="secondary" loading={syncing} onClick={handleSyncMembers}>
+                  Sync members
+                </Button>
+              )}
               <Button type="button" variant="primary" loading={working} onClick={handleCreate}>
                 {provisionedCount === totalActive && totalActive > 0
                   ? 'Re-sync groups'
