@@ -120,6 +120,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     const monthlyMap = new Map<string, { income: number; expenses: number }>();
     for (const t of transactions) {
       const d = new Date(t.date);
+      if (isNaN(d.getTime())) continue; // skip malformed dates — they'd render as a "NaN-NaN" month
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const entry = monthlyMap.get(key) || { income: 0, expenses: 0 };
       if (t.type === 'income') entry.income += t.amount;
