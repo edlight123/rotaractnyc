@@ -22,7 +22,7 @@ async function getMemberData(uid: string) {
 type Params = { params: Promise<{ id: string }> };
 
 // ─── DELETE /api/portal/committees/[id]/members?memberId=xxx
-// Board/president removes a specific member from the committee.
+// Board/president — or this committee's chair/co-chair — removes a member.
 export async function DELETE(request: NextRequest, { params }: Params) {
   const rateLimitResult = await rateLimit(getRateLimitKey(request, 'portal-committees'), { max: 10, windowSec: 60 });
   if (!rateLimitResult.allowed) return rateLimitResponse(rateLimitResult.resetAt);
@@ -31,10 +31,6 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     const decoded = await verifySession();
     const { id } = await params;
     const actor = await getMemberData(decoded.uid);
-
-    if (!actor || !['president', 'board', 'treasurer'].includes(actor.role as string)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
 
     const { searchParams } = new URL(request.url);
     const memberId = searchParams.get('memberId');
@@ -48,6 +44,14 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     }
 
     const committee = committeeDoc.data()!;
+
+    // Chairs manage their own committee's roster (matches the detail-page UI,
+    // which already shows the remove button to chairs via canManage).
+    const isBoard = actor && ['president', 'board', 'treasurer'].includes(actor.role as string);
+    const isChair = committee.chairId === decoded.uid || committee.coChairId === decoded.uid;
+    if (!actor || (!isBoard && !isChair)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const memberIds: string[] = committee.memberIds || [];
     const waitlistIds: string[] = committee.waitlistIds || [];
     const committeeName: string = committee.name || 'the committee';

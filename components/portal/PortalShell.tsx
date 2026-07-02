@@ -148,6 +148,14 @@ const navSections = [
     title: 'Admin',
     items: [
       {
+        label: 'Membership',
+        href: '/portal/admin/membership',
+        tutorialId: 'nav-membership',
+        icon: <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" /></svg>,
+        roles: ['board', 'president', 'treasurer'],
+        titles: ['Director of Membership', 'Membership Chair'],
+      },
+      {
         label: 'Reminders',
         href: '/portal/admin/reminders',
         tutorialId: 'nav-reminders',
@@ -382,7 +390,10 @@ export default function PortalShell({ children }: { children: React.ReactNode })
           {navSections.map((section, si) => {
             const visibleItems = section.items.filter((item) => {
               if (!('roles' in item) || !(item as any).roles) return true;
-              return member && (item as any).roles.includes(member.role);
+              if (member && (item as any).roles.includes(member.role)) return true;
+              // Title-scoped items (e.g. Membership for the Membership Chair)
+              if (member && (item as any).titles?.includes((member as any).boardTitle)) return true;
+              return false;
             });
             if (visibleItems.length === 0) return null;
 

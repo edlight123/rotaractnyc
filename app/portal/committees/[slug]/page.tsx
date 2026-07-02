@@ -237,16 +237,48 @@ function RosterTab({
   allMembers,
   currentMemberId,
   canManage,
+  isBoard,
   onRemoved,
 }: {
   committee: Committee;
   allMembers: Member[];
   currentMemberId: string;
   canManage: boolean;
+  isBoard: boolean;
   onRemoved: () => void;
 }) {
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [settingChairId, setSettingChairId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Board appoints/unsets the chair or co-chair straight from the roster.
+  const handleSetChair = async (m: Member, kind: 'chair' | 'coChair') => {
+    const isAlready = kind === 'chair' ? committee.chairId === m.id : committee.coChairId === m.id;
+    const patch =
+      kind === 'chair'
+        ? { chairId: isAlready ? '' : m.id, chairName: isAlready ? '' : m.displayName }
+        : { coChairId: isAlready ? '' : m.id, coChairName: isAlready ? '' : m.displayName };
+    setSettingChairId(m.id);
+    try {
+      const res = await fetch(`/api/portal/committees/${committee.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) throw new Error();
+      toast(
+        isAlready
+          ? `${m.displayName} is no longer ${kind === 'chair' ? 'chair' : 'co-chair'}.`
+          : `${m.displayName} is now ${kind === 'chair' ? 'chair' : 'co-chair'}.`,
+        'success',
+      );
+      onRemoved(); // refresh committee data
+    } catch {
+      toast('Failed to update chair.', 'error');
+    } finally {
+      setSettingChairId(null);
+    }
+  };
 
   const memberMap = Object.fromEntries(allMembers.map((m) => [m.id, m]));
 
@@ -303,6 +335,34 @@ function RosterTab({
           {m.occupation || m.role}
         </p>
       </div>
+      {isBoard && !isWaiting && (
+        <>
+          <button
+            onClick={() => handleSetChair(m, 'chair')}
+            disabled={settingChairId === m.id}
+            className={`opacity-0 group-hover:opacity-100 p-1.5 rounded-lg transition-all ${
+              committee.chairId === m.id
+                ? 'text-cranberry opacity-100 hover:bg-cranberry/10'
+                : 'text-gray-400 hover:text-cranberry hover:bg-cranberry/10'
+            }`}
+            title={committee.chairId === m.id ? 'Remove as chair' : 'Make chair'}
+          >
+            {settingChairId === m.id ? <Spinner className="w-3.5 h-3.5" /> : <Crown className="w-3.5 h-3.5" />}
+          </button>
+          <button
+            onClick={() => handleSetChair(m, 'coChair')}
+            disabled={settingChairId === m.id}
+            className={`opacity-0 group-hover:opacity-100 px-1.5 py-0.5 rounded-lg text-[10px] font-bold transition-all ${
+              committee.coChairId === m.id
+                ? 'text-azure-600 opacity-100 hover:bg-azure-100 dark:hover:bg-azure-900/30'
+                : 'text-gray-400 hover:text-azure-600 hover:bg-azure-100 dark:hover:bg-azure-900/30'
+            }`}
+            title={committee.coChairId === m.id ? 'Remove as co-chair' : 'Make co-chair'}
+          >
+            Co
+          </button>
+        </>
+      )}
       {canManage && m.id !== currentMemberId && (
         <button
           onClick={() => handleRemove(m.id)}
@@ -874,6 +934,7 @@ export default function CommitteeWorkspacePage({
             allMembers={allMembers as Member[]}
             currentMemberId={member.id}
             canManage={canManage}
+            isBoard={isBoard}
             onRemoved={refresh}
           />
         )}

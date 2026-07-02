@@ -32,6 +32,22 @@ async function getMemberRole(uid: string) {
   return snap.exists ? (snap.data()?.role as string) : null;
 }
 
+/**
+ * Membership chair — a member titled "Director of Membership" (or
+ * "Membership Chair") may manage the membership pipeline (approve/reject,
+ * edit profiles) without holding a full admin role. Role/board changes stay
+ * restricted to board+ (and mostly the President) as before.
+ */
+async function getCallerAccess(uid: string): Promise<{ role: string | null; isMembershipChair: boolean }> {
+  const snap = await adminDb.collection('members').doc(uid).get();
+  if (!snap.exists) return { role: null, isMembershipChair: false };
+  const data = snap.data()!;
+  return {
+    role: (data.role as string) || null,
+    isMembershipChair: ['Director of Membership', 'Membership Chair'].includes(data.boardTitle || ''),
+  };
+}
+
 // ─── GET members (portal-only) ───
 //
 // • GET /api/portal/members            → list of active members (directory)
@@ -53,10 +69,11 @@ export async function GET(request: NextRequest) {
       const isSelf = decoded.uid === id;
 
       // Caller's role determines whether sensitive fields are returned
-      const callerRole = await getMemberRole(decoded.uid);
+      const callerAccess = await getCallerAccess(decoded.uid);
       const isBoard =
-        !!callerRole &&
-        ['president', 'board', 'treasurer'].includes(callerRole);
+        (!!callerAccess.role &&
+          ['president', 'board', 'treasurer'].includes(callerAccess.role)) ||
+        callerAccess.isMembershipChair;
 
       // Hide sensitive fields from non-board peers (everyone other than self
       // or board+ admins). The directory is portal-only so basic profile
@@ -71,6 +88,21 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json(
         serializeDoc({ id: doc.id, uid: doc.id, ...data }),
+      );
+    }
+
+    // ── Membership pipeline list (all statuses) — membership managers only ──
+    if (new URL(request.url).searchParams.get('scope') === 'membership') {
+      const access = await getCallerAccess(decoded.uid);
+      const canManage =
+        (!!access.role && ['president', 'board', 'treasurer'].includes(access.role)) ||
+        access.isMembershipChair;
+      if (!canManage) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      const allSnap = await adminDb.collection('members').orderBy('displayName').get();
+      return NextResponse.json(
+        allSnap.docs.map((doc) => serializeDoc({ id: doc.id, uid: doc.id, ...doc.data() })),
       );
     }
 
@@ -288,13 +320,20 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const decoded = await verifySession();
-    const role = await getMemberRole(decoded.uid);
-    if (!role || !['president', 'board', 'treasurer'].includes(role)) {
+    const { role, isMembershipChair } = await getCallerAccess(decoded.uid);
+    const isBoardPlus = !!role && ['president', 'board', 'treasurer'].includes(role);
+    if (!isBoardPlus && !isMembershipChair) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const body = await request.json();
     const { memberId, status, role: newRole, boardTitle, boardOrder } = body;
+
+    // Membership chairs manage status + profile fields only — never roles,
+    // board titles, or leadership ordering.
+    if (!isBoardPlus && (newRole !== undefined || boardTitle !== undefined || boardOrder !== undefined)) {
+      return NextResponse.json({ error: 'Forbidden — board only' }, { status: 403 });
+    }
 
     if (!memberId) {
       return NextResponse.json({ error: 'memberId required' }, { status: 400 });
