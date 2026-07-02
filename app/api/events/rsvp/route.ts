@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
+import { eventHasEnded } from '@/lib/utils/eventTime';
 import { rateLimit, getRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 import { isValidEmail } from '@/lib/utils/sanitize';
 import { sendEmail } from '@/lib/email/send';
@@ -41,6 +42,11 @@ export async function POST(request: NextRequest) {
     const event = eventDoc.data()!;
     if (event.status !== 'published' || !event.isPublic) {
       return NextResponse.json({ error: 'Event is not available for registration.' }, { status: 400 });
+    }
+
+    // Ticket sales / registration close once the event has ended.
+    if (eventHasEnded(event as { date?: string; endDate?: string })) {
+      return NextResponse.json({ error: 'This event has ended — registration is closed.' }, { status: 410 });
     }
 
     // Determine if this event requires payment.

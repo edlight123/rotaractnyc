@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { eventHasEnded } from '@/lib/utils/eventTime';
 import { cookies } from 'next/headers';
 import { rateLimit, getRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 import { tryReserveTierSpot, releaseTierSpot } from '@/lib/services/tierTracking';
@@ -54,6 +55,11 @@ export async function POST(request: NextRequest) {
     }
 
     const event = eventDoc.data()!;
+
+    // Ticket sales / registration close once the event has ended.
+    if (eventHasEnded(event as { date?: string; endDate?: string })) {
+      return NextResponse.json({ error: 'This event has ended — registration is closed.' }, { status: 410 });
+    }
 
     // ── P0-1: Capacity check ──
     // Sum *tickets* (RSVP.quantity) rather than counting RSVP docs — a single

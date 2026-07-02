@@ -8,6 +8,7 @@ import { ogImage } from '@/lib/utils/ogImage';
 import { SITE } from '@/lib/constants';
 import Badge from '@/components/ui/Badge';
 import GuestRsvpForm from '@/components/public/GuestRsvpForm';
+import { eventHasEnded } from '@/lib/utils/eventTime';
 import PublicEventActions from '@/components/public/PublicEventActions';
 import EventWaitlistForm from '@/components/public/EventWaitlistForm';
 import EventDescription from '@/components/public/EventDescription';
@@ -347,6 +348,20 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
 
             {/* Guest RSVP + Member CTA — hidden when fully sold out */}
             {(() => {
+              // Past events: no ticket sales — show a closed notice instead.
+              if (eventHasEnded(event)) {
+                return (
+                  <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-8 text-center">
+                    <p className="font-display font-bold text-gray-900 dark:text-white text-lg">This event has ended</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                      Ticket sales are closed. Browse our{' '}
+                      <Link href="/events" className="text-cranberry hover:underline font-medium">upcoming events</Link>
+                      {' '}or relive the night in the{' '}
+                      <Link href="/gallery" className="text-cranberry hover:underline font-medium">photo gallery</Link>.
+                    </p>
+                  </div>
+                );
+              }
               const now = new Date();
               const allTiersSoldOrExpired =
                 (event.pricing?.tiers?.length ?? 0) > 0 &&

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { eventHasEnded } from '@/lib/utils/eventTime';
 import { rateLimit, getRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 import { sendEmail } from '@/lib/email/send';
 import { memberRsvpConfirmationEmail } from '@/lib/email/templates';
@@ -32,6 +33,14 @@ export async function POST(request: NextRequest) {
     const VALID_RSVP_STATUSES = ['going', 'maybe', 'not_going'];
     if (!VALID_RSVP_STATUSES.includes(status)) {
       return NextResponse.json({ error: `Invalid RSVP status. Must be one of: ${VALID_RSVP_STATUSES.join(', ')}` }, { status: 400 });
+    }
+
+    // Registration closes once the event has ended (cancelling stays allowed).
+    if (status === 'going' || status === 'maybe') {
+      const endedCheck = await adminDb.collection('events').doc(eventId).get();
+      if (endedCheck.exists && eventHasEnded(endedCheck.data() as { date?: string; endDate?: string })) {
+        return NextResponse.json({ error: 'This event has ended — registration is closed.' }, { status: 410 });
+      }
     }
 
     // P0 #2: If tierId is provided, validate it belongs to the event's pricing tiers

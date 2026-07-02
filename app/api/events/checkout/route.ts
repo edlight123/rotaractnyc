@@ -3,6 +3,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { getStripe } from '@/lib/stripe/client';
 import { rateLimit, getRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 import { adminDb } from '@/lib/firebase/admin';
+import { eventHasEnded } from '@/lib/utils/eventTime';
 import { isValidEmail } from '@/lib/utils/sanitize';
 import { sendEmail } from '@/lib/email/send';
 import { guestTicketConfirmationEmail } from '@/lib/email/templates';
@@ -58,6 +59,11 @@ export async function POST(request: NextRequest) {
     }
 
     const event = eventDoc.data()!;
+
+    // Ticket sales / registration close once the event has ended.
+    if (eventHasEnded(event as { date?: string; endDate?: string })) {
+      return NextResponse.json({ error: 'This event has ended — registration is closed.' }, { status: 410 });
+    }
 
     const isPublished =
       typeof event.status === 'string'
