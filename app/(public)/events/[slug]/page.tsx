@@ -8,7 +8,7 @@ import { ogImage } from '@/lib/utils/ogImage';
 import { SITE } from '@/lib/constants';
 import Badge from '@/components/ui/Badge';
 import GuestRsvpForm from '@/components/public/GuestRsvpForm';
-import { eventHasEnded } from '@/lib/utils/eventTime';
+import { eventHasEnded, eventDonationsClosed } from '@/lib/utils/eventTime';
 import PublicEventActions from '@/components/public/PublicEventActions';
 import EventWaitlistForm from '@/components/public/EventWaitlistForm';
 import EventDescription from '@/components/public/EventDescription';
@@ -185,8 +185,9 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
 
             <EventDescription text={event.description} />
 
-            {/* Donations — opt-in per event */}
-            {(event as any).acceptsDonations && (
+            {/* Donations — opt-in per event; closes 2 weeks after the event
+                ends (the regular /donate page is always open) */}
+            {(event as any).acceptsDonations && !eventDonationsClosed(event) && (
               <div className="mt-8">
                 <EventDonateSection
                   eventId={event.id}

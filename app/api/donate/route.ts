@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminDb } from '@/lib/firebase/admin';
+import { eventDonationsClosed } from '@/lib/utils/eventTime';
 import { getStripe } from '@/lib/stripe/client';
 import { rateLimit, getRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
 import { clampNumber } from '@/lib/utils/sanitize';
@@ -56,6 +58,18 @@ export async function POST(request: NextRequest) {
     const safeEventId = typeof eventId === 'string' && eventId.length > 0 && eventId.length < 128
       ? eventId
       : '';
+
+    // Event-linked donations close 2 weeks after the event ends. General
+    // donations (no eventId) are always open.
+    if (safeEventId) {
+      const eventSnap = await adminDb.collection('events').doc(safeEventId).get();
+      if (eventSnap.exists && eventDonationsClosed(eventSnap.data() as { date?: string; endDate?: string })) {
+        return NextResponse.json(
+          { error: 'Donations for this event have closed — you can still give anytime at rotaractnyc.org/donate.' },
+          { status: 410 },
+        );
+      }
+    }
     const safeEventTitle = typeof eventTitle === 'string' && eventTitle.length > 0
       ? eventTitle.slice(0, 200)
       : '';
