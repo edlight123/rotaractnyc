@@ -80,6 +80,7 @@ export async function GET(request: NextRequest) {
       const membersMap: Record<string, { displayName: string; memberType?: string; email: string }> = {};
       membersSnap.docs.forEach((d) => {
         const data = d.data();
+        if (data.isRoleAccount) return; // org/role logins never owe dues
         membersMap[d.id] = { displayName: data.displayName, memberType: data.memberType, email: data.email };
       });
 

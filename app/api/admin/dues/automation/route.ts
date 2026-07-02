@@ -51,7 +51,9 @@ export async function POST(req: Request) {
 
     const unpaidMembers = membersSnap.docs
       .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((m: any) => !paidMemberIds.has(m.id));
+      .filter((m: any) => !paidMemberIds.has(m.id))
+      // Role/org accounts (president@…, club logins) never owe dues
+      .filter((m: any) => !m.isRoleAccount);
 
     switch (action) {
       case 'send-reminders': {

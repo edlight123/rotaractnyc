@@ -35,6 +35,26 @@ function initialsOf(name?: string): string {
     .slice(0, 2);
 }
 
+/**
+ * Deterministic avatar gradient per member — subtle palette variety so a
+ * photo-less directory grid doesn't read as a wall of identical pink circles.
+ */
+const AVATAR_GRADIENTS = [
+  'from-cranberry-400 to-cranberry-600',
+  'from-azure-400 to-azure-600',
+  'from-gold-400 to-gold-600',
+  'from-cranberry-400 to-azure-500',
+  'from-azure-400 to-cranberry-500',
+  'from-gold-400 to-cranberry-500',
+] as const;
+
+function gradientOf(name?: string): string {
+  const s = String(name ?? '');
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return AVATAR_GRADIENTS[h % AVATAR_GRADIENTS.length];
+}
+
 interface MemberCardProps {
   member: Member;
   viewerRole?: string;
@@ -159,9 +179,10 @@ export default function MemberCard({ member: m, viewerRole, onMessage, variant =
     );
   }
 
-  // ── Full magazine-style grid card (default) ───────────────────────────────
+  // ── Grid card (default) — centered-portrait style, works with or without a
+  //    photo (mirrors the public leadership card language) ───────────────────
   return (
-    <div className="group relative bg-white dark:bg-gray-900 rounded-2xl overflow-hidden border border-gray-200/60 dark:border-gray-800 transition-all duration-200 hover:shadow-xl hover:shadow-cranberry-900/5 hover:-translate-y-0.5 hover:border-cranberry-200/70 dark:hover:border-cranberry-800/70">
+    <div className="group relative bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 pt-7 text-center transition-all duration-300 hover:shadow-xl hover:shadow-cranberry-100/40 dark:hover:shadow-cranberry-900/20 hover:-translate-y-1 hover:border-cranberry-200/80 dark:hover:border-cranberry-800/60 flex flex-col items-center">
       {/* Stretched link overlay — makes the whole card navigable */}
       <Link
         href={href}
@@ -169,100 +190,94 @@ export default function MemberCard({ member: m, viewerRole, onMessage, variant =
         className="absolute inset-0 z-10 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cranberry-500"
       />
 
-      {/* Photo / avatar hero — now in full color */}
-      <div className="h-48 overflow-hidden bg-cranberry-50 dark:bg-cranberry-950/20 relative">
+      {/* Status badges */}
+      {m.status === 'alumni' && (
+        <div className="absolute top-3 left-3">
+          <Badge variant="gold">Alumni</Badge>
+        </div>
+      )}
+
+      {/* Avatar */}
+      <div className="relative mb-4">
         {m.photoURL ? (
           <img
             src={m.photoURL}
             alt=""
-            className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+            className="w-20 h-20 rounded-full object-cover ring-4 ring-gray-100 dark:ring-gray-800 group-hover:ring-cranberry-200 dark:group-hover:ring-cranberry-800 transition-all duration-300 shadow-md"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-cranberry-50 to-gold-50 dark:from-cranberry-950/30 dark:to-gold-950/20">
-            <div className="w-20 h-20 rounded-full bg-white/70 dark:bg-gray-900/40 flex items-center justify-center shadow-sm">
-              <span className="text-2xl font-bold text-cranberry-700 dark:text-cranberry-300 select-none">
-                {initials}
-              </span>
-            </div>
-          </div>
-        )}
-        {/* Role badge overlay (board/officer roles) */}
-        {m.role !== 'member' && (
-          <div className="absolute top-2 right-2">
-            <Badge variant={roleColors[m.role] || 'gray'}>{roleLabel(m)}</Badge>
-          </div>
-        )}
-        {m.status === 'alumni' && (
-          <div className="absolute top-2 left-2">
-            <Badge variant="gold">Alumni</Badge>
+          <div
+            className={cn(
+              'w-20 h-20 rounded-full bg-gradient-to-br flex items-center justify-center ring-4 ring-gray-100 dark:ring-gray-800 group-hover:ring-cranberry-200 dark:group-hover:ring-cranberry-800 transition-all duration-300 shadow-md',
+              gradientOf(m.displayName),
+            )}
+          >
+            <span className="text-xl font-display font-bold text-white select-none drop-shadow-sm">{initials}</span>
           </div>
         )}
       </div>
 
-      {/* Card body */}
-      <div className="p-4">
-        <div className="mb-3">
-          <h3 className="font-display font-semibold text-gray-900 dark:text-white group-hover:text-cranberry dark:group-hover:text-cranberry-400 transition-colors leading-tight truncate">
-            {m.displayName}
-          </h3>
-          {m.committee ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">{m.committee}</p>
-          ) : (
-            m.role === 'member' && (
-              <p className="text-xs font-semibold uppercase tracking-wider text-gold-600 dark:text-gold-400 mt-1">Member</p>
-            )
-          )}
-          {m.occupation && (
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5 truncate">
-              {m.occupation}{m.employer ? ` · ${m.employer}` : ''}
-            </p>
-          )}
-        </div>
+      {/* Name + role/committee */}
+      <h3 className="font-display font-bold text-gray-900 dark:text-white group-hover:text-cranberry dark:group-hover:text-cranberry-400 transition-colors leading-tight truncate w-full">
+        {m.displayName}
+      </h3>
+      <div className="mt-1.5 flex items-center justify-center gap-1.5 flex-wrap">
+        {m.role !== 'member' ? (
+          <Badge variant={roleColors[m.role] || 'gray'}>{roleLabel(m)}</Badge>
+        ) : (
+          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-400 dark:text-gray-500">Member</span>
+        )}
+      </div>
+      {(m.committee || m.occupation) && (
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 truncate w-full">
+          {m.committee || m.occupation}
+          {m.committee && m.occupation ? ` · ${m.occupation}` : ''}
+        </p>
+      )}
 
-        {/* Action row — above the stretched link (z-20) so clicks don't navigate */}
-        <div className="relative z-20 flex items-center gap-1 pt-3 border-t border-gray-100 dark:border-gray-800">
-          {onMessage && (
-            <button
-              type="button"
-              onClick={onMessage}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-cranberry hover:bg-cranberry-50 dark:hover:bg-cranberry-900/20 transition-colors"
-              title="Send message"
-            >
-              <MessageSquare className="w-4 h-4" />
-              <span className="sr-only">Message {m.displayName}</span>
-            </button>
-          )}
-          {m.linkedIn && (
-            <a
-              href={m.linkedIn}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-8 h-8 rounded-full flex items-center justify-center text-cranberry hover:bg-cranberry-50 dark:hover:bg-cranberry-900/20 transition-colors"
-              title="LinkedIn"
-            >
-              <Linkedin className="w-4 h-4" />
-              <span className="sr-only">LinkedIn profile</span>
-            </a>
-          )}
-          {isBoard && whatsAppLink && (
-            <a
-              href={whatsAppLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-8 h-8 rounded-full flex items-center justify-center text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
-              title="WhatsApp"
-            >
-              <Phone className="w-4 h-4" />
-              <span className="sr-only">WhatsApp</span>
-            </a>
-          )}
-          <span
-            className="ml-auto w-8 h-8 rounded-full flex items-center justify-center text-gray-400 group-hover:text-cranberry transition-colors"
-            aria-hidden="true"
+      {/* Action row — above the stretched link (z-20) so clicks don't navigate */}
+      <div className="relative z-20 flex items-center justify-center gap-1 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 w-full">
+        {onMessage && (
+          <button
+            type="button"
+            onClick={onMessage}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-cranberry hover:bg-cranberry-50 dark:hover:bg-cranberry-900/20 transition-colors"
+            title="Send message"
           >
-            <ChevronRight className="w-4 h-4" />
-          </span>
-        </div>
+            <MessageSquare className="w-4 h-4" />
+            <span className="sr-only">Message {m.displayName}</span>
+          </button>
+        )}
+        {m.linkedIn && (
+          <a
+            href={m.linkedIn}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-azure hover:bg-azure-50 dark:hover:bg-azure-900/20 transition-colors"
+            title="LinkedIn"
+          >
+            <Linkedin className="w-4 h-4" />
+            <span className="sr-only">LinkedIn profile</span>
+          </a>
+        )}
+        {isBoard && whatsAppLink && (
+          <a
+            href={whatsAppLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+            title="WhatsApp"
+          >
+            <Phone className="w-4 h-4" />
+            <span className="sr-only">WhatsApp</span>
+          </a>
+        )}
+        <span
+          className="w-8 h-8 rounded-full flex items-center justify-center text-gray-300 dark:text-gray-600 group-hover:text-cranberry transition-colors"
+          aria-hidden="true"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </span>
       </div>
     </div>
   );

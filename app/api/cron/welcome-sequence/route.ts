@@ -88,7 +88,7 @@ export async function GET(request: Request) {
       .where('joinedAt', '>=', cutoff)
       .get();
 
-    const members = membersSnap.docs.map(
+    const members = membersSnap.docs.filter((doc) => !doc.data().isRoleAccount).map(
       (doc) => ({ id: doc.id, ...doc.data() }) as Member,
     );
 

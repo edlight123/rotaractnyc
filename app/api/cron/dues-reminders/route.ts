@@ -60,9 +60,10 @@ export async function GET(request: Request) {
       .where('status', '==', 'active')
       .get();
 
-    const members = membersSnap.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() }) as Member,
-    );
+    const members = membersSnap.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }) as Member)
+      // Role/org accounts never owe dues or get reminder emails
+      .filter((m: any) => !m.isRoleAccount);
 
     // 2. Process each member individually
     for (const member of members) {

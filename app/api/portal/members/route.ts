@@ -102,7 +102,9 @@ export async function GET(request: NextRequest) {
       }
       const allSnap = await adminDb.collection('members').orderBy('displayName').get();
       return NextResponse.json(
-        allSnap.docs.map((doc) => serializeDoc({ id: doc.id, uid: doc.id, ...doc.data() })),
+        allSnap.docs
+          .filter((doc) => !doc.data().isRoleAccount)
+          .map((doc) => serializeDoc({ id: doc.id, uid: doc.id, ...doc.data() })),
       );
     }
 
@@ -113,13 +115,17 @@ export async function GET(request: NextRequest) {
       .orderBy('displayName')
       .get();
 
-    const members = snapshot.docs.map((doc) =>
-      serializeDoc({
-        id: doc.id,
-        uid: doc.id,
-        ...doc.data(),
-      }),
-    );
+    const members = snapshot.docs
+      // Role/org accounts (president@…, club logins) aren't people — keep them
+      // out of the member directory.
+      .filter((doc) => !doc.data().isRoleAccount)
+      .map((doc) =>
+        serializeDoc({
+          id: doc.id,
+          uid: doc.id,
+          ...doc.data(),
+        }),
+      );
 
     return NextResponse.json(members);
   } catch (error: any) {
@@ -346,6 +352,13 @@ export async function PATCH(request: NextRequest) {
     }
 
     const updates: Record<string, any> = { updatedAt: new Date().toISOString() };
+
+    // Role/organizational accounts (president@…, info@…, club logins) are not
+    // people — flagging them hides them from the directory, dues, and email
+    // automations. Board+ only.
+    if (isBoardPlus && typeof body.isRoleAccount === 'boolean') {
+      updates.isRoleAccount = body.isRoleAccount;
+    }
 
     // Profile fields that board+ admins may edit on behalf of another member.
     // Mirrors the whitelist on /api/portal/profile but applied to memberId.
