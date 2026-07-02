@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { canManageEvent } from '@/lib/server/access';
 import { cookies } from 'next/headers';
 import { getEventAttendees } from '@/lib/services/eventAttendees';
 
@@ -14,7 +15,7 @@ async function getAuthenticatedManager(): Promise<{ uid: string; role: string } 
     const memberDoc = await adminDb.collection('members').doc(uid).get();
     if (!memberDoc.exists) return null;
     const data = memberDoc.data()!;
-    if (!['board', 'president', 'treasurer'].includes(data.role)) return null;
+    // Event-level access checked per-event via canManageEvent (below).
     return { uid, role: data.role };
   } catch {
     return null;
@@ -29,6 +30,9 @@ export async function GET(
   if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const { id: eventId } = await params;
+  if (!(await canManageEvent(user.uid, eventId))) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
 
   try {
     const { rows, totals } = await getEventAttendees(eventId);

@@ -23,6 +23,9 @@ export default function PortalArticlesPage() {
   const [deleting, setDeleting] = useState(false);
 
   const canManage = member && ['board', 'president', 'treasurer'].includes(member.role);
+  // Any active member can contribute drafts (publishing needs board/chair —
+  // enforced server-side).
+  const canCreate = !!member;
 
   const allArticles = (firestoreArticles as Article[] || []).length > 0
     ? (firestoreArticles as Article[])
@@ -74,7 +77,7 @@ export default function PortalArticlesPage() {
         </div>
         <div className="flex items-center gap-3">
           <SearchInput value={search} onChange={setSearch} placeholder="Search articles..." className="sm:max-w-xs" />
-          {canManage && (
+          {canCreate && (
             <Button size="sm" onClick={() => router.push('/portal/articles/new')}>
               <svg aria-hidden="true" className="w-4 h-4 -ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -116,7 +119,7 @@ export default function PortalArticlesPage() {
             <ArticleCard
               key={article.id}
               article={article}
-              canManage={!!canManage}
+              canManage={!!canManage || (!!member && (article as any).author?.id === member.id && !article.isPublished)}
               onDelete={(id) => handleDelete(id)}
             />
           ))}

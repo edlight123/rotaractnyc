@@ -191,6 +191,8 @@ export interface RotaractEvent {
   waitlistEnabled?: boolean;
   isPublic: boolean;
   status: 'draft' | 'published' | 'cancelled';
+  /** Optional owning committee — its team can run this event (check-in, attendees). */
+  committeeId?: string;
   // ── Donations (optional, opt-in per event) ──
   /** When true, the event accepts donations alongside (or instead of) tickets. */
   acceptsDonations?: boolean;

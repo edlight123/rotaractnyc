@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/lib/firebase/auth';
@@ -50,8 +50,24 @@ export default function NewArticlePage() {
     wordCount: 0,
   });
 
-  // Check role
-  const canCreate = member && ['board', 'president', 'treasurer'].includes(member.role);
+  // Any active member can draft; publishing is for board+ and committee
+  // chairs (server enforces this — the Publish button is hidden otherwise).
+  const canCreate = !!member;
+  const [isPublisher, setIsPublisher] = useState(false);
+  useEffect(() => {
+    if (!member) return;
+    if (['board', 'president', 'treasurer'].includes(member.role)) {
+      setIsPublisher(true);
+      return;
+    }
+    fetch('/api/portal/committees')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data.committees || [];
+        setIsPublisher(list.some((c: any) => c.chairId === member.id || c.coChairId === member.id));
+      })
+      .catch(() => {});
+  }, [member]);
 
   const handleEditorUpdate = useCallback(
     (data: { html: string; json: JSONContent; wordCount: number }) => {
@@ -172,15 +188,17 @@ export default function NewArticlePage() {
           >
             Save Draft
           </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => handleSave(true)}
-            loading={saving}
-            disabled={saving}
-          >
-            Publish
-          </Button>
+          {isPublisher && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => handleSave(true)}
+              loading={saving}
+              disabled={saving}
+            >
+              Publish
+            </Button>
+          )}
         </div>
       </div>
 
@@ -303,14 +321,20 @@ export default function NewArticlePage() {
           >
             Save as Draft
           </Button>
-          <Button
-            variant="primary"
-            onClick={() => handleSave(true)}
-            loading={saving}
-            disabled={saving}
-          >
-            Publish Article
-          </Button>
+          {isPublisher ? (
+            <Button
+              variant="primary"
+              onClick={() => handleSave(true)}
+              loading={saving}
+              disabled={saving}
+            >
+              Publish Article
+            </Button>
+          ) : (
+            <p className="text-xs text-gray-400 self-center">
+              Drafts are reviewed and published by a committee chair or the board.
+            </p>
+          )}
         </div>
       </div>
     </div>

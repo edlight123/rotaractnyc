@@ -188,6 +188,18 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
 
   // Details
   const [type, setType] = useState<EventType>('free');
+  // Optional owning committee — its team can run the event (check-in, attendees)
+  const [committeeId, setCommitteeId] = useState('');
+  const [committeeOptions, setCommitteeOptions] = useState<Array<{ id: string; name: string }>>([]);
+  useEffect(() => {
+    fetch('/api/portal/committees')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data.committees || [];
+        setCommitteeOptions(list.map((c: any) => ({ id: c.id, name: c.name })));
+      })
+      .catch(() => {});
+  }, []);
   const [imageURL, setImageURL] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -269,6 +281,7 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
       setCapacity(event.capacity ? String(event.capacity) : '');
       setIsPublic(event.isPublic ?? true);
       setStatus(event.status || 'draft');
+      setCommitteeId(event.committeeId || '');
       setAcceptsDonations(event.acceptsDonations ?? false);
       setFundraisingGoal(
         event.fundraisingGoalCents != null ? String(event.fundraisingGoalCents / 100) : '',
@@ -548,6 +561,7 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
         capacity: capacity ? parseInt(capacity) : undefined,
         isPublic,
         status,
+        committeeId: committeeId || null,
         acceptsDonations,
         fundraisingGoalCents:
           acceptsDonations && fundraisingGoal
@@ -1166,6 +1180,25 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
                     )}
                   </div>
                 )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Owning committee (optional)
+                </label>
+                <select
+                  value={committeeId}
+                  onChange={(e) => setCommitteeId(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cranberry-500"
+                >
+                  <option value="">— None (board-run event) —</option>
+                  {committeeOptions.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-400">
+                  The committee&apos;s team can run this event: check-in, attendee roster.
+                </p>
               </div>
 
               <Input

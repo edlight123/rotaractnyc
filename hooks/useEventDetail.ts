@@ -61,15 +61,20 @@ export function useEventDetail() {
   const [donationSummary, setDonationSummary] = useState<DonationSummary | null>(null);
 
   const { data: rsvps } = useRsvps(id);
-  const canManageEvents = Boolean(member && MANAGE_ROLES.includes(member.role));
+  const isBoardRole = Boolean(member && MANAGE_ROLES.includes(member.role));
+  const isEventsChair = Boolean(member && ['Director of Events', 'Events Chair'].includes((member as any).boardTitle || ''));
+  // Committee-linked events can be run by that committee's team.
+  const isCommitteeTeam = Boolean(
+    member && event?.committeeId && (member as any).committeeId === event.committeeId,
+  );
+  const canManageEvents = isBoardRole || isEventsChair || isCommitteeTeam;
 
-  // Real-time guest RSVPs (board+ only — Firestore rules block other roles).
-  // Replaces a one-shot fetch so admins viewing the event page see new
-  // bookings appear immediately without a manual refresh.
-  const { data: liveGuestRsvps } = useGuestRsvps(id, canManageEvents);
+  // Real-time guest RSVPs (board+ only — Firestore rules block other roles;
+  // committee teams get guest data via the purchasers API instead).
+  const { data: liveGuestRsvps } = useGuestRsvps(id, isBoardRole);
   useEffect(() => {
-    if (canManageEvents) setGuestRsvps(liveGuestRsvps as unknown as GuestRsvpLite[]);
-  }, [canManageEvents, liveGuestRsvps]);
+    if (isBoardRole) setGuestRsvps(liveGuestRsvps as unknown as GuestRsvpLite[]);
+  }, [isBoardRole, liveGuestRsvps]);
 
   const fetchEvent = useCallback(async () => {
     try {

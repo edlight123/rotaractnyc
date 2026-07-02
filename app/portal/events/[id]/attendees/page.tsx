@@ -67,34 +67,34 @@ export default function EventAttendeesPage() {
   // Person keys currently mid-flight so we can disable the button + show a spinner.
   const [checkingIn, setCheckingIn] = useState<Set<string>>(new Set());
 
-  const canManage = member && ['board', 'president', 'treasurer'].includes(member.role);
-
+  // Access is decided by the server (board+, Events chair, or the owning
+  // committee's team — see lib/server/access.ts). We simply try the fetch and
+  // bounce anyone the API rejects, so committee teams work without
+  // duplicating the membership lookup client-side.
   useEffect(() => {
-    if (!id) return;
-    if (member && !canManage) {
-      toast('You do not have access to this page', 'error');
-      router.replace(`/portal/events/${id}`);
-      return;
-    }
-    if (!member) return;
+    if (!id || !member) return;
 
     let cancelled = false;
     async function load() {
       try {
-        const [eventData, purchData] = await Promise.all([
-          apiGet(`/api/portal/events?id=${id}`).catch(() =>
-            apiGet(`/api/events?id=${id}`).then((d) =>
-              Array.isArray(d) ? d.find((e: RotaractEvent) => e.id === id) || null : d,
-            ),
+        const purchData = await apiGet(`/api/portal/events/${id}/purchasers`);
+        const eventData = await apiGet(`/api/portal/events?id=${id}`).catch(() =>
+          apiGet(`/api/events?id=${id}`).then((d) =>
+            Array.isArray(d) ? d.find((e: RotaractEvent) => e.id === id) || null : d,
           ),
-          apiGet(`/api/portal/events/${id}/purchasers`),
-        ]);
+        );
         if (cancelled) return;
         setEvent(eventData);
         setPurchasers(purchData?.purchasers || []);
         setSummary(purchData?.summary || null);
       } catch (err: any) {
-        if (!cancelled) toast(err?.message || 'Failed to load attendees', 'error');
+        if (cancelled) return;
+        if (err?.message === 'Forbidden' || /forbidden|403/i.test(String(err?.message))) {
+          toast('You do not have access to this page', 'error');
+          router.replace(`/portal/events/${id}`);
+          return;
+        }
+        toast(err?.message || 'Failed to load attendees', 'error');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -103,7 +103,7 @@ export default function EventAttendeesPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, member, canManage, router, toast]);
+  }, [id, member, router, toast]);
 
   /* ── Tier label lookup ── */
   const tierLabel = (tierId?: string | null) => {

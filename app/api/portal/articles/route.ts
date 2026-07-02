@@ -8,12 +8,18 @@ export const dynamic = 'force-dynamic';
 
 // ─── Helpers ───
 
-async function authenticateBoardMember() {
+/**
+ * Contributor model:
+ *  - any ACTIVE member can write DRAFTS (they cannot publish),
+ *  - PUBLISHING is reserved for the executive board (board/treasurer/president)
+ *    and committee chairs/co-chairs.
+ */
+async function authenticateContributor() {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('rotaract_portal_session')?.value;
 
   if (!sessionCookie) {
-    return { error: 'Unauthorized', status: 401, uid: null, member: null };
+    return { error: 'Unauthorized', status: 401, uid: null, member: null, isPublisher: false };
   }
 
   try {
@@ -21,13 +27,23 @@ async function authenticateBoardMember() {
     const memberSnap = await adminDb.collection('members').doc(decoded.uid).get();
     const member = memberSnap.exists ? (memberSnap.data() as any) : null;
 
-    if (!member || !['board', 'president', 'treasurer'].includes(member.role)) {
-      return { error: 'Only board members can manage articles.', status: 403, uid: null, member: null };
+    if (!member || member.status !== 'active') {
+      return { error: 'Only active members can contribute articles.', status: 403, uid: null, member: null, isPublisher: false };
     }
 
-    return { error: null, status: 200, uid: decoded.uid, member: { id: decoded.uid, ...member } };
+    let isPublisher = ['board', 'president', 'treasurer'].includes(member.role);
+    if (!isPublisher) {
+      // Committee chairs / co-chairs may publish
+      const [chairSnap, coChairSnap] = await Promise.all([
+        adminDb.collection('committees').where('chairId', '==', decoded.uid).limit(1).get(),
+        adminDb.collection('committees').where('coChairId', '==', decoded.uid).limit(1).get(),
+      ]);
+      isPublisher = !chairSnap.empty || !coChairSnap.empty;
+    }
+
+    return { error: null, status: 200, uid: decoded.uid, member: { id: decoded.uid, ...member }, isPublisher };
   } catch {
-    return { error: 'Session expired. Please sign in again.', status: 401, uid: null, member: null };
+    return { error: 'Session expired. Please sign in again.', status: 401, uid: null, member: null, isPublisher: false };
   }
 }
 
@@ -73,13 +89,15 @@ export async function POST(request: NextRequest) {
   if (!rateLimitResult.allowed) return rateLimitResponse(rateLimitResult.resetAt);
 
   try {
-    const { error, status, uid, member } = await authenticateBoardMember();
+    const { error, status, uid, member, isPublisher } = await authenticateContributor();
     if (error || !uid || !member) {
       return NextResponse.json({ error: error || 'Unauthorized' }, { status: status || 401 });
     }
 
     const body = await request.json();
-    const { title, slug, excerpt, content, coverImage, category, tags, isPublished } = body;
+    const { title, slug, excerpt, content, coverImage, category, tags } = body;
+    // Publishing requires board or a committee chair — everyone else drafts.
+    const isPublished = isPublisher ? body.isPublished : false;
 
     if (!title || !slug || !content) {
       return NextResponse.json(
@@ -158,13 +176,14 @@ export async function PUT(request: NextRequest) {
   if (!rateLimitResult.allowed) return rateLimitResponse(rateLimitResult.resetAt);
 
   try {
-    const { error, status, uid } = await authenticateBoardMember();
+    const { error, status, uid, isPublisher } = await authenticateContributor();
     if (error || !uid) {
       return NextResponse.json({ error: error || 'Unauthorized' }, { status: status || 401 });
     }
 
     const body = await request.json();
-    const { id, title, slug, excerpt, content, coverImage, category, tags, isPublished } = body;
+    const { id, title, slug, excerpt, content, coverImage, category, tags } = body;
+    let { isPublished } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Article ID is required.' }, { status: 400 });
@@ -178,6 +197,15 @@ export async function PUT(request: NextRequest) {
     }
 
     const existing = docSnap.data()!;
+
+    // Contributors may only edit their own unpublished drafts and can never
+    // flip the published state — that's for board / committee chairs.
+    if (!isPublisher) {
+      if (existing.author?.id !== uid || existing.isPublished) {
+        return NextResponse.json({ error: 'Only the board or a committee chair can do that.' }, { status: 403 });
+      }
+      isPublished = undefined;
+    }
     const wasPublished = existing.isPublished;
     const now = new Date().toISOString();
 
@@ -248,7 +276,7 @@ export async function DELETE(request: NextRequest) {
   if (!rateLimitResult.allowed) return rateLimitResponse(rateLimitResult.resetAt);
 
   try {
-    const { error, status, uid } = await authenticateBoardMember();
+    const { error, status, uid, isPublisher } = await authenticateContributor();
     if (error || !uid) {
       return NextResponse.json({ error: error || 'Unauthorized' }, { status: status || 401 });
     }
@@ -265,6 +293,11 @@ export async function DELETE(request: NextRequest) {
 
     if (!docSnap.exists) {
       return NextResponse.json({ error: 'Article not found.' }, { status: 404 });
+    }
+
+    const existingArticle = docSnap.data()!;
+    if (!isPublisher && (existingArticle.author?.id !== uid || existingArticle.isPublished)) {
+      return NextResponse.json({ error: 'Only the board or a committee chair can delete this.' }, { status: 403 });
     }
 
     await docRef.delete();

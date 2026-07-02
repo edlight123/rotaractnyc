@@ -1,26 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { canManageEvent } from '@/lib/server/access';
 
 export const dynamic = 'force-dynamic';
 
-const MANAGER_ROLES = ['board', 'president', 'treasurer'];
-
-/**
- * Resolve the authenticated portal session into a board-level manager.
- * Returns null for anonymous or insufficiently-privileged users.
- */
-async function getAuthenticatedManager(): Promise<{ uid: string; role: string } | null> {
+/** Resolve the authenticated portal session (event-level access is checked
+ *  per-event via canManageEvent: board+, Events chair, or the owning
+ *  committee's team). */
+async function getSessionUid(): Promise<string | null> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('rotaract_portal_session')?.value;
   if (!sessionCookie) return null;
   try {
     const { uid } = await adminAuth.verifySessionCookie(sessionCookie, true);
-    const memberDoc = await adminDb.collection('members').doc(uid).get();
-    if (!memberDoc.exists) return null;
-    const data = memberDoc.data()!;
-    if (!MANAGER_ROLES.includes(data.role)) return null;
-    return { uid, role: data.role };
+    return uid;
   } catch {
     return null;
   }
@@ -51,11 +45,15 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const manager = await getAuthenticatedManager();
-  if (!manager) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const uid = await getSessionUid();
+  if (!uid) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const { id: eventId } = await params;
   if (!eventId) return NextResponse.json({ error: 'Event ID is required' }, { status: 400 });
+
+  if (!(await canManageEvent(uid, eventId))) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
 
   let body: {
     kind?: string;
@@ -82,7 +80,7 @@ export async function POST(
   const now = new Date().toISOString();
   const checkedInAt = checkedIn ? now : null;
   const auditFields = {
-    checkedInBy: checkedIn ? manager.uid : null,
+    checkedInBy: checkedIn ? uid : null,
     checkedInMethod: checkedIn ? 'manual' : null,
   };
 

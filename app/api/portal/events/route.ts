@@ -93,7 +93,10 @@ async function getAuthenticatedMember(requireAdmin = false) {
 
   const member = memberDoc.data()!;
 
-  if (requireAdmin && !ADMIN_ROLES.includes(member.role)) {
+  // The Events chair (boardTitle "Director of Events") manages all events,
+  // same as board+.
+  const isEventsChair = ['Director of Events', 'Events Chair'].includes(member.boardTitle || '');
+  if (requireAdmin && !ADMIN_ROLES.includes(member.role) && !isEventsChair) {
     throw { status: 403, message: 'You do not have permission to manage events.' };
   }
 
@@ -166,6 +169,7 @@ export async function POST(request: NextRequest) {
       recurrence,
       acceptsDonations,
       fundraisingGoalCents,
+      committeeId,
     } = body;
 
     // Validate required fields
@@ -207,6 +211,9 @@ export async function POST(request: NextRequest) {
       attendeeCount: 0,
       isPublic: isPublic ?? true,
       status: status || 'draft',
+      // Optional owning committee — its whole team can run this event
+      // (check-in, attendees). See lib/server/access.ts canManageEvent.
+      committeeId: committeeId || null,
       acceptsDonations: acceptsDonations === true,
       fundraisingGoalCents:
         typeof fundraisingGoalCents === 'number' && fundraisingGoalCents > 0
