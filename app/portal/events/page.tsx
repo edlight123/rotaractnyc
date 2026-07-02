@@ -90,6 +90,7 @@ export default function PortalEventsPage() {
 
   const allEvents = ((firestoreEvents || []).length > 0 ? firestoreEvents : defaultEvents) as RotaractEvent[];
   const now = new Date();
+  const upcomingCount = allEvents.filter((e) => new Date(e.date) >= now).length;
 
   const events = allEvents
     .filter((e) => {
@@ -229,8 +230,18 @@ export default function PortalEventsPage() {
     <>
       <PageContainer width="default">
         <PageHeader
+          eyebrow="Portal"
           title="Events"
-          subtitle="RSVP to upcoming events and track your attendance."
+          subtitle={
+            loading ? (
+              'RSVP to upcoming events and track your attendance.'
+            ) : (
+              <>
+                <span className="tabular-nums">{upcomingCount}</span> upcoming{' '}
+                {upcomingCount === 1 ? 'event' : 'events'}
+              </>
+            )
+          }
           actions={
             canManageEvents && (
               <Button onClick={() => setShowCreateModal(true)}>
@@ -270,7 +281,7 @@ export default function PortalEventsPage() {
         {/* ── Event list ── */}
         {isCalendar ? (
           loading ? (
-            <div className="h-[32rem] rounded-2xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+            <div className="h-[32rem] rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
           ) : (
             <CalendarView events={calendarEvents} />
           )

@@ -10,6 +10,7 @@ import Spinner from '@/components/ui/Spinner';
 import Tabs from '@/components/ui/Tabs';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
+import PageHeader from '@/components/portal/PageHeader';
 import { SITE } from '@/lib/constants';
 import { formatCurrency } from '@/lib/utils/format';
 import type { DuesPaymentStatus, PaymentMethod } from '@/types';
@@ -286,13 +287,12 @@ export default function DuesPage() {
 
   return (
     <>
-    <div className="max-w-5xl mx-auto space-y-6 page-enter">
-      <div>
-        <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Annual Dues</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          {isTreasurer ? 'Manage membership dues and approve offline payments.' : 'Manage your membership dues for the current Rotary year.'}
-        </p>
-      </div>
+    <div className="max-w-5xl mx-auto space-y-8 page-enter">
+      <PageHeader
+        eyebrow="Membership"
+        title="Annual Dues"
+        subtitle={isTreasurer ? 'Manage membership dues and approve offline payments.' : 'Manage your membership dues for the current Rotary year.'}
+      />
 
       {/* Tabs — only shown for treasurer/president */}
       {isTreasurer && (
@@ -303,7 +303,7 @@ export default function DuesPage() {
       {activeTab === 'my-dues' && (
         <div className="max-w-3xl mx-auto space-y-8">
           {/* Status Card */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 sm:p-8">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
             <div className="text-center">
               <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Rotary Year {cycleName}</p>
               <Badge
@@ -315,7 +315,7 @@ export default function DuesPage() {
             </div>
 
             {duesStatus === 'UNPAID' && !hasActiveCycle && (
-              <div className="mt-8 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-center space-y-2">
+              <div className="mt-8 p-5 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-center space-y-2">
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">Dues enrollment isn&apos;t open yet</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   The {cycleName} dues cycle hasn&apos;t been opened by the treasurer. You&apos;ll be able to pay here once it starts — no action needed right now.
@@ -325,12 +325,12 @@ export default function DuesPage() {
 
             {duesStatus === 'UNPAID' && hasActiveCycle && (
               <div className="mt-8 space-y-6">
-                <div className="relative p-6 rounded-2xl border-2 border-cranberry bg-cranberry-50/50 dark:bg-cranberry-900/10 shadow-sm text-center">
+                <div className="relative p-5 rounded-xl border-2 border-cranberry bg-cranberry-50/50 dark:bg-cranberry-900/10 text-center">
                   <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-cranberry flex items-center justify-center">
                     <svg aria-hidden="true" className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                   </div>
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400 capitalize">{selectedType} Membership</p>
-                  <p className="text-4xl font-display font-bold text-cranberry mt-2">{formatCurrency(amount)}</p>
+                  <p className="text-4xl font-display font-semibold tracking-tight tabular-nums text-cranberry mt-2">{formatCurrency(amount)}</p>
                   <p className="text-xs text-gray-500 mt-2">
                     {selectedType === 'student' ? 'Student rate — valid student ID required' : 'Professional rate'}
                   </p>
@@ -348,7 +348,7 @@ export default function DuesPage() {
                 {/* Alternative Payment Methods */}
                 {((paymentSettings.zelleEnabled && paymentSettings.zelleIdentifier) || (paymentSettings.venmoEnabled && paymentSettings.venmoUsername) || (paymentSettings.cashappEnabled && paymentSettings.cashappUsername)) && (
                   <div className="bg-azure-50 dark:bg-azure-900/10 rounded-xl border border-azure-200 dark:border-azure-800 p-5 space-y-3">
-                    <h4 className="font-display font-bold text-gray-900 dark:text-white text-sm flex items-center gap-2">
+                    <h4 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center gap-2">
                       <svg aria-hidden="true" className="w-4 h-4 text-azure" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
                       Other Payment Methods
                     </h4>
@@ -404,8 +404,8 @@ export default function DuesPage() {
           </div>
 
           {/* Info */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6">
-            <h3 className="font-display font-bold text-gray-900 dark:text-white mb-3">About Annual Dues</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">About Annual Dues</h3>
             <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
               <li className="flex items-start gap-2"><span className="text-cranberry mt-0.5">•</span>The Rotary year runs July 1 – June 30</li>
               <li className="flex items-start gap-2"><span className="text-cranberry mt-0.5">•</span>Dues include Rotary International membership registration</li>
@@ -424,17 +424,17 @@ export default function DuesPage() {
           ) : (
             <>
               {/* Stats Strip */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              <div className="grid grid-cols-5 divide-x divide-gray-200 dark:divide-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-x-auto">
                 {[
-                  { label: 'Total Members', value: stats.total + membersWithoutDues.length, color: 'text-gray-900 dark:text-white' },
-                  { label: 'Paid', value: stats.paid, color: 'text-emerald-600' },
-                  { label: 'Unpaid', value: stats.unpaid + membersWithoutDues.length, color: 'text-red-600' },
-                  { label: 'Waived', value: stats.waived, color: 'text-azure' },
-                  { label: 'Collected', value: formatCurrency(stats.collected), color: 'text-emerald-600' },
+                  { label: 'Total Members', value: stats.total + membersWithoutDues.length },
+                  { label: 'Paid', value: stats.paid },
+                  { label: 'Unpaid', value: stats.unpaid + membersWithoutDues.length },
+                  { label: 'Waived', value: stats.waived },
+                  { label: 'Collected', value: formatCurrency(stats.collected) },
                 ].map((s) => (
-                  <div key={s.label} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200/60 dark:border-gray-800 p-4 text-center">
-                    <p className={`text-xl font-display font-bold ${s.color}`}>{s.value}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
+                  <div key={s.label} className="px-5 py-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">{s.label}</p>
+                    <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums text-gray-900 dark:text-white">{s.value}</p>
                   </div>
                 ))}
               </div>
@@ -446,7 +446,7 @@ export default function DuesPage() {
                   <button
                     key={f}
                     onClick={() => setStatusFilter(f)}
-                    className={`text-xs px-3 py-2.5 rounded-full font-medium transition-colors ${
+                    className={`text-xs px-3 py-2.5 rounded-md font-medium transition-colors ${
                       statusFilter === f
                         ? 'bg-cranberry text-white'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'
@@ -458,7 +458,7 @@ export default function DuesPage() {
               </div>
 
               {/* Members Dues Table — Desktop */}
-              <div className="hidden sm:block bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 overflow-hidden">
+              <div className="hidden sm:block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -482,7 +482,7 @@ export default function DuesPage() {
                               <p className="text-xs text-gray-400">{m.memberEmail}</p>
                             </td>
                             <td className="px-5 py-3 capitalize text-gray-600 dark:text-gray-400">{m.memberType}</td>
-                            <td className="px-5 py-3 font-medium text-gray-900 dark:text-white">{formatCurrency(displayAmount)}</td>
+                            <td className="px-5 py-3 font-medium text-gray-900 dark:text-white tabular-nums">{formatCurrency(displayAmount)}</td>
                             <td className="px-5 py-3"><Badge variant={badge.variant}>{badge.label}</Badge></td>
                             <td className="px-5 py-3 text-gray-500 text-xs">{(m as any).paidAt ? new Date((m as any).paidAt).toLocaleDateString() : '—'}</td>
                             <td className="px-5 py-3 text-right">
@@ -544,7 +544,7 @@ export default function DuesPage() {
                     const badge = STATUS_BADGES[m.status];
                     const displayAmount = m.amount || (m.memberType === 'student' ? cycleAmounts.student : cycleAmounts.professional);
                     return (
-                      <div key={m.memberId + idx} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200/60 dark:border-gray-800 p-4 space-y-3">
+                      <div key={m.memberId + idx} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 space-y-3">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="font-medium text-gray-900 dark:text-white truncate">{m.memberName}</p>
@@ -554,7 +554,7 @@ export default function DuesPage() {
                         </div>
                         <div className="flex items-center gap-4 text-sm">
                           <span className="text-gray-500 capitalize">{m.memberType}</span>
-                          <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(displayAmount)}</span>
+                          <span className="font-semibold text-gray-900 dark:text-white tabular-nums">{formatCurrency(displayAmount)}</span>
                           {(m as any).paidAt && (
                             <span className="text-xs text-gray-400 ml-auto">{new Date((m as any).paidAt).toLocaleDateString()}</span>
                           )}
@@ -603,9 +603,9 @@ export default function DuesPage() {
               {/* Cycle Settings & Payment Methods — side by side */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Cycle Settings */}
-                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6">
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-display font-bold text-gray-900 dark:text-white">Dues Cycles</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Dues Cycles</h3>
                     <Button
                       size="sm"
                       variant="outline"
@@ -621,13 +621,13 @@ export default function DuesPage() {
                   {cycleLoading ? <Spinner /> : (
                     <div className="space-y-2">
                       {cycles.map((c: any) => (
-                        <div key={c.id} className={`flex items-center justify-between p-3 rounded-xl border ${c.isActive ? 'border-emerald-300 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-900/10' : 'border-gray-200 dark:border-gray-800'}`}>
+                        <div key={c.id} className={`flex items-center justify-between p-3 rounded-lg border ${c.isActive ? 'border-emerald-300 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-900/10' : 'border-gray-200 dark:border-gray-800'}`}>
                           <div>
                             <p className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
                               {c.name}
                               {c.isActive && <Badge variant="green">Active</Badge>}
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-500 tabular-nums">
                               Pro: {formatCurrency(c.amountProfessional)} · Student: {formatCurrency(c.amountStudent)} · Grace: {c.gracePeriodDays}d
                             </p>
                           </div>
@@ -659,9 +659,9 @@ export default function DuesPage() {
                 </div>
 
                 {/* Payment Methods Settings */}
-                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6">
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-display font-bold text-gray-900 dark:text-white">Payment Methods</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Payment Methods</h3>
                     {!editingPayment && (
                       <Button size="sm" variant="ghost" onClick={() => { setPaymentForm(paymentSettings); setEditingPayment(true); }}>
                         Edit
@@ -724,7 +724,7 @@ export default function DuesPage() {
           <div className="space-y-4">
             <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
               <p className="font-medium text-gray-900 dark:text-white">{approveTarget.memberName}</p>
-              <p className="text-sm text-gray-500 capitalize">{approveTarget.memberType} — {formatCurrency(approveTarget.amount)}</p>
+              <p className="text-sm text-gray-500 capitalize tabular-nums">{approveTarget.memberType} — {formatCurrency(approveTarget.amount)}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Payment Method</label>

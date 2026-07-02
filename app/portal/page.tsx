@@ -13,6 +13,7 @@ import Tabs from '@/components/ui/Tabs';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
 import ProgressRing from '@/components/ui/ProgressRing';
+import PageHeader, { SectionHeader } from '@/components/portal/PageHeader';
 import PostComposerModal from '@/components/portal/PostComposerModal';
 import FeedCard from '@/components/portal/FeedCard';
 import ProfileCompletionCard from '@/components/portal/ProfileCompletionCard';
@@ -23,16 +24,14 @@ import { SERVICE_HOURS_GOAL } from '@/lib/constants';
 import type { CommunityPost, RotaractEvent, ServiceHour } from '@/types';
 
 /* ── Icons ── */
-const ClockIcon = () => <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
-const CalendarIcon = () => <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>;
-const UsersIcon = () => <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
-const CreditCardIcon = () => <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>;
-const ArrowRightIcon = () => <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>;
-const SparklesIcon = () => <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" /></svg>;
-const DocumentIcon = () => <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" /></svg>;
-const FolderIcon = () => <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>;
-const ChartIcon = () => <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>;
-const TrendingUpIcon = () => <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>;
+const ClockIcon = () => <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+const CalendarIcon = () => <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>;
+const UsersIcon = () => <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
+const CreditCardIcon = () => <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>;
+const DocumentIcon = () => <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" /></svg>;
+const FolderIcon = () => <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>;
+const ChartIcon = () => <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>;
+const TrendingUpIcon = () => <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>;
 
 // SERVICE_HOURS_GOAL is now imported from '@/lib/constants'
 
@@ -40,20 +39,19 @@ type QuickAction = {
   label: string;
   href: string;
   icon: React.ReactNode;
-  color: string;
   description: string;
   roles?: string[];
 };
 
 const quickActions: QuickAction[] = [
-  { label: 'Log Hours', href: '/portal/service-hours', icon: <ClockIcon />, color: 'bg-emerald-500', description: 'Track service' },
-  { label: 'Events', href: '/portal/events', icon: <CalendarIcon />, color: 'bg-azure', description: 'Browse events' },
-  { label: 'Directory', href: '/portal/directory', icon: <UsersIcon />, color: 'bg-violet-500', description: 'Find members' },
-  { label: 'Pay Dues', href: '/portal/dues', icon: <CreditCardIcon />, color: 'bg-gold-600', description: 'Membership fees' },
-  { label: 'Articles', href: '/portal/articles', icon: <DocumentIcon />, color: 'bg-cranberry', description: 'Read & write' },
-  { label: 'Documents', href: '/portal/documents', icon: <FolderIcon />, color: 'bg-cyan-600', description: 'Club resources' },
-  { label: 'Leaderboard', href: '/portal/service-hours/analytics', icon: <TrendingUpIcon />, color: 'bg-teal-500', description: 'Service stats' },
-  { label: 'Analytics', href: '/portal/admin/analytics', icon: <ChartIcon />, color: 'bg-indigo-500', description: 'Club insights', roles: ['board', 'president', 'treasurer'] },
+  { label: 'Log Hours', href: '/portal/service-hours', icon: <ClockIcon />, description: 'Track service' },
+  { label: 'Events', href: '/portal/events', icon: <CalendarIcon />, description: 'Browse events' },
+  { label: 'Directory', href: '/portal/directory', icon: <UsersIcon />, description: 'Find members' },
+  { label: 'Pay Dues', href: '/portal/dues', icon: <CreditCardIcon />, description: 'Membership fees' },
+  { label: 'Articles', href: '/portal/articles', icon: <DocumentIcon />, description: 'Read & write' },
+  { label: 'Documents', href: '/portal/documents', icon: <FolderIcon />, description: 'Club resources' },
+  { label: 'Leaderboard', href: '/portal/service-hours/analytics', icon: <TrendingUpIcon />, description: 'Service stats' },
+  { label: 'Analytics', href: '/portal/admin/analytics', icon: <ChartIcon />, description: 'Club insights', roles: ['board', 'president', 'treasurer'] },
 ];
 
 export default function PortalDashboard() {
@@ -130,10 +128,12 @@ export default function PortalDashboard() {
   })();
 
   const firstName = member?.firstName || member?.displayName?.split(' ')[0] || 'Member';
+  const dateLine = `${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} — here's your community at a glance.`;
+  const duesPaid = duesStatus === 'PAID' || duesStatus === 'PAID_OFFLINE' || duesStatus === 'WAIVED';
 
   return (
     <>
-    <div className="max-w-7xl mx-auto space-y-6 page-enter">
+    <div className="space-y-8 page-enter">
 
       {/* ═══════ MOBILE VIEW TABS (sm:hidden) ═══════ */}
       <div className="sm:hidden">
@@ -156,64 +156,28 @@ export default function PortalDashboard() {
         </div>
       </div>
 
-      {/* ═══════ HERO SECTION ═══════ */}
+      {/* ═══════ HEADER + STAT STRIP ═══════ */}
       {/* On mobile: only show in overview tab. On sm+: always show */}
-      <section className={`relative overflow-hidden rounded-2xl lg:rounded-3xl ${mobileView !== 'overview' ? 'hidden sm:block' : ''}`}>
-        {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-cranberry-700 via-cranberry-800 to-cranberry-950" />
-        {/* Mesh pattern overlay */}
-        <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23fff' fill-opacity='1'%3E%3Cpath d='M20 20.5V18H0v-2h20v-2H0V0h2v14h4v-6h2v6h4V0h2v14h4v-4h2v4h4v2h-4v4h4v2H20z' /%3E%3C/g%3E%3C/svg%3E")` }} />
-        {/* Decorative blobs */}
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-cranberry-400/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 w-48 h-48 bg-gold/10 rounded-full blur-3xl" />
+      <section className={mobileView !== 'overview' ? 'hidden sm:block' : ''}>
+        <PageHeader
+          eyebrow="Portal"
+          title={`${greeting}, ${firstName}`}
+          subtitle={dateLine}
+        />
 
-        <div className="relative px-6 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-12">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-            {/* Left: greeting */}
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Avatar src={member?.photoURL} alt={member?.displayName || ''} size="xl" className="ring-4 ring-white/20" />
-                {duesStatus === 'PAID' || duesStatus === 'PAID_OFFLINE' || duesStatus === 'WAIVED' ? (
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center ring-2 ring-cranberry-800">
-                    <svg aria-hidden="true" className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                  </div>
-                ) : null}
-              </div>
-              <div>
-                <p className="text-cranberry-200 text-sm font-medium flex items-center gap-1.5">
-                  <SparklesIcon />
-                  {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                </p>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-white mt-1">
-                  {greeting}, {firstName}
-                </h1>
-                <p className="text-cranberry-200/80 mt-1 text-sm sm:text-base">Here&apos;s your community at a glance.</p>
-              </div>
-            </div>
-
-            {/* Right: key metrics */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-4 w-full sm:w-auto">
-              <div className="glass-card rounded-2xl px-3 sm:px-5 py-3 sm:py-4 text-center">
-                <p className="text-xl sm:text-3xl font-display font-bold text-white tabular-nums">{totalHours}</p>
-                <p className="text-cranberry-200 text-[10px] sm:text-[11px] font-medium uppercase tracking-wider mt-0.5">Hours</p>
-              </div>
-              <div className="glass-card rounded-2xl px-3 sm:px-5 py-3 sm:py-4 text-center">
-                <p className="text-xl sm:text-3xl font-display font-bold text-white tabular-nums">{upcomingEvents.length}</p>
-                <p className="text-cranberry-200 text-[10px] sm:text-[11px] font-medium uppercase tracking-wider mt-0.5">Events</p>
-              </div>
-              <div className="glass-card rounded-2xl px-3 sm:px-5 py-3 sm:py-4 text-center">
-                {duesStatus === 'PAID' || duesStatus === 'PAID_OFFLINE' || duesStatus === 'WAIVED' ? (
-                  <>
-                    <div className="flex justify-center"><Badge variant="green" className="text-xs">Paid</Badge></div>
-                    <p className="text-cranberry-200 text-[11px] font-medium uppercase tracking-wider mt-1.5">Dues</p>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex justify-center"><Badge variant="red" className="text-xs">Unpaid</Badge></div>
-                    <p className="text-cranberry-200 text-[11px] font-medium uppercase tracking-wider mt-1.5">Dues</p>
-                  </>
-                )}
-              </div>
+        <div className="mt-6 grid grid-cols-3 divide-x divide-gray-200 dark:divide-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+          <div className="px-5 py-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">Service hours this year</p>
+            <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums text-gray-900 dark:text-white">{totalHours}</p>
+          </div>
+          <div className="px-5 py-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">Upcoming events</p>
+            <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums text-gray-900 dark:text-white">{upcomingEvents.length}</p>
+          </div>
+          <div className="px-5 py-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">Dues</p>
+            <div className="mt-2">
+              <Badge variant={duesPaid ? 'green' : 'red'}>{duesPaid ? 'Paid' : 'Unpaid'}</Badge>
             </div>
           </div>
         </div>
@@ -227,24 +191,25 @@ export default function PortalDashboard() {
         <ProfileCompletionCard member={member} />
       )}
 
-      {/* ═══════ QUICK ACTIONS STRIP ═══════ */}
+      {/* ═══════ QUICK ACTIONS ═══════ */}
       {/* On mobile: only show in overview tab. On sm+: always show */}
-      <section className={`grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-8 gap-3 ${mobileView !== 'overview' ? 'hidden sm:grid' : ''}`}>
-        {quickActions.filter((action) => !action.roles || (member?.role && action.roles.includes(member.role))).map((action) => (
-          <Link
-            key={action.href}
-            href={action.href}
-            className="group relative flex flex-col items-center gap-2.5 p-4 sm:p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 hover:border-cranberry-200 dark:hover:border-cranberry-800 hover:shadow-lg hover:shadow-cranberry-500/5 hover:-translate-y-0.5 transition-all duration-300 text-center"
-          >
-            <span className={`w-11 h-11 flex items-center justify-center rounded-xl ${action.color} text-white shadow-lg shadow-black/10 group-hover:scale-110 transition-transform duration-300`}>
-              {action.icon}
-            </span>
-            <div>
-              <span className="text-xs font-bold text-gray-900 dark:text-white block">{action.label}</span>
-              <span className="text-[10px] text-gray-400 dark:text-gray-500 hidden sm:block">{action.description}</span>
-            </div>
-          </Link>
-        ))}
+      <section className={mobileView !== 'overview' ? 'hidden sm:block' : ''}>
+        <SectionHeader title="Quick actions" />
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+          <div className="grid sm:grid-cols-2 gap-1">
+            {quickActions.filter((action) => !action.roles || (member?.role && action.roles.includes(member.role))).map((action) => (
+              <Link
+                key={action.href}
+                href={action.href}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+              >
+                <span className="w-4 h-4 shrink-0 text-gray-500">{action.icon}</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">{action.label}</span>
+                <span className="text-xs text-gray-500 truncate">{action.description}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* ═══════ MAIN GRID ═══════ */}
@@ -256,10 +221,10 @@ export default function PortalDashboard() {
           {/* Composer trigger card */}
           <div
             onClick={() => setShowComposer(true)}
-            className="flex items-center gap-3.5 p-5 sm:p-6 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 hover:border-cranberry-200 dark:hover:border-cranberry-700 cursor-pointer transition-all duration-200 group hover:shadow-md hover:shadow-cranberry-500/5"
+            className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 cursor-pointer transition-colors"
           >
             <Avatar src={member?.photoURL} alt={member?.displayName || ''} size="md" />
-            <div className="flex-1 bg-gray-50/80 dark:bg-gray-800/40 rounded-xl px-4 py-3 border border-gray-200/80 dark:border-gray-700/60 group-hover:border-cranberry-200 dark:group-hover:border-cranberry-700 transition-colors">
+            <div className="flex-1 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-4 py-2.5">
               <p className="text-sm text-gray-400 dark:text-gray-500">Share an update with the community…</p>
             </div>
           </div>
@@ -320,14 +285,14 @@ export default function PortalDashboard() {
         <aside className={`lg:col-span-5 xl:col-span-4 space-y-5 lg:sticky lg:top-24 lg:self-start ${mobileView !== 'widgets' ? 'hidden lg:block' : ''}`}>
 
           {/* Service Hours Progress */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 hover:shadow-md transition-shadow duration-300">
-            <div className="flex items-center justify-between mb-5">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div className="flex items-baseline justify-between mb-4">
               <div>
-                <h3 className="font-display font-bold text-gray-900 dark:text-white">Service Progress</h3>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Annual goal: {SERVICE_HOURS_GOAL}h</p>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Service progress</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Annual goal: <span className="tabular-nums">{SERVICE_HOURS_GOAL}</span>h</p>
               </div>
-              <Link href="/portal/service-hours" className="text-xs text-cranberry hover:text-cranberry-800 font-semibold transition-colors flex items-center gap-1">
-                View all <ArrowRightIcon />
+              <Link href="/portal/service-hours" className="text-xs font-medium text-cranberry hover:text-cranberry-800 dark:text-cranberry-400 dark:hover:text-cranberry-300 transition-colors">
+                View all
               </Link>
             </div>
             <div className="flex items-center justify-center">
@@ -341,23 +306,28 @@ export default function PortalDashboard() {
               />
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3">
-              <div className="bg-gray-50 dark:bg-gray-800/60 rounded-xl p-3 text-center">
-                <p className="text-lg font-display font-bold text-gray-900 dark:text-white tabular-nums">{SERVICE_HOURS_GOAL - totalHours > 0 ? SERVICE_HOURS_GOAL - totalHours : 0}</p>
-                <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Remaining</p>
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 text-center">
+                <p className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white tabular-nums">{SERVICE_HOURS_GOAL - totalHours > 0 ? SERVICE_HOURS_GOAL - totalHours : 0}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">Remaining</p>
               </div>
-              <div className="bg-gray-50 dark:bg-gray-800/60 rounded-xl p-3 text-center">
-                <p className="text-lg font-display font-bold text-gray-900 dark:text-white tabular-nums">{Math.round((totalHours / SERVICE_HOURS_GOAL) * 100)}%</p>
-                <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Complete</p>
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 text-center">
+                <p className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white tabular-nums">{Math.round((totalHours / SERVICE_HOURS_GOAL) * 100)}%</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">Complete</p>
               </div>
             </div>
           </div>
 
           {/* Upcoming Events */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 hover:shadow-md transition-shadow duration-300">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="font-display font-bold text-gray-900 dark:text-white">Upcoming Events</h3>
-              <Link href="/portal/events" className="text-xs text-cranberry hover:text-cranberry-800 font-semibold transition-colors flex items-center gap-1">
-                View all <ArrowRightIcon />
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+            <div className="flex items-baseline justify-between mb-2">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                Upcoming events
+                {upcomingEvents.length > 0 && (
+                  <span className="ml-2 text-xs font-normal text-gray-400 tabular-nums">{upcomingEvents.length}</span>
+                )}
+              </h3>
+              <Link href="/portal/events" className="text-xs font-medium text-cranberry hover:text-cranberry-800 dark:text-cranberry-400 dark:hover:text-cranberry-300 transition-colors">
+                View all
               </Link>
             </div>
 
@@ -365,66 +335,41 @@ export default function PortalDashboard() {
               <div className="flex justify-center py-8"><Spinner /></div>
             ) : upcomingEvents.length === 0 ? (
               <div className="py-8 text-center">
-                <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                <div className="w-11 h-11 mx-auto mb-3 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 flex items-center justify-center">
                   <CalendarIcon />
                 </div>
-                <p className="text-sm text-gray-400 font-medium">No upcoming events</p>
-                <p className="text-xs text-gray-400/60 mt-1">Check back soon!</p>
+                <p className="text-sm font-medium text-gray-500">No upcoming events</p>
+                <p className="text-xs text-gray-500 mt-1">Check back soon!</p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
                 {upcomingEvents.map((event) => (
                   <Link
                     key={event.id}
                     href={`/portal/events/${event.id}`}
-                    className="group flex gap-3.5 items-center p-3 -mx-1 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-all duration-200"
+                    className="group flex items-center gap-3 py-3"
                   >
                     {/* Date badge */}
-                    <div className="text-center bg-gradient-to-br from-cranberry-50 to-cranberry-100/50 dark:from-cranberry-900/30 dark:to-cranberry-900/10 rounded-xl w-14 h-14 flex flex-col items-center justify-center shrink-0 group-hover:from-cranberry-100 dark:group-hover:from-cranberry-900/40 transition-colors">
-                      <p className="text-[10px] font-extrabold text-cranberry tracking-widest leading-none">
-                        {new Date(event.date).toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
+                    <div className="rounded-lg bg-gray-100 dark:bg-gray-800 w-11 h-11 flex flex-col items-center justify-center shrink-0 tabular-nums">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 leading-none">
+                        {new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}
                       </p>
-                      <p className="text-xl font-display font-bold text-cranberry-800 dark:text-cranberry-300 leading-tight">
+                      <p className="text-base font-semibold text-gray-900 dark:text-white leading-tight tabular-nums">
                         {new Date(event.date).getDate()}
                       </p>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-cranberry dark:group-hover:text-cranberry-400 transition-colors truncate">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-cranberry dark:group-hover:text-cranberry-400 transition-colors truncate">
                         {event.title}
                       </p>
                       <p className="text-xs text-gray-500 mt-0.5 truncate">
                         {event.time} · {event.location?.split(',')[0]}
                       </p>
                     </div>
-                    <span className="text-gray-300 dark:text-gray-600 group-hover:text-cranberry transition-colors shrink-0">
-                      <ArrowRightIcon />
-                    </span>
                   </Link>
                 ))}
               </div>
             )}
-          </div>
-
-          {/* Member Status Card */}
-          <div className="bg-gradient-to-br from-gray-900 to-gray-950 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-cranberry/10 rounded-full blur-2xl" />
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gold/10 rounded-full blur-2xl" />
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Active Member</span>
-              </div>
-              <p className="font-display font-bold text-lg">{member?.displayName}</p>
-              <p className="text-gray-400 text-sm mt-0.5 capitalize">{member?.role} · {member?.committee || 'General'}</p>
-              <div className="mt-4 pt-4 border-t border-gray-700/50">
-                <Link
-                  href="/portal/profile"
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-cranberry-300 hover:text-cranberry-200 transition-colors"
-                >
-                  View Profile <ArrowRightIcon />
-                </Link>
-              </div>
-            </div>
           </div>
         </aside>
       </div>

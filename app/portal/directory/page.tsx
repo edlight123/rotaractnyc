@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Upload, Plus, Users } from 'lucide-react';
+import { Upload, Plus, Users, ChevronDown } from 'lucide-react';
 import { useAllMembers } from '@/hooks/useFirestore';
 import { useAuth } from '@/lib/firebase/auth';
 import Avatar from '@/components/ui/Avatar';
@@ -15,8 +15,7 @@ import { useToast } from '@/components/ui/Toast';
 import AddMemberModal from '@/components/portal/AddMemberModal';
 import ImportMembersModal from '@/components/portal/ImportMembersModal';
 import MemberCard from '@/components/portal/MemberCard';
-import PendingApprovals from '@/components/portal/PendingApprovals';
-import PageHeader from '@/components/portal/PageHeader';
+import PageHeader, { SectionHeader } from '@/components/portal/PageHeader';
 import PageContainer from '@/components/portal/PageContainer';
 import FilterBar, { FilterSelect, FilterChip, FilterChipRow } from '@/components/portal/FilterBar';
 import DataView, { ViewToggle, type ViewMode } from '@/components/portal/DataView';
@@ -69,6 +68,7 @@ export default function DirectoryPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [pendingExpanded, setPendingExpanded] = useState(false);
 
   const { member: currentMember } = useAuth();
   const { data: allMembers, loading } = useAllMembers();
@@ -293,8 +293,24 @@ export default function DirectoryPage() {
     <>
       <PageContainer width="default">
         <PageHeader
+          eyebrow="Portal"
           title="Member Directory"
-          subtitle="Connect with fellow leaders and change-makers in the NYC community."
+          subtitle={
+            loading ? (
+              'Connect with fellow leaders and change-makers in the NYC community.'
+            ) : (
+              <>
+                <span className="tabular-nums">{activeList.length}</span> active{' '}
+                {activeList.length === 1 ? 'member' : 'members'}
+                {alumniList.length > 0 && (
+                  <>
+                    {' · '}
+                    <span className="tabular-nums">{alumniList.length}</span> alumni
+                  </>
+                )}
+              </>
+            )
+          }
           actions={
             isAdmin && (
               <>
@@ -311,16 +327,75 @@ export default function DirectoryPage() {
           }
         />
 
-        {/* Admin-only pinned pending-approvals banner */}
-        {isAdmin && (
-          <PendingApprovals
-            members={pendingList}
-            onApprove={approveMember}
-            onReject={deleteMember}
-            canReject={isPresident}
-            busyId={busyId}
-            duplicateEmails={duplicateEmails}
-          />
+        {/* Admin-only pinned pending-approvals section */}
+        {isAdmin && pendingList.length > 0 && (
+          <section aria-label="Pending member approvals">
+            <SectionHeader title="Pending approval" count={pendingList.length} />
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+              <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+                {(pendingExpanded ? pendingList : pendingList.slice(0, 3)).map((m) => {
+                  const isDup = duplicateEmails.has((m.email || '').toLowerCase());
+                  const name =
+                    m.displayName || `${m.firstName || ''} ${m.lastName || ''}`.trim() || m.email;
+                  const busy = busyId === m.id;
+                  return (
+                    <li key={m.id} className="flex items-center gap-3 px-4 py-3">
+                      <Avatar src={m.photoURL} alt={name} size="md" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {name}
+                          </p>
+                          {m.role !== 'member' && (
+                            <Badge variant={roleColors[m.role] || 'gray'}>{m.role}</Badge>
+                          )}
+                          {m.boardTitle && <Badge variant="azure">{m.boardTitle}</Badge>}
+                          {isDup && <Badge variant="red">Duplicate email</Badge>}
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {m.email}
+                          {m.committee ? ` · ${m.committee}` : ''}
+                          {m.invitedAt ? ` · invited ${new Date(m.invitedAt).toLocaleDateString()}` : ''}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button size="sm" onClick={() => approveMember(m)} loading={busy} disabled={busy}>
+                          Approve
+                        </Button>
+                        {isPresident && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteMember(m)}
+                            disabled={busy}
+                            className="!text-red-600 hover:!bg-red-50 dark:!text-red-400 dark:hover:!bg-red-900/20"
+                          >
+                            Reject
+                          </Button>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              {pendingList.length > 3 && (
+                <button
+                  type="button"
+                  onClick={() => setPendingExpanded((v) => !v)}
+                  className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-t border-gray-100 dark:border-gray-800"
+                >
+                  {pendingExpanded ? 'Show fewer' : (
+                    <>
+                      Show all <span className="tabular-nums">{pendingList.length}</span>
+                    </>
+                  )}
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${pendingExpanded ? 'rotate-180' : ''}`}
+                  />
+                </button>
+              )}
+            </div>
+          </section>
         )}
 
         {/* Toolbar */}
@@ -410,7 +485,7 @@ export default function DirectoryPage() {
               ))}
             </div>
           ) : viewMode === 'list' ? (
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
               {filtered.map((m) => (
                 <MemberCard
                   key={m.id}
@@ -423,7 +498,7 @@ export default function DirectoryPage() {
             </div>
           ) : (
             /* Table view */
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 overflow-hidden">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>

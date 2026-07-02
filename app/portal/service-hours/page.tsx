@@ -10,6 +10,7 @@ import Tabs from '@/components/ui/Tabs';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
 import ServiceHourLogger from '@/components/portal/ServiceHourLogger';
+import PageHeader, { SectionHeader } from '@/components/portal/PageHeader';
 import type { ServiceHour, RotaractEvent } from '@/types';
 
 export default function ServiceHoursPage() {
@@ -93,53 +94,39 @@ export default function ServiceHoursPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 page-enter">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Service Hours</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Log and track your community service contributions.</p>
-        </div>
-        <Button onClick={() => setShowForm(!showForm)}>
-          {showForm ? (
-            'Cancel'
-          ) : (
-            <>
-              <svg aria-hidden="true" className="w-4 h-4 -ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              Log Hours
-            </>
-          )}
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Membership"
+        title="Service Hours"
+        subtitle="Log and track your community service contributions."
+        actions={
+          <Button onClick={() => setShowForm(!showForm)}>
+            {showForm ? (
+              'Cancel'
+            ) : (
+              <>
+                <svg aria-hidden="true" className="w-4 h-4 -ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Log Hours
+              </>
+            )}
+          </Button>
+        }
+      />
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-cranberry-50 dark:bg-cranberry-900/20 flex items-center justify-center">
-              <svg aria-hidden="true" className="w-4.5 h-4.5 text-cranberry" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </div>
-          </div>
-          <p className="text-2xl font-display font-bold text-gray-900 dark:text-white">{totalHours}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Total Hours</p>
+      <div className="grid grid-cols-3 divide-x divide-gray-200 dark:divide-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+        <div className="px-5 py-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">Total Hours</p>
+          <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums text-gray-900 dark:text-white">{totalHours}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-azure-50 dark:bg-azure-900/20 flex items-center justify-center">
-              <svg aria-hidden="true" className="w-4.5 h-4.5 text-azure" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-            </div>
-          </div>
-          <p className="text-2xl font-display font-bold text-gray-900 dark:text-white">{thisYearHours}</p>
-          <p className="text-xs text-gray-500 mt-0.5">This Year</p>
+        <div className="px-5 py-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">This Year</p>
+          <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums text-gray-900 dark:text-white">{thisYearHours}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
-              <svg aria-hidden="true" className="w-4.5 h-4.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </div>
-          </div>
-          <p className="text-2xl font-display font-bold text-gray-900 dark:text-white">{approvedHours.length}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Events Served</p>
+        <div className="px-5 py-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">Events Served</p>
+          <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums text-gray-900 dark:text-white">{approvedHours.length}</p>
         </div>
       </div>
 
@@ -156,21 +143,21 @@ export default function ServiceHoursPage() {
       {activeTab === 'review' && isBoardOrAbove ? (
         /* Board Review Tab */
         <div>
-          <h3 className="font-display font-bold text-gray-900 dark:text-white mb-4">Pending Approvals</h3>
+          <SectionHeader title="Pending Approvals" count={pendingEntries.length} />
           {pendingLoading ? (
             <div className="flex justify-center py-8"><Spinner /></div>
           ) : pendingEntries.length === 0 ? (
             <EmptyState icon={<svg aria-hidden="true" className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} title="All caught up" description="No pending service hours to review." />
           ) : (
-            <div className="space-y-3">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
               {pendingEntries.map((entry) => (
-                <div key={entry.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-4 sm:p-5">
+                <div key={entry.id} className="px-4 py-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
                         {entry.memberName || 'Member'} — {entry.eventTitle || 'Service Hours'}
                       </h4>
-                      <p className="text-xs text-gray-500 mt-1">{entry.hours} hours · {entry.date || ''}</p>
+                      <p className="text-xs text-gray-500 mt-1 tabular-nums">{entry.hours} hours · {entry.date || ''}</p>
                       {entry.notes && <p className="text-xs text-gray-400 mt-1">{entry.notes}</p>}
                     </div>
                     <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -202,15 +189,15 @@ export default function ServiceHoursPage() {
       ) : (
         /* My Hours Tab */
         <div>
-          <h3 className="font-display font-bold text-gray-900 dark:text-white mb-4">Recent Submissions</h3>
+          <SectionHeader title="Recent Submissions" count={serviceHours.length || undefined} />
           {loading ? (
             <div className="flex justify-center py-8"><Spinner /></div>
           ) : serviceHours.length === 0 ? (
             <EmptyState icon={<svg aria-hidden="true" className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} title="No service hours logged" description="Click 'Log Hours' to submit your first service contribution." />
           ) : (
-            <div className="space-y-3">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
               {serviceHours.map((entry) => (
-                <div key={entry.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-4 sm:p-5">
+                <div key={entry.id} className="px-4 py-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="font-semibold text-gray-900 dark:text-white text-sm">{entry.eventTitle || 'Service Hours'}</h4>
@@ -221,7 +208,7 @@ export default function ServiceHoursPage() {
                       {entry.notes && <p className="text-xs text-gray-400 mt-1">{entry.notes}</p>}
                     </div>
                     <div className="text-right">
-                      <p className="text-xl font-display font-bold text-cranberry">{entry.hours}</p>
+                      <p className="text-xl font-semibold tracking-tight tabular-nums text-gray-900 dark:text-white">{entry.hours}</p>
                       <p className="text-xs text-gray-400">hours</p>
                     </div>
                   </div>

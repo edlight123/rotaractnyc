@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils/cn';
 import type { ReactNode } from 'react';
 
 interface PageHeaderProps {
+  /** Eyebrow above the title — the sidebar section this page lives in ("Membership", "Admin"…). */
+  eyebrow?: string;
   /** Page title — rendered as the single standardized portal H1. */
   title: ReactNode;
   /** Optional supporting line beneath the title. */
@@ -27,6 +29,7 @@ interface PageHeaderProps {
  * so headers stop drifting in size/weight/color across the portal.
  */
 export default function PageHeader({
+  eyebrow,
   title,
   subtitle,
   actions,
@@ -39,7 +42,7 @@ export default function PageHeader({
   const showBack = Boolean(backHref || onBack);
 
   return (
-    <div className={cn('space-y-3', className)}>
+    <header className={cn('space-y-3 pb-6 border-b border-gray-200 dark:border-gray-800', className)}>
       {showBack &&
         (backHref ? (
           <Link
@@ -68,11 +71,14 @@ export default function PageHeader({
             </div>
           )}
           <div className="min-w-0">
-            <h1 className="text-2xl font-display font-bold tracking-tight text-gray-900 dark:text-white">
+            {eyebrow && (
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-1">{eyebrow}</p>
+            )}
+            <h1 className="text-2xl font-display font-semibold tracking-tight text-gray-900 dark:text-white">
               {title}
             </h1>
             {subtitle && (
-              <p className="mt-1 text-gray-500 dark:text-gray-400 max-w-2xl leading-relaxed">
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-2xl leading-relaxed">
                 {subtitle}
               </p>
             )}
@@ -81,6 +87,35 @@ export default function PageHeader({
 
         {actions && <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>}
       </div>
+    </header>
+  );
+}
+
+/**
+ * SectionHeader — ranked section headings inside a page. Carries its count so
+ * the page reads as an inventory ("Pending approval ·4·"), with an optional
+ * "View all" affordance on the right. (docs/PORTAL_DESIGN.md §7)
+ */
+export function SectionHeader({
+  title,
+  count,
+  action,
+  className,
+}: {
+  title: string;
+  count?: number | string;
+  action?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn('mb-3 flex items-baseline justify-between gap-3', className)}>
+      <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
+        {title}
+        {count !== undefined && (
+          <span className="ml-2 text-xs font-normal text-gray-400 tabular-nums">{count}</span>
+        )}
+      </h2>
+      {action}
     </div>
   );
 }
