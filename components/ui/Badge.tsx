@@ -17,7 +17,7 @@ const variants = {
 
 export default function Badge({ children, variant = 'gray', className }: BadgeProps) {
   return (
-    <span className={cn('inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold', variants[variant], className)}>
+    <span className={cn('inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium', variants[variant], className)}>
       {children}
     </span>
   );

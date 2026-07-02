@@ -347,7 +347,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
 
   return (
     <TutorialProvider>
-    <div className="min-h-screen bg-gray-50/50 dark:bg-[#0c0c0f]">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -400,7 +400,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
             return (
               <div key={si} className={cn(si > 0 && 'mt-5')} {...(section.title ? { 'data-tutorial': `section-${section.title.toLowerCase()}` } : {})}>
                 {section.title && (
-                  <p className="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400/80 dark:text-gray-500/80">
+                  <p className="px-2.5 mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">
                     {section.title}
                   </p>
                 )}
@@ -413,9 +413,9 @@ export default function PortalShell({ children }: { children: React.ReactNode })
                       aria-current={isActive(item.href) ? 'page' : undefined}
                       {...((item as any).tutorialId ? { 'data-tutorial': (item as any).tutorialId } : {})}
                       className={cn(
-                        'flex items-center gap-3 px-3 py-3 rounded-xl text-[13px] font-medium transition-all duration-150',
+                        'flex items-center gap-3 px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors duration-150',
                         isActive(item.href)
-                          ? 'bg-cranberry-50 text-cranberry-700 dark:bg-cranberry-900/20 dark:text-cranberry-400 shadow-sm'
+                          ? 'bg-cranberry-50 text-cranberry-800 dark:bg-cranberry-900/25 dark:text-cranberry-300'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800/60'
                       )}
                     >
@@ -546,8 +546,8 @@ export default function PortalShell({ children }: { children: React.ReactNode })
             {/* Only nag about dues when an active cycle actually exists — otherwise payment is impossible. */}
             {duesStatus === 'UNPAID' && duesCycleOpen && <div className="mb-6"><DuesBanner status={duesStatus} cycleName={duesCycleName} memberType={member?.memberType} /></div>}
             <AnnouncementBanner />
+            {children}
           </div>
-          {children}
         </main>
       </div>
 

@@ -12,8 +12,8 @@ interface CardProps {
 const paddings = {
   none: '',
   sm: 'p-4',
-  md: 'p-6',
-  lg: 'p-8',
+  md: 'p-5',
+  lg: 'p-6',
 };
 
 export default function Card({ children, className, interactive = false, padding = 'md', onClick }: CardProps) {
@@ -22,9 +22,8 @@ export default function Card({ children, className, interactive = false, padding
     <Component
       onClick={onClick}
       className={cn(
-        'bg-white rounded-2xl border border-gray-200/60 shadow-sm dark:bg-gray-900 dark:border-gray-800',
-        interactive && 'hover:shadow-md hover:border-cranberry-200 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer dark:hover:border-cranberry-800',
-        !interactive && 'transition-shadow duration-200',
+        'bg-white rounded-xl border border-gray-200 dark:bg-gray-900 dark:border-gray-800',
+        interactive && 'hover:border-gray-300 dark:hover:border-gray-700 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors duration-150 cursor-pointer',
         paddings[padding],
         className
       )}
