@@ -247,8 +247,10 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
               );
             })()}
 
-            {/* ── Tickets-left urgency nudge (hidden once sold out) ── */}
-            <TicketScarcity capacity={event.capacity} ticketsSold={ticketsSold} className="mt-10" />
+            {/* ── Tickets-left urgency nudge (hidden once sold out or ended) ── */}
+            {!eventHasEnded(event) && (
+              <TicketScarcity capacity={event.capacity} ticketsSold={ticketsSold} className="mt-10" />
+            )}
 
             {/* Pricing */}
             {event.pricing && (event.type === 'paid' || event.type === 'hybrid') && (

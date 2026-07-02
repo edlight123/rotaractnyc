@@ -207,8 +207,9 @@ export default function EventRegistration({
                 </div>
               )}
 
-              {/* ── Scarcity / urgency nudge — escalates as the event fills ── */}
-              <TicketScarcity capacity={event.capacity} ticketsSold={attendeeCount} />
+              {/* ── Scarcity / urgency nudge — escalates as the event fills;
+                    never shown for past events ── */}
+              {!isPast && <TicketScarcity capacity={event.capacity} ticketsSold={attendeeCount} />}
 
               {/* ── Current RSVP status ── */}
               {currentRSVP && (
