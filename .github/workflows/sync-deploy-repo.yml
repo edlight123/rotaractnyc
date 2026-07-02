@@ -1,0 +1,39 @@
+name: Sync to deploy repo
+
+# Vercel deploys from rcun-president/rotaractnyc (Settings → Git), but day-to-day
+# development happens in THIS repo (edlight123/rotaractnyc). This workflow keeps
+# the deploy repo in lockstep: every push to main here is force-pushed to the
+# deploy repo's main, which triggers the Vercel auto-deploy.
+#
+# Setup (one-time): create a fine-grained GitHub PAT on an account with WRITE
+# access to rcun-president/rotaractnyc (Contents: read & write on that repo
+# only), then add it to THIS repo's secrets as DEPLOY_REPO_PAT.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check secret is configured
+        run: |
+          if [ -z "${{ secrets.DEPLOY_REPO_PAT }}" ]; then
+            echo "::error::DEPLOY_REPO_PAT secret is not set — create a PAT with write access to rcun-president/rotaractnyc and add it to this repo's Actions secrets."
+            exit 1
+          fi
+
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push main to deploy repo
+        run: |
+          git push --force \
+            "https://x-access-token:${{ secrets.DEPLOY_REPO_PAT }}@github.com/rcun-president/rotaractnyc.git" \
+            HEAD:main
+          echo "✓ Synced $(git rev-parse --short HEAD) to rcun-president/rotaractnyc:main"

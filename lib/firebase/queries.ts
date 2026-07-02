@@ -148,6 +148,34 @@ export async function getBoardMembers(): Promise<BoardMember[]> {
   }
 }
 
+// ---- Past boards ----
+// One `pastBoards` doc per Rotary year (doc id = year slug, e.g. "2025-2026"),
+// written from the portal Board Manager. Newest year first.
+
+export interface PastBoard {
+  year: string;
+  members: Array<{ name: string; title: string; photoURL?: string }>;
+}
+
+export async function getPastBoards(): Promise<PastBoard[]> {
+  try {
+    const snap = await adminDb.collection('pastBoards').get();
+    return snap.docs
+      .map((d) => {
+        const data = d.data();
+        return {
+          year: String(data.year || d.id),
+          members: Array.isArray(data.members) ? data.members : [],
+        } as PastBoard;
+      })
+      .filter((b) => b.members.length > 0)
+      .sort((a, b) => b.year.localeCompare(a.year));
+  } catch (e) {
+    console.error('getPastBoards error:', e);
+    return [];
+  }
+}
+
 // ---- Gallery ----
 
 export async function getGalleryImages(): Promise<GalleryImage[]> {

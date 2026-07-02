@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import HeroSection from '@/components/public/HeroSection';
 import { generateMeta } from '@/lib/seo';
-import { getBoardMembers } from '@/lib/firebase/queries';
+import { getBoardMembers, getPastBoards } from '@/lib/firebase/queries';
 
 export const revalidate = 600; // 10 min — leadership rarely changes
 
@@ -64,8 +64,40 @@ function MemberCard({ member }: { member: Awaited<ReturnType<typeof getBoardMemb
   );
 }
 
+function PastBoardCard({ board }: { board: Awaited<ReturnType<typeof getPastBoards>>[number] }) {
+  return (
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6">
+      <h3 className="font-display font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <span className="text-cranberry">{board.year}</span>
+        <span className="text-xs font-normal text-gray-400">Rotary year</span>
+      </h3>
+      <ul className="space-y-2">
+        {board.members.map((m, i) => (
+          <li key={`${m.name}-${i}`} className="flex items-center gap-3 text-sm">
+            {m.photoURL ? (
+              <Image
+                src={m.photoURL}
+                alt={m.name}
+                width={28}
+                height={28}
+                className="w-7 h-7 rounded-full object-cover ring-1 ring-gray-200 dark:ring-gray-700 shrink-0"
+              />
+            ) : (
+              <span className="w-7 h-7 rounded-full bg-cranberry-100 dark:bg-cranberry-900/40 flex items-center justify-center text-[10px] font-bold text-cranberry shrink-0">
+                {(m.name || '').split(' ').map((w) => w?.[0] || '').join('').slice(0, 2).toUpperCase()}
+              </span>
+            )}
+            <span className="font-medium text-gray-900 dark:text-white">{m.name}</span>
+            <span className="text-gray-400 dark:text-gray-500 ml-auto text-xs text-right">{m.title}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default async function LeadershipPage() {
-  const board = await getBoardMembers();
+  const [board, pastBoards] = await Promise.all([getBoardMembers(), getPastBoards()]);
   const topRow = board.slice(0, 3);
   const bottomRow = board.slice(3);
 
@@ -91,6 +123,23 @@ export default async function LeadershipPage() {
                   <MemberCard member={member} />
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Past boards — archived rosters from previous Rotary years */}
+          {pastBoards.length > 0 && (
+            <div className="mt-16">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Past Boards</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Honoring the leaders who guided Rotaract NYC in previous years.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {pastBoards.map((pb) => (
+                  <PastBoardCard key={pb.year} board={pb} />
+                ))}
+              </div>
             </div>
           )}
 

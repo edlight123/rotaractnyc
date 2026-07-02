@@ -26,6 +26,8 @@ import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import Input from '@/components/ui/Input';
+import { apiGet, apiPost, apiDelete } from '@/hooks/useFirestore';
+import { getCurrentRotaryYear } from '@/lib/utils/rotaryYear';
 import { ROTARACT_BOARD_TITLES } from '@/lib/constants';
 import {
   Plus,
@@ -309,6 +311,146 @@ function EditTitleModal({ member, onSave, onClose }: EditTitleModalProps) {
 }
 
 // ─── Main page ───────────────────────────────────────────────────────────────
+
+// ─── Past Boards ─────────────────────────────────────────────────────────────
+// Archived rosters from previous Rotary years, shown here and on the public
+// /leadership page. "Archive current board" snapshots the live roster above.
+
+interface PastBoard {
+  year: string;
+  members: Array<{ name: string; title: string; photoURL?: string }>;
+}
+
+function PastBoardsSection({ isPresident }: { isPresident: boolean }) {
+  const { toast } = useToast();
+  const [boards, setBoards] = useState<PastBoard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [archiving, setArchiving] = useState(false);
+  const [showArchiveForm, setShowArchiveForm] = useState(false);
+  const [expandedYear, setExpandedYear] = useState<string | null>(null);
+  // Default to the PREVIOUS Rotary year — that's the board you usually archive.
+  const [archiveYear, setArchiveYear] = useState(() => {
+    const [start] = getCurrentRotaryYear().split('-').map(Number);
+    return `${start - 1}-${start}`;
+  });
+
+  const load = useCallback(async () => {
+    try {
+      const data = await apiGet('/api/portal/past-boards');
+      setBoards(data.boards || []);
+    } catch {
+      // non-fatal — section just shows empty
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const archiveCurrent = async () => {
+    if (!/^\d{4}-\d{4}$/.test(archiveYear.trim())) {
+      toast('Year must look like 2025-2026', 'error');
+      return;
+    }
+    setArchiving(true);
+    try {
+      const res = await apiPost('/api/portal/past-boards', { year: archiveYear.trim(), archiveCurrent: true });
+      toast(`Archived ${res.count} members as the ${res.year} board`);
+      setShowArchiveForm(false);
+      await load();
+    } catch (err: any) {
+      toast(err.message || 'Failed to archive board', 'error');
+    } finally {
+      setArchiving(false);
+    }
+  };
+
+  const deleteYear = async (year: string) => {
+    if (!confirm(`Delete the archived ${year} board? This removes it from the public Leadership page.`)) return;
+    try {
+      await apiDelete(`/api/portal/past-boards?year=${encodeURIComponent(year)}`);
+      toast(`Deleted ${year} board`);
+      await load();
+    } catch (err: any) {
+      toast(err.message || 'Failed to delete', 'error');
+    }
+  };
+
+  return (
+    <div className="pt-8">
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div>
+          <h2 className="text-lg font-display font-bold text-gray-900 dark:text-white">Past Boards</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            Archived rosters from previous Rotary years — shown on the public Leadership page.
+          </p>
+        </div>
+        <Button variant="secondary" size="sm" onClick={() => setShowArchiveForm((v) => !v)}>
+          Archive current board
+        </Button>
+      </div>
+
+      {showArchiveForm && (
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 mb-3 flex flex-col sm:flex-row sm:items-end gap-3">
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              Rotary year to file the current roster under
+            </label>
+            <Input value={archiveYear} onChange={(e) => setArchiveYear(e.target.value)} placeholder="2025-2026" />
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <Button size="sm" onClick={archiveCurrent} loading={archiving}>Archive</Button>
+            <Button size="sm" variant="secondary" onClick={() => setShowArchiveForm(false)}>Cancel</Button>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="py-8 flex justify-center"><Spinner /></div>
+      ) : boards.length === 0 ? (
+        <div className="text-center py-8 bg-white dark:bg-gray-900 rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
+          <p className="text-sm text-gray-400">No past boards archived yet.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {boards.map((pb) => (
+            <div key={pb.year} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+              <div className="flex items-center gap-3 px-4 py-3">
+                <button
+                  onClick={() => setExpandedYear(expandedYear === pb.year ? null : pb.year)}
+                  className="flex-1 flex items-center gap-2 text-left"
+                >
+                  <span className="text-sm font-semibold text-cranberry">{pb.year}</span>
+                  <span className="text-xs text-gray-400">{pb.members.length} members</span>
+                </button>
+                {isPresident && (
+                  <button
+                    onClick={() => deleteYear(pb.year)}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    title={`Delete ${pb.year} archive`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              {expandedYear === pb.year && (
+                <ul className="px-4 pb-3 space-y-1.5 border-t border-gray-100 dark:border-gray-800 pt-3">
+                  {pb.members.map((m, i) => (
+                    <li key={`${m.name}-${i}`} className="flex items-center gap-2 text-sm">
+                      <Avatar src={m.photoURL} alt={m.name} size="sm" />
+                      <span className="font-medium text-gray-900 dark:text-white">{m.name}</span>
+                      <span className="text-xs text-gray-400 ml-auto">{m.title}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function BoardManagerPage() {
   const { member, loading } = useAuth();
@@ -617,6 +759,9 @@ export default function BoardManagerPage() {
           ))}
         </div>
       )}
+
+      {/* Past boards */}
+      <PastBoardsSection isPresident={!!isPresident} />
 
       {/* Modals */}
       {showAdd && (
