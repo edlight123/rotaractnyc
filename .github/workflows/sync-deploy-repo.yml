@@ -27,9 +27,13 @@ jobs:
           fi
 
       - name: Checkout full history
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          # Don't persist the default GITHUB_TOKEN in git config — it would
+          # override the PAT in the push URL and the push would run as
+          # github-actions[bot], which has no access to the deploy repo.
+          persist-credentials: false
 
       - name: Push main to deploy repo
         run: |
