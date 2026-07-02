@@ -1,6 +1,7 @@
 'use client';
 
 import Card from '@/components/ui/Card';
+import { formatCurrency } from '@/lib/utils/format';
 import type { FinanceSummary } from '@/types';
 
 interface FinanceChartsProps {
@@ -23,8 +24,8 @@ export default function FinanceCharts({ summary }: FinanceChartsProps) {
               <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-500 font-medium w-16 sm:w-20">{m.month}</span>
                 <div className="flex gap-4">
-                  <span className="text-emerald-600">+${m.income.toLocaleString()}</span>
-                  <span className="text-red-500">-${m.expenses.toLocaleString()}</span>
+                  <span className="text-emerald-600">+{formatCurrency(m.income)}</span>
+                  <span className="text-red-500">-{formatCurrency(m.expenses)}</span>
                 </div>
               </div>
               <div className="flex gap-1 h-3">

@@ -328,7 +328,7 @@ export async function PATCH(request: NextRequest) {
       await createTransaction({
         type: 'income',
         category: 'Dues',
-        amount: resolvedAmount / 100, // cents → dollars for display
+        amount: resolvedAmount, // stored in cents — all finance amounts use cents (see finance page /100 display)
         description: `Offline dues payment — ${memberType || 'professional'} (${paymentMethod || 'cash'})${notes ? ` — ${notes}` : ''}`,
         date: paidAt,
         createdBy: user.displayName || user.uid,

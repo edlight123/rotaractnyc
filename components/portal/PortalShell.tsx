@@ -210,7 +210,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const { user, member, signOut, loading } = useAuth();
-  const { status: duesStatus } = useDues();
+  const { status: duesStatus, hasCycle: duesCycleOpen, cycleName: duesCycleName } = useDues();
   const unread = useUnreadCounts(!!member);
   const isAdmin = member?.role === 'board' || member?.role === 'president' || member?.role === 'treasurer';
   const { data: pendingMembers } = usePendingMembers(!!member && isAdmin);
@@ -532,7 +532,8 @@ export default function PortalShell({ children }: { children: React.ReactNode })
               use, so they line up with the page content instead of spanning
               the full main area and looking mismatched. */}
           <div className="max-w-5xl mx-auto">
-            {duesStatus === 'UNPAID' && <div className="mb-6"><DuesBanner status={duesStatus} memberType={member?.memberType} /></div>}
+            {/* Only nag about dues when an active cycle actually exists — otherwise payment is impossible. */}
+            {duesStatus === 'UNPAID' && duesCycleOpen && <div className="mb-6"><DuesBanner status={duesStatus} cycleName={duesCycleName} memberType={member?.memberType} /></div>}
             <AnnouncementBanner />
           </div>
           {children}

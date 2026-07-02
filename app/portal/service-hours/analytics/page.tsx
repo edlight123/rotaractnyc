@@ -45,8 +45,8 @@ interface AnalyticsData {
   myStats?: {
     totalApproved: number;
     totalPending: number;
-    rank: number;
-    percentile: number;
+    rank: number | null;
+    percentile: number | null;
     goal: number;
     progress: number;
   };
@@ -299,12 +299,22 @@ export default function ServiceHoursAnalyticsPage() {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    You&apos;re <span className="font-bold text-gray-900 dark:text-white">#{data.myStats.rank}</span> of {data.summary.totalMembers} members
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Top <span className="font-bold text-cranberry dark:text-cranberry-300">{data.myStats.percentile}%</span> of all members
-                  </p>
+                  {data.myStats.rank != null ? (
+                    <>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        You&apos;re <span className="font-bold text-gray-900 dark:text-white">#{data.myStats.rank}</span> of {data.summary.totalMembers} members
+                      </p>
+                      {data.myStats.percentile != null && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Top <span className="font-bold text-cranberry dark:text-cranberry-300">{data.myStats.percentile}%</span> of all members
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Not ranked yet — log your first service hours to join the leaderboard!
+                    </p>
+                  )}
                 </div>
               </div>
             </section>

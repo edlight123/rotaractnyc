@@ -20,10 +20,27 @@ async function requireBoard() {
   }
 }
 
-// GET — list all albums (for portal)
+// Any signed-in member (the gallery is member-facing; board is only needed for writes).
+async function requireMember() {
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get('rotaract_portal_session')?.value;
+  if (!sessionCookie) return null;
+  try {
+    const { uid } = await adminAuth.verifySessionCookie(sessionCookie, true);
+    const doc = await adminDb.collection('members').doc(uid).get();
+    if (!doc.exists) return null;
+    return { uid, member: doc.data() };
+  } catch {
+    return null;
+  }
+}
+
+// GET — list all albums (for portal). Member-accessible: the /portal/gallery
+// page is shown to every member, so gating this behind board caused regular
+// members to silently see an empty gallery.
 export async function GET() {
-  const board = await requireBoard();
-  if (!board) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await requireMember();
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
     const snap = await adminDb
@@ -31,7 +48,28 @@ export async function GET() {
       .orderBy('date', 'desc')
       .get();
 
-    const albums = snap.docs.map((doc) => serializeDoc({ id: doc.id, ...doc.data() }));
+    const albums = await Promise.all(
+      snap.docs.map(async (doc) => {
+        const album = serializeDoc({ id: doc.id, ...doc.data() }) as Record<string, unknown>;
+        // Fall back to the first photo when no cover was set, so index cards
+        // don't render blank.
+        if (!album.coverPhotoUrl) {
+          try {
+            const photoSnap = await adminDb
+              .collection('gallery')
+              .where('albumId', '==', doc.id)
+              .limit(1)
+              .get();
+            if (!photoSnap.empty) {
+              album.coverPhotoUrl = photoSnap.docs[0].data().url || null;
+            }
+          } catch {
+            // best-effort — leave cover null
+          }
+        }
+        return album;
+      }),
+    );
     return NextResponse.json(albums);
   } catch (error) {
     console.error('Error fetching albums:', error);

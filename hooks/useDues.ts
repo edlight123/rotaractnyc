@@ -10,6 +10,8 @@ interface DuesInfo {
   status: DuesPaymentStatus;
   cycleName: string;
   amount: number;
+  /** True only when an active dues cycle exists — no cycle means dues aren't collectable yet. */
+  hasCycle: boolean;
   loading: boolean;
 }
 
@@ -21,6 +23,7 @@ export function useDues(): DuesInfo {
   const [status, setStatus] = useState<DuesPaymentStatus>('UNPAID');
   const [cycleName, setCycleName] = useState(getCurrentRotaryYear());
   const [amount, setAmount] = useState(0);
+  const [hasCycle, setHasCycle] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,6 +35,7 @@ export function useDues(): DuesInfo {
     (async () => {
       try {
         const data = await apiGet('/api/portal/dues');
+        setHasCycle(!!data?.cycle);
         if (data?.dues?.status) setStatus(data.dues.status);
         if (data?.cycle?.name) setCycleName(data.cycle.name);
         if (data?.dues?.amount) setAmount(data.dues.amount);
@@ -43,5 +47,5 @@ export function useDues(): DuesInfo {
     })();
   }, [member?.id]);
 
-  return { status, cycleName, amount, loading };
+  return { status, cycleName, amount, hasCycle, loading };
 }

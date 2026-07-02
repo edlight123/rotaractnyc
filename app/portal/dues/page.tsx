@@ -54,6 +54,8 @@ export default function DuesPage() {
   const [duesStatus, setDuesStatus] = useState<DuesPaymentStatus>('UNPAID');
   const [cycleName, setCycleName] = useState('2025-2026');
   const [cycleAmounts, setCycleAmounts] = useState({ professional: SITE.dues.professional, student: SITE.dues.student });
+  // No active cycle → payment is impossible; show a "not open yet" state instead of the pay UI.
+  const [hasActiveCycle, setHasActiveCycle] = useState(false);
 
   // Payment settings
   const [paymentSettings, setPaymentSettings] = useState({ zelleIdentifier: '', zelleEnabled: true, venmoUsername: '', venmoEnabled: true, cashappUsername: '', cashappEnabled: true });
@@ -99,6 +101,7 @@ export default function DuesPage() {
         if (duesData?.dues?.status) setDuesStatus(duesData.dues.status);
         if (duesData?.cycle?.name) setCycleName(duesData.cycle.name);
         if (duesData?.cycle) {
+          setHasActiveCycle(true);
           setCycleAmounts({
             professional: duesData.cycle.amountProfessional ?? SITE.dues.professional,
             student: duesData.cycle.amountStudent ?? SITE.dues.student,
@@ -311,7 +314,16 @@ export default function DuesPage() {
               </Badge>
             </div>
 
-            {duesStatus === 'UNPAID' && (
+            {duesStatus === 'UNPAID' && !hasActiveCycle && (
+              <div className="mt-8 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-center space-y-2">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">Dues enrollment isn&apos;t open yet</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  The {cycleName} dues cycle hasn&apos;t been opened by the treasurer. You&apos;ll be able to pay here once it starts — no action needed right now.
+                </p>
+              </div>
+            )}
+
+            {duesStatus === 'UNPAID' && hasActiveCycle && (
               <div className="mt-8 space-y-6">
                 <div className="relative p-6 rounded-2xl border-2 border-cranberry bg-cranberry-50/50 dark:bg-cranberry-900/10 shadow-sm text-center">
                   <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-cranberry flex items-center justify-center">

@@ -13,7 +13,7 @@ import Tabs from '@/components/ui/Tabs';
 import EmptyState from '@/components/ui/EmptyState';
 import FileUpload from '@/components/ui/FileUpload';
 import FinanceCharts from '@/components/portal/FinanceCharts';
-import { formatCurrency } from '@/lib/utils/format';
+import { formatCurrency, formatDate } from '@/lib/utils/format';
 import type { FinanceSummary, Transaction, PaymentMethod } from '@/types';
 
 const CATEGORIES = {
@@ -325,7 +325,7 @@ export default function FinancePage() {
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                     {filtered.map((tx) => (
                       <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                        <td className="px-5 py-3 text-gray-500 whitespace-nowrap">{tx.date}</td>
+                        <td className="px-5 py-3 text-gray-500 whitespace-nowrap">{formatDate(tx.date, { month: 'short' })}</td>
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-2">
                             <div className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${tx.type === 'income' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400' : 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400'}`}>
@@ -389,7 +389,7 @@ export default function FinancePage() {
                       </div>
                       <div className="min-w-0">
                         <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{tx.description}</p>
-                        <p className="text-xs text-gray-400">{tx.date} · <span className="capitalize">{tx.category}</span></p>
+                        <p className="text-xs text-gray-400">{formatDate(tx.date, { month: 'short' })} · <span className="capitalize">{tx.category}</span></p>
                       </div>
                     </div>
                     <p className={`text-sm font-bold whitespace-nowrap ${tx.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}>

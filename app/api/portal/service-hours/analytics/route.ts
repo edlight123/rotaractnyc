@@ -197,14 +197,16 @@ export async function GET(request: NextRequest) {
       .filter((e) => e.memberId === currentUid && e.status === 'pending')
       .reduce((sum, e) => sum + (Number(e.hours) || 0), 0);
 
-    // Rank: position among all members with approved hours
+    // Rank: position among all members with approved hours.
+    // Members with no approved hours are unranked (rank/percentile null) —
+    // otherwise the percentile clamp made 0-hour members read as "Top 1%".
     const myRankIndex = sortedMembers.findIndex((m) => m.memberId === currentUid);
-    const myRank = myRankIndex >= 0 ? myRankIndex + 1 : sortedMembers.length + 1;
+    const isRanked = myRankIndex >= 0;
+    const myRank = isRanked ? myRankIndex + 1 : null;
     const totalRanked = Math.max(sortedMembers.length, 1);
-    const percentile = Math.max(
-      1,
-      Math.round(((totalRanked - myRank + 1) / totalRanked) * 100),
-    );
+    const percentile = isRanked
+      ? Math.max(1, Math.round(((totalRanked - (myRank as number) + 1) / totalRanked) * 100))
+      : null;
 
     const myStats = {
       totalApproved: Math.round(myApproved * 10) / 10,
