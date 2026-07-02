@@ -43,7 +43,21 @@ interface SendEmailOptions {
   attachments?: EmailAttachment[];
 }
 
+/**
+ * Global kill switch: set EMAILS_PAUSED=true in the environment to silently
+ * skip ALL outbound email (crons, welcome sequence, RSVP confirmations,
+ * broadcasts…). Sends report success so callers don't error or retry.
+ * Remove the env var (and redeploy) to resume sending.
+ */
+function emailsPaused(): boolean {
+  return process.env.EMAILS_PAUSED === 'true';
+}
+
 export async function sendEmail({ to, subject, html, replyTo, text, attachments }: SendEmailOptions) {
+  if (emailsPaused()) {
+    console.warn(`✋ EMAILS_PAUSED — skipped send: "${subject}" → ${Array.isArray(to) ? to.join(', ') : to}`);
+    return { success: true, id: 'paused-skip' };
+  }
   if (!process.env.RESEND_API_KEY) {
     console.warn('RESEND_API_KEY not set — email not sent:', subject);
     return { success: false, error: 'Email not configured' };
@@ -88,6 +102,10 @@ export async function sendBulkEmail(
   text?: string,
   attachments?: EmailAttachment[],
 ) {
+  if (emailsPaused()) {
+    console.warn(`✋ EMAILS_PAUSED — skipped bulk send: "${subject}" → ${recipients.length} recipients`);
+    return { sent: 0, failed: 0, total: recipients.length };
+  }
   if (!process.env.RESEND_API_KEY) {
     console.warn('RESEND_API_KEY not set — bulk email not sent:', subject);
     return { sent: 0, failed: recipients.length, total: recipients.length };
