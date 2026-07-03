@@ -69,6 +69,7 @@ export default function MembershipAdminPage() {
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
   const [provisioningId, setProvisioningId] = useState<string | null>(null);
+  const [suspendingId, setSuspendingId] = useState<string | null>(null);
   const [provisionResults, setProvisionResults] = useState<Record<string, ProvisionResult>>({});
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [provisionAllRunning, setProvisionAllRunning] = useState(false);
@@ -130,6 +131,13 @@ export default function MembershipAdminPage() {
     [active, provisionResults],
   );
 
+  // Active people (never role/org accounts) who already have an @rotaractnyc.org
+  // address — candidates for suspension.
+  const hasOrgEmail = useMemo(
+    () => active.filter((m) => !m.isRoleAccount && !!m.orgEmail),
+    [active],
+  );
+
   const setStatus = async (m: MemberRow, status: 'active' | 'rejected') => {
     setActingId(m.id);
     try {
@@ -188,6 +196,31 @@ export default function MembershipAdminPage() {
       await provisionOne(m);
     } finally {
       setProvisioningId(null);
+    }
+  };
+
+  const suspend = async (m: MemberRow) => {
+    if (!m.orgEmail) return;
+    if (
+      !confirm(
+        `Suspend ${m.orgEmail}? Reversible in Google Admin; clears their profile org email.`,
+      )
+    )
+      return;
+    setSuspendingId(m.id);
+    try {
+      const res = await fetch(`/api/portal/members/${m.id}/deprovision`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast(data.error || `Failed to suspend ${nameOf(m)}`, 'error');
+        return;
+      }
+      toast(`Suspended ${data.suspendedEmail}`);
+      await load();
+    } catch {
+      toast(`Failed to suspend ${nameOf(m)}`, 'error');
+    } finally {
+      setSuspendingId(null);
     }
   };
 
@@ -407,6 +440,39 @@ export default function MembershipAdminPage() {
                   </div>
                 );
               })}
+          </div>
+        )}
+
+        {/* Provisioned accounts — active members who already have an org email */}
+        {hasOrgEmail.length > 0 && (
+          <div className="mt-6">
+            <SectionHeader title="Provisioned accounts" count={hasOrgEmail.length} />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              Active members with an @rotaractnyc.org address. Suspending is reversible in Google Admin.
+            </p>
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
+              {hasOrgEmail.map((m) => (
+                <div key={m.id} className="flex items-center gap-3 px-4 py-3">
+                  <Avatar src={m.photoURL} alt={nameOf(m)} size="sm" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{nameOf(m)}</p>
+                    <code className="text-xs text-gray-500 truncate block">{m.orgEmail}</code>
+                  </div>
+                  <div className="shrink-0">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-600 hover:text-red-700"
+                      onClick={() => suspend(m)}
+                      loading={suspendingId === m.id}
+                      disabled={suspendingId !== null && suspendingId !== m.id}
+                    >
+                      Suspend
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </section>

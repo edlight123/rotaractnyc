@@ -202,6 +202,7 @@ export default function PortalMemberDetailPage() {
 
   // Admin: provision org email (Workspace account)
   const [provisioning, setProvisioning] = useState(false);
+  const [suspending, setSuspending] = useState(false);
   const [provisionResult, setProvisionResult] = useState<{
     orgEmail: string;
     temporaryPassword: string;
@@ -367,6 +368,36 @@ export default function PortalMemberDetailPage() {
       toast(err?.message || 'Failed to provision org email', 'error');
     } finally {
       setProvisioning(false);
+    }
+  }
+
+  async function suspendOrgAccount() {
+    if (!member || suspending || !member.orgEmail) return;
+    if (
+      !confirm(
+        `Suspend ${member.orgEmail}? They'll lose access to that mailbox. This can be reversed in Google Admin. The org email will be cleared from their profile.`
+      )
+    )
+      return;
+    setSuspending(true);
+    try {
+      const res = await fetch(`/api/portal/members/${member.id}/deprovision`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || 'Failed to suspend org account');
+      }
+      // Optimistically clear the org email, then reconcile from the server.
+      setMember((m) => (m ? { ...m, orgEmail: undefined } : m));
+      toast(`Suspended ${data.suspendedEmail}`, 'success');
+      await fetchMember();
+    } catch (err: any) {
+      toast(err?.message || 'Failed to suspend org account', 'error');
+    } finally {
+      setSuspending(false);
     }
   }
 
@@ -811,7 +842,7 @@ export default function PortalMemberDetailPage() {
 
           <div className="flex items-center justify-between gap-2 flex-wrap pt-2 border-t border-gray-100 dark:border-gray-800">
             <div>
-              {!member.orgEmail && (
+              {!member.orgEmail ? (
                 <Button
                   variant="outline"
                   onClick={provisionOrgEmail}
@@ -821,6 +852,15 @@ export default function PortalMemberDetailPage() {
                   <Mail className="w-4 h-4 mr-1.5 inline" />
                   Provision org email
                 </Button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={suspendOrgAccount}
+                  disabled={suspending}
+                  className="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {suspending ? 'Suspending…' : 'Suspend org account'}
+                </button>
               )}
             </div>
             <div className="flex items-center justify-end gap-2 flex-wrap">
