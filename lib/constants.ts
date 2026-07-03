@@ -28,7 +28,11 @@ export const SITE = {
   name: 'Rotaract Club at the United Nations NYC',
   shortName: 'Rotaract NYC',
   domain: 'rotaractnyc.org',
-  url: 'https://rotaractnyc.org',
+  // Canonical host is www — the apex 307-redirects to it. QR image URLs and
+  // email links must point at www directly: a cross-origin apex→www redirect
+  // is not followed by <img> tags or most email clients, which broke ticket
+  // QR codes on /account/tickets and in event emails.
+  url: 'https://www.rotaractnyc.org',
   email: 'info@rotaractnyc.org',
   address: '216 East 45th Street, New York, NY 10017',
   meetingSchedule: 'Every 2nd & 4th Thursday, 7:00–8:00 PM',
