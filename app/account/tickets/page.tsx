@@ -40,6 +40,50 @@ export default function AccountTicketsPage() {
   const router = useRouter();
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [cancellingKey, setCancellingKey] = useState<string | null>(null);
+
+  const handleCancel = async (ticket: Ticket) => {
+    const isPaid =
+      ticket.paymentStatus === 'paid' || ticket.paymentStatus === 'pending_offline';
+    const consequence = isPaid
+      ? `This will cancel your reservation for ${ticket.eventTitle}${
+          ticket.paymentStatus === 'paid'
+            ? ' and issue a full refund to your original payment method'
+            : ''
+        }. This can’t be undone.`
+      : `This will cancel your reservation for ${ticket.eventTitle}. This can’t be undone.`;
+    if (!window.confirm(consequence)) return;
+
+    const key = `${ticket.kind}-${ticket.id}`;
+    setCancellingKey(key);
+    setError('');
+    setNotice('');
+    try {
+      const res = await fetch('/api/account/tickets/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kind: ticket.kind,
+          ticketId: ticket.id,
+          eventId: ticket.eventId,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || 'We couldn’t cancel this reservation. Please try again.');
+        return;
+      }
+      setTickets((prev) =>
+        prev ? prev.filter((t) => !(t.kind === ticket.kind && t.id === ticket.id)) : prev,
+      );
+      setNotice(data.message || 'Your reservation has been cancelled.');
+    } catch {
+      setError('We couldn’t cancel this reservation. Please try again.');
+    } finally {
+      setCancellingKey(null);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -79,6 +123,12 @@ export default function AccountTicketsPage() {
         </div>
       )}
 
+      {notice && (
+        <div className="mb-4 p-3 rounded-xl border border-green-200 bg-green-50 text-sm text-green-700 dark:bg-green-900/10 dark:border-green-800 dark:text-green-400">
+          {notice}
+        </div>
+      )}
+
       {tickets === null && !error && (
         <div className="flex justify-center py-16">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-cranberry" />
@@ -100,7 +150,12 @@ export default function AccountTicketsPage() {
       {upcoming.length > 0 && (
         <section className="space-y-4">
           {upcoming.map((t) => (
-            <TicketCard key={`${t.kind}-${t.id}`} ticket={t} />
+            <TicketCard
+              key={`${t.kind}-${t.id}`}
+              ticket={t}
+              onCancel={handleCancel}
+              cancelling={cancellingKey === `${t.kind}-${t.id}`}
+            />
           ))}
         </section>
       )}
@@ -139,7 +194,16 @@ export default function AccountTicketsPage() {
   );
 }
 
-function TicketCard({ ticket }: { ticket: Ticket }) {
+function TicketCard({
+  ticket,
+  onCancel,
+  cancelling,
+}: {
+  ticket: Ticket;
+  onCancel: (ticket: Ticket) => void;
+  cancelling: boolean;
+}) {
+  const isPaid = ticket.paymentStatus === 'paid';
   return (
     <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
       <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-start justify-between gap-4">
@@ -196,6 +260,23 @@ function TicketCard({ ticket }: { ticket: Ticket }) {
       ) : (
         <div className="px-5 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
           QR code unavailable. Please contact us if you need help at the door.
+        </div>
+      )}
+
+      {!ticket.checkedIn && (
+        <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+          <button
+            type="button"
+            onClick={() => onCancel(ticket)}
+            disabled={cancelling}
+            className="text-xs font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {cancelling
+              ? 'Cancelling…'
+              : isPaid
+              ? 'Cancel & refund'
+              : 'Cancel reservation'}
+          </button>
         </div>
       )}
     </div>
