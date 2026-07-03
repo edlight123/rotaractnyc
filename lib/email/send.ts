@@ -41,6 +41,13 @@ interface SendEmailOptions {
   replyTo?: string;
   text?: string;
   attachments?: EmailAttachment[];
+  /**
+   * Bypass the EMAILS_PAUSED kill switch for a single transactional send.
+   * Use ONLY for admin-initiated, one-recipient, credential-style messages
+   * (e.g. Workspace account provisioning) where the recipient needs the email
+   * to use the thing that was just created. Never set this on bulk/cron sends.
+   */
+  ignorePause?: boolean;
 }
 
 /**
@@ -53,8 +60,8 @@ function emailsPaused(): boolean {
   return process.env.EMAILS_PAUSED === 'true';
 }
 
-export async function sendEmail({ to, subject, html, replyTo, text, attachments }: SendEmailOptions) {
-  if (emailsPaused()) {
+export async function sendEmail({ to, subject, html, replyTo, text, attachments, ignorePause }: SendEmailOptions) {
+  if (emailsPaused() && !ignorePause) {
     console.warn(`✋ EMAILS_PAUSED — skipped send: "${subject}" → ${Array.isArray(to) ? to.join(', ') : to}`);
     return { success: true, id: 'paused-skip' };
   }

@@ -48,6 +48,10 @@ export async function POST(
     }
 
     const { id } = await params;
+    // `force: true` re-provisions a member whose previous org account was
+    // deleted in the Admin console (bypasses the already-provisioned guard).
+    const body = await request.json().catch(() => ({}));
+    const force = body?.force === true;
 
     // ── Member must exist ──
     const memberRef = adminDb.collection('members').doc(id);
@@ -66,8 +70,8 @@ export async function POST(
       );
     }
 
-    // ── Already-provisioned guard ──
-    if (member.orgEmail) {
+    // ── Already-provisioned guard (skip when re-provisioning) ──
+    if (member.orgEmail && !force) {
       return NextResponse.json(
         { error: 'This member already has an org email.', orgEmail: member.orgEmail },
         { status: 409 },
@@ -119,9 +123,13 @@ export async function POST(
     });
 
     // ── Welcome email (best-effort, non-blocking) ──
+    // Credential delivery is transactional and admin-initiated, so it bypasses
+    // the global EMAILS_PAUSED switch (ignorePause) — the new member needs the
+    // sign-in details for the account we just created.
     const paused = process.env.EMAILS_PAUSED === 'true';
     let emailed = false;
-    if (!paused && personalEmail) {
+    let emailError: string | null = null;
+    if (personalEmail) {
       try {
         const { sendEmail } = await import('@/lib/email/send');
         const { memberWorkspaceWelcomeEmail } = await import('@/lib/email/templates');
@@ -136,9 +144,12 @@ export async function POST(
           subject: template.subject,
           html: template.html,
           text: template.text,
+          ignorePause: true,
         });
         emailed = result.success === true;
-      } catch (emailErr) {
+        if (!emailed) emailError = (result as { error?: string }).error || 'send failed';
+      } catch (emailErr: any) {
+        emailError = emailErr?.message || 'send failed';
         console.error('Workspace welcome email failed (non-blocking):', emailErr);
       }
     }
@@ -149,6 +160,8 @@ export async function POST(
       orgEmail,
       temporaryPassword: created.temporaryPassword,
       emailed,
+      emailError,
+      // Kept for the UI's messaging; credential emails now send even while paused.
       paused,
     });
   } catch (error: any) {
