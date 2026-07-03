@@ -448,6 +448,29 @@ export async function PATCH(request: NextRequest) {
         });
         if (!holders.empty) await batch.commit();
         updates.roleEmail = officeEmail;
+
+        // Best-effort Gmail delegation transfer: revoke the previous holders'
+        // access to the office mailbox, grant the new holder's (requires the
+        // gmail.settings.sharing DWD scope + an in-domain delegate address —
+        // failures are logged, never block the title change).
+        try {
+          const { grantOfficeDelegate, revokeOfficeDelegate } = await import('@/lib/google/delegation');
+          for (const d of holders.docs) {
+            if (d.id === memberId) continue;
+            const prevEmail = String(d.data().email || '').toLowerCase();
+            if (prevEmail) {
+              const r = await revokeOfficeDelegate(officeEmail, prevEmail);
+              if (!r.ok) console.warn(`[delegation] revoke ${prevEmail} on ${officeEmail}: ${r.reason}`);
+            }
+          }
+          const newHolderEmail = String(memberDoc.data()?.email || '').toLowerCase();
+          if (newHolderEmail) {
+            const r = await grantOfficeDelegate(officeEmail, newHolderEmail);
+            if (!r.ok) console.warn(`[delegation] grant ${newHolderEmail} on ${officeEmail}: ${r.reason}`);
+          }
+        } catch (err) {
+          console.warn('[delegation] office mailbox delegation failed (non-blocking):', err);
+        }
       } else {
         // New title has no office mailbox — release a stale one if held
         const currentRoleEmail = (memberDoc.data()?.roleEmail as string) || '';
