@@ -83,13 +83,12 @@ function ctaButton(label: string, href: string, secondary = false): string {
     </table>`;
 }
 
-/** Info card with a left-side crimson accent bar. */
+/** Clean, quietly-bordered info card (no colored accent bar). */
 function infoCard(lines: string): string {
   return `
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 20px 0; border-radius: 8px; overflow: hidden; border: 1px solid ${GRAY_BORDER};">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 20px 0; border-radius: 10px; border: 1px solid ${GRAY_BORDER};">
       <tr>
-        <td width="4" style="background-color: ${CRIMSON};"></td>
-        <td style="background-color: #FAFAFA; padding: 18px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+        <td style="background-color: #FAFAFA; padding: 18px 22px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
           ${lines}
         </td>
       </tr>
