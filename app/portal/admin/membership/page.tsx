@@ -23,6 +23,7 @@ import Badge from '@/components/ui/Badge';
 import { apiPatch } from '@/hooks/useFirestore';
 import { canManageMembership } from '@/lib/permissions';
 import { formatDate } from '@/lib/utils/format';
+import { SectionHeader } from '@/components/portal/PageHeader';
 
 interface MemberRow {
   id: string;
@@ -39,6 +40,16 @@ interface MemberRow {
   linkedIn?: string;
   committee?: string;
   onboardingComplete?: boolean;
+  orgEmail?: string;
+  personalEmail?: string;
+  isRoleAccount?: boolean;
+}
+
+interface ProvisionResult {
+  orgEmail: string;
+  temporaryPassword: string;
+  emailed: boolean;
+  paused: boolean;
 }
 
 const nameOf = (m: MemberRow) =>
@@ -57,6 +68,11 @@ export default function MembershipAdminPage() {
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
+  const [provisioningId, setProvisioningId] = useState<string | null>(null);
+  const [provisionResults, setProvisionResults] = useState<Record<string, ProvisionResult>>({});
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [provisionAllRunning, setProvisionAllRunning] = useState(false);
+  const [provisionAllProgress, setProvisionAllProgress] = useState<{ done: number; total: number } | null>(null);
 
   const allowed = canManageMembership(member);
 
@@ -107,6 +123,13 @@ export default function MembershipAdminPage() {
     [active],
   );
 
+  // Active people (never role/org accounts) who don't yet have an @rotaractnyc.org
+  // address. Members already provisioned this session are dropped once done.
+  const needsOrgEmail = useMemo(
+    () => active.filter((m) => !m.isRoleAccount && !m.orgEmail && !provisionResults[m.id]),
+    [active, provisionResults],
+  );
+
   const setStatus = async (m: MemberRow, status: 'active' | 'rejected') => {
     setActingId(m.id);
     try {
@@ -118,6 +141,70 @@ export default function MembershipAdminPage() {
     } finally {
       setActingId(null);
     }
+  };
+
+  const copy = useCallback(
+    async (key: string, value: string) => {
+      try {
+        await navigator.clipboard.writeText(value);
+        setCopiedKey(key);
+        setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500);
+      } catch {
+        toast('Copy failed — select and copy manually', 'error');
+      }
+    },
+    [toast],
+  );
+
+  /** Provision one member. Returns the result on success, null on failure. */
+  const provisionOne = useCallback(
+    async (m: MemberRow): Promise<ProvisionResult | null> => {
+      try {
+        const res = await fetch(`/api/portal/members/${m.id}/provision`, { method: 'POST' });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          toast(data.error || `Failed to provision ${nameOf(m)}`, 'error');
+          return null;
+        }
+        const result: ProvisionResult = {
+          orgEmail: data.orgEmail,
+          temporaryPassword: data.temporaryPassword,
+          emailed: !!data.emailed,
+          paused: !!data.paused,
+        };
+        setProvisionResults((prev) => ({ ...prev, [m.id]: result }));
+        return result;
+      } catch {
+        toast(`Failed to provision ${nameOf(m)}`, 'error');
+        return null;
+      }
+    },
+    [toast],
+  );
+
+  const provision = async (m: MemberRow) => {
+    setProvisioningId(m.id);
+    try {
+      await provisionOne(m);
+    } finally {
+      setProvisioningId(null);
+    }
+  };
+
+  const provisionAll = async () => {
+    const queue = needsOrgEmail;
+    if (queue.length === 0) return;
+    setProvisionAllRunning(true);
+    setProvisionAllProgress({ done: 0, total: queue.length });
+    let ok = 0;
+    for (let i = 0; i < queue.length; i++) {
+      const result = await provisionOne(queue[i]);
+      if (result) ok++;
+      setProvisionAllProgress({ done: i + 1, total: queue.length });
+    }
+    setProvisionAllRunning(false);
+    setProvisionAllProgress(null);
+    toast(`Provisioned ${ok} of ${queue.length} member${queue.length === 1 ? '' : 's'}`);
   };
 
   if (authLoading || (allowed && loading)) {
@@ -221,6 +308,105 @@ export default function MembershipAdminPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+      </section>
+
+      {/* Org email accounts */}
+      <section>
+        <SectionHeader
+          title="Org email accounts"
+          count={needsOrgEmail.length}
+          action={
+            needsOrgEmail.length > 0 ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={provisionAll}
+                loading={provisionAllRunning}
+                disabled={provisioningId !== null}
+              >
+                {provisionAllRunning && provisionAllProgress
+                  ? `Provisioning ${provisionAllProgress.done}/${provisionAllProgress.total}…`
+                  : `Provision all (${needsOrgEmail.length})`}
+              </Button>
+            ) : undefined
+          }
+        />
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+          Active members without an @rotaractnyc.org address. Emails are paused, so the temporary
+          password shown here is the primary way to hand off credentials.
+        </p>
+
+        {needsOrgEmail.length === 0 && Object.keys(provisionResults).length === 0 ? (
+          <div className="text-center py-8 bg-white dark:bg-gray-900 rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
+            <p className="text-sm text-gray-400">Every active member has an org email 🎉</p>
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
+            {/* Members still needing an org email */}
+            {needsOrgEmail.map((m) => (
+              <div key={m.id} className="flex items-center gap-3 px-4 py-3">
+                <Avatar src={m.photoURL} alt={nameOf(m)} size="sm" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{nameOf(m)}</p>
+                  <p className="text-xs text-gray-500 truncate">{m.personalEmail || m.email || 'No email on file'}</p>
+                </div>
+                <div className="shrink-0">
+                  <Button
+                    size="sm"
+                    onClick={() => provision(m)}
+                    loading={provisioningId === m.id}
+                    disabled={provisionAllRunning || (provisioningId !== null && provisioningId !== m.id)}
+                  >
+                    Provision
+                  </Button>
+                </div>
+              </div>
+            ))}
+
+            {/* Freshly provisioned this session — credentials to hand off */}
+            {active
+              .filter((m) => provisionResults[m.id])
+              .map((m) => {
+                const r = provisionResults[m.id];
+                const emailKey = `email-${m.id}`;
+                const pwKey = `pw-${m.id}`;
+                return (
+                  <div key={m.id} className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar src={m.photoURL} alt={nameOf(m)} size="sm" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{nameOf(m)}</p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {r.paused
+                            ? 'Emails paused — share manually'
+                            : r.emailed
+                              ? 'Emailed to personal address'
+                              : 'Provisioned'}
+                        </p>
+                      </div>
+                      <Badge variant="green" className="shrink-0">Provisioned</Badge>
+                    </div>
+                    <div className="mt-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500 w-20 shrink-0">Email</span>
+                        <code className="flex-1 min-w-0 truncate text-sm text-gray-900 dark:text-gray-100">{r.orgEmail}</code>
+                        <Button size="sm" variant="ghost" onClick={() => copy(emailKey, r.orgEmail)}>
+                          {copiedKey === emailKey ? 'Copied' : 'Copy'}
+                        </Button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500 w-20 shrink-0">Password</span>
+                        <code className="flex-1 min-w-0 truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{r.temporaryPassword}</code>
+                        <Button size="sm" onClick={() => copy(pwKey, r.temporaryPassword)}>
+                          {copiedKey === pwKey ? 'Copied' : 'Copy'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         )}
       </section>

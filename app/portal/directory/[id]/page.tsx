@@ -40,6 +40,9 @@ import PageHeader from '@/components/portal/PageHeader';
 import { DetailSkeleton } from '@/components/ui/Skeleton';
 import type { Member, MemberRole, MemberStatus } from '@/types';
 
+/** Member as returned by the detail GET, including the org login email (added at provisioning). */
+type MemberDetail = Member & { orgEmail?: string };
+
 const roleColors: Record<string, 'cranberry' | 'gold' | 'azure' | 'gray'> = {
   president: 'cranberry',
   treasurer: 'gold',
@@ -130,7 +133,7 @@ export default function PortalMemberDetailPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { member: currentMember } = useAuth();
-  const [member, setMember] = useState<Member | null>(null);
+  const [member, setMember] = useState<MemberDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [msgOpen, setMsgOpen] = useState(false);
   const [savingAdmin, setSavingAdmin] = useState(false);
@@ -197,10 +200,20 @@ export default function PortalMemberDetailPage() {
   const photoRef = useRef<HTMLInputElement>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
+  // Admin: provision org email (Workspace account)
+  const [provisioning, setProvisioning] = useState(false);
+  const [provisionResult, setProvisionResult] = useState<{
+    orgEmail: string;
+    temporaryPassword: string;
+    emailed: boolean;
+    paused: boolean;
+  } | null>(null);
+  const [copied, setCopied] = useState<'email' | 'password' | null>(null);
+
   const fetchMember = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiGet<Member>(`/api/portal/members?id=${id}`);
+      const data = await apiGet<MemberDetail>(`/api/portal/members?id=${id}`);
       setMember(data);
       setAdminForm({
         role: (data?.role as MemberRole) || 'member',
@@ -312,6 +325,58 @@ export default function PortalMemberDetailPage() {
     } catch (err: any) {
       toast(err?.message || 'Failed to delete member', 'error');
       setSavingAdmin(false);
+    }
+  }
+
+  async function provisionOrgEmail() {
+    if (!member || provisioning) return;
+    const recovery = member.email || 'their current email';
+    if (
+      !confirm(
+        `This creates a first.last@rotaractnyc.org Google Workspace account for ${member.displayName || 'this member'}, using ${recovery} as the recovery email. Continue?`
+      )
+    )
+      return;
+    setProvisioning(true);
+    try {
+      const res = await fetch(`/api/portal/members/${member.id}/provision`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 409) {
+        toast(data?.error || 'Member already has an org email', 'error');
+        await fetchMember();
+        return;
+      }
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || 'Failed to provision org email');
+      }
+      // Optimistically reflect the new org email, then reconcile from the server.
+      setMember((m) => (m ? { ...m, orgEmail: data.orgEmail } : m));
+      setProvisionResult({
+        orgEmail: data.orgEmail,
+        temporaryPassword: data.temporaryPassword,
+        emailed: !!data.emailed,
+        paused: !!data.paused,
+      });
+      toast('Org email provisioned', 'success');
+      await fetchMember();
+    } catch (err: any) {
+      toast(err?.message || 'Failed to provision org email', 'error');
+    } finally {
+      setProvisioning(false);
+    }
+  }
+
+  async function copyToClipboard(text: string, which: 'email' | 'password') {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(which);
+      setTimeout(() => setCopied((c) => (c === which ? null : c)), 1500);
+    } catch {
+      toast('Could not copy to clipboard', 'error');
     }
   }
 
@@ -485,6 +550,7 @@ export default function PortalMemberDetailPage() {
       <div className="grid sm:grid-cols-2 gap-6">
         {/* Contact */}
         {(member.email ||
+          (member.orgEmail && (isBoard || isSelf)) ||
           (member.roleEmail && (isBoard || isSelf)) ||
           (member.phone && (isBoard || isSelf)) ||
           (member.address && (isBoard || isSelf))) && (
@@ -492,6 +558,11 @@ export default function PortalMemberDetailPage() {
             {member.email && (
               <PropertyRow icon={Mail} label="Email" href={`mailto:${member.email}`}>
                 {member.email}
+              </PropertyRow>
+            )}
+            {member.orgEmail && (isBoard || isSelf) && (
+              <PropertyRow icon={Mail} label="Org Email" adminOnly href={`mailto:${member.orgEmail}`}>
+                {member.orgEmail}
               </PropertyRow>
             )}
             {member.roleEmail && (isBoard || isSelf) && (
@@ -738,16 +809,95 @@ export default function PortalMemberDetailPage() {
             />
           </div>
 
-          <div className="flex items-center justify-end gap-2 flex-wrap pt-2 border-t border-gray-100 dark:border-gray-800">
-            {isPresident && (
-              <Button variant="outline" onClick={deleteMember} disabled={savingAdmin}>
-                Delete Member
+          <div className="flex items-center justify-between gap-2 flex-wrap pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div>
+              {!member.orgEmail && (
+                <Button
+                  variant="outline"
+                  onClick={provisionOrgEmail}
+                  loading={provisioning}
+                  disabled={provisioning}
+                >
+                  <Mail className="w-4 h-4 mr-1.5 inline" />
+                  Provision org email
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center justify-end gap-2 flex-wrap">
+              {isPresident && (
+                <Button variant="outline" onClick={deleteMember} disabled={savingAdmin}>
+                  Delete Member
+                </Button>
+              )}
+              <Button onClick={saveAdminChanges} loading={savingAdmin}>
+                Save Changes
               </Button>
-            )}
-            <Button onClick={saveAdminChanges} loading={savingAdmin}>
-              Save Changes
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Provisioning result: temporary credentials (shown once) */}
+      {isBoard && provisionResult && (
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Org email created</h3>
+              <p className="text-xs text-gray-500 mt-0.5">
+                This temporary password is shown only once — copy it now.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setProvisionResult(null)}
+            >
+              Dismiss
             </Button>
           </div>
+
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+            <div className="flex items-center justify-between gap-3 py-2.5">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">Org Email</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white break-all">
+                  {provisionResult.orgEmail}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => copyToClipboard(provisionResult.orgEmail, 'email')}
+              >
+                {copied === 'email' ? 'Copied' : 'Copy'}
+              </Button>
+            </div>
+            <div className="flex items-center justify-between gap-3 py-2.5">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">
+                  Temporary Password
+                </p>
+                <p className="text-sm font-medium font-mono text-gray-900 dark:text-white break-all">
+                  {provisionResult.temporaryPassword}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => copyToClipboard(provisionResult.temporaryPassword, 'password')}
+              >
+                {copied === 'password' ? 'Copied' : 'Copy'}
+              </Button>
+            </div>
+          </div>
+
+          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+            {provisionResult.paused
+              ? 'Email delivery is currently paused — share these sign-in details with the member manually.'
+              : provisionResult.emailed
+                ? 'Sign-in details were emailed to their personal address.'
+                : 'Share these sign-in details with the member.'}
+          </p>
         </div>
       )}
 
