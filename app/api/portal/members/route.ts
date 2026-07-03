@@ -417,6 +417,44 @@ export async function PATCH(request: NextRequest) {
     // Board title (free-form, but only meaningful for board roles)
     if (typeof boardTitle === 'string') {
       updates.boardTitle = boardTitle.trim();
+
+      // ── Office email transfer ──
+      // Offices own their mailbox (president@…), people just hold them for a
+      // term. When a title is (re)assigned via the Board Manager, the office's
+      // roleEmail moves automatically: stripped from the previous holder,
+      // set on the new one. Titles without an office mailbox clear a stale
+      // office roleEmail if the member still carries one.
+      const OFFICE_EMAIL_LOCALPARTS: Record<string, string> = {
+        'President': 'president',
+        'Vice President': 'vicepresident',
+        'President-Elect': 'presidentelect',
+        'Secretary': 'secretary',
+        'Treasurer': 'treasurer',
+      };
+      const officeDomain = process.env.GOOGLE_WORKSPACE_DOMAIN || 'rotaractnyc.org';
+      const officeLocal = OFFICE_EMAIL_LOCALPARTS[updates.boardTitle];
+      const allOfficeEmails = Object.values(OFFICE_EMAIL_LOCALPARTS).map((l) => `${l}@${officeDomain}`);
+
+      if (officeLocal) {
+        const officeEmail = `${officeLocal}@${officeDomain}`;
+        // Strip this office email from any previous holder
+        const holders = await adminDb
+          .collection('members')
+          .where('roleEmail', '==', officeEmail)
+          .get();
+        const batch = adminDb.batch();
+        holders.docs.forEach((d) => {
+          if (d.id !== memberId) batch.update(d.ref, { roleEmail: '', updatedAt: new Date().toISOString() });
+        });
+        if (!holders.empty) await batch.commit();
+        updates.roleEmail = officeEmail;
+      } else {
+        // New title has no office mailbox — release a stale one if held
+        const currentRoleEmail = (memberDoc.data()?.roleEmail as string) || '';
+        if (currentRoleEmail && allOfficeEmails.includes(currentRoleEmail.toLowerCase())) {
+          updates.roleEmail = '';
+        }
+      }
     }
     // Board display order on the public Leadership page
     if (typeof boardOrder === 'number' && Number.isFinite(boardOrder)) {
