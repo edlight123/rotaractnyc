@@ -379,6 +379,35 @@ export function membershipInterestEmail(data: {
   };
 }
 
+/**
+ * Double opt-in confirmation email sent to a newsletter subscriber.
+ * `confirmUrl` must be an absolute URL to /api/newsletter/confirm?token=…
+ */
+export function newsletterConfirmEmail(data: {
+  name?: string;
+  confirmUrl: string;
+}): { subject: string; html: string; text: string } {
+  const greeting = data.name ? `Hi ${escapeHtml(data.name)},` : 'Hi there,';
+  const url = data.confirmUrl; // system-generated, not user input
+
+  return {
+    subject: `Confirm your subscription to ${SITE.shortName}`,
+    html: wrapTemplate(`
+      ${h1('One quick step')}
+      ${p(greeting)}
+      ${p(`Thanks for subscribing to the ${SITE.name} newsletter. Please confirm your email address so we can keep you posted on our service projects, events, and stories.`)}
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 28px 0;">
+        <tr><td align="center">${ctaButton('Confirm my subscription', url)}</td></tr>
+      </table>
+      ${p(`If the button doesn't work, copy and paste this link into your browser:`)}
+      <p style="word-break: break-all; font-size: 13px;"><a href="${url}" style="color: ${CRIMSON};">${url}</a></p>
+      ${divider()}
+      ${p(`If you didn't sign up, you can safely ignore this email — you won't be subscribed.`)}
+    `, `Confirm your subscription to ${SITE.shortName}`),
+    text: `${greeting}\n\nThanks for subscribing to the ${SITE.name} newsletter. Please confirm your email address by opening this link:\n\n${url}\n\nIf you didn't sign up, you can safely ignore this email.\n\n--\n${SITE.name}\n${SITE.address}`,
+  };
+}
+
 export function welcomeEmail(name: string): { subject: string; html: string; text: string } {
   const safeName = escapeHtml(name);
 
