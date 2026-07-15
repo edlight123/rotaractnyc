@@ -78,7 +78,15 @@ export default function DirectoryPage() {
   const isPresident = currentMember?.role === 'president';
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const allList = (allMembers || []) as Member[];
+  // Only real people belong in the directory: drop functional/shared accounts
+  // (club & treasurer role logins) and malformed docs with no name.
+  const allList = useMemo(
+    () =>
+      ((allMembers || []) as Member[]).filter(
+        (m) => (m.displayName || '').trim() && !m.isSystemAccount,
+      ),
+    [allMembers],
+  );
   const activeList = useMemo(() => allList.filter((m) => m.status === 'active'), [allList]);
   const alumniList = useMemo(() => allList.filter((m) => m.status === 'alumni'), [allList]);
   const pendingList = useMemo(() => allList.filter((m) => m.status === 'pending'), [allList]);
@@ -521,7 +529,11 @@ export default function DirectoryPage() {
                               <div className="min-w-0">
                                 <p className="font-medium text-gray-900 dark:text-white truncate flex items-center gap-1.5 flex-wrap">
                                   {m.displayName}
-                                  {m.status === 'alumni' && <Badge variant="gold">Alumni</Badge>}
+                                  {m.status === 'alumni' && (
+                                    <Badge variant="gold">
+                                      {alumniYear(m) ? `Alumni since ${alumniYear(m)}` : 'Alumni'}
+                                    </Badge>
+                                  )}
                                   {m.status === 'inactive' && <Badge variant="gray">Inactive</Badge>}
                                   {isAdmin && isDup && <Badge variant="red">Duplicate email</Badge>}
                                 </p>

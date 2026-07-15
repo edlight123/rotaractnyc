@@ -26,6 +26,20 @@ function roleLabel(m: Member): string {
   return map[m.role] ?? m.role;
 }
 
+/** Year a member became an alumnus (alumniSince, falling back to joinedAt). */
+function alumniYearOf(m: Member): number | null {
+  const src = m.alumniSince || m.joinedAt;
+  if (!src) return null;
+  const d = new Date(src);
+  return Number.isNaN(d.getTime()) ? null : d.getFullYear();
+}
+
+/** Badge label for an alumnus: "Alumni since 2021" (or just "Alumni"). */
+function alumniLabel(m: Member): string {
+  const y = alumniYearOf(m);
+  return y ? `Alumni since ${y}` : 'Alumni';
+}
+
 function initialsOf(name?: string): string {
   return String(name ?? '')
     .split(' ')
@@ -122,7 +136,7 @@ export default function MemberCard({ member: m, viewerRole, onMessage, variant =
               {m.displayName}
             </p>
             {m.role !== 'member' && <Badge variant={roleColors[m.role] || 'gray'}>{roleLabel(m)}</Badge>}
-            {m.status === 'alumni' && <Badge variant="gold">Alumni</Badge>}
+            {m.status === 'alumni' && <Badge variant="gold">{alumniLabel(m)}</Badge>}
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
             {m.committee || 'No committee'}
@@ -212,7 +226,7 @@ export default function MemberCard({ member: m, viewerRole, onMessage, variant =
       {/* Alumni tag */}
       {m.status === 'alumni' && (
         <div className="absolute top-2 left-2 z-20">
-          <Badge variant="gold">Alumni</Badge>
+          <Badge variant="gold">{alumniLabel(m)}</Badge>
         </div>
       )}
 

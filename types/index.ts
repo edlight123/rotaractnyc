@@ -45,6 +45,8 @@ export interface Member {
   /** Workspace/Slack provisioning status, set when an org account is auto-created on invite. */
   provisioning?: MemberProvisioning;
   onboardingComplete?: boolean;
+  /** Functional/shared accounts (e.g. club or treasurer role logins) — hidden from the member directory. */
+  isSystemAccount?: boolean;
   invitedAt?: string;
   joinedAt: string;
   alumniSince?: string;            // ISO date when member became alumni
