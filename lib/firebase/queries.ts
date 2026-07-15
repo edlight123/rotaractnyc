@@ -436,11 +436,13 @@ export async function getTestimonials(): Promise<Testimonial[]> {
       .orderBy('order', 'asc')
       .get();
 
-    if (snap.empty) return defaultTestimonials;
+    // No fallback to placeholder testimonials: showing a fabricated named quote
+    // is worse than showing nothing. The homepage hides the section when empty.
+    if (snap.empty) return [];
     return snap.docs.map((d) => serializeDoc({ id: d.id, ...d.data() }) as Testimonial);
   } catch (e) {
     console.error('getTestimonials error:', e);
-    return defaultTestimonials;
+    return [];
   }
 }
 

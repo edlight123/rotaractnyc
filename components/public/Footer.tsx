@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { SITE } from '@/lib/constants';
+import NewsletterSignup from '@/components/public/NewsletterSignup';
 
 const quickLinks = [
   { label: 'About Us', href: '/about' },
@@ -33,6 +34,19 @@ export default function Footer() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
           </Link>
+        </div>
+      </div>
+
+      {/* Newsletter */}
+      <div className="container-page pt-12 lg:pt-16">
+        <div className="rounded-2xl bg-gray-900 border border-gray-800 p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center gap-6">
+          <div className="lg:flex-1">
+            <h3 className="text-white font-display font-bold text-lg">Stay in the loop</h3>
+            <p className="text-sm text-gray-400 mt-1">
+              Get our latest events, service projects, and stories — straight to your inbox.
+            </p>
+          </div>
+          <NewsletterSignup source="footer" className="lg:w-[420px]" />
         </div>
       </div>
 
