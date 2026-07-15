@@ -55,6 +55,45 @@ const partnershipTiers = [
   },
 ];
 
+const communityPartners = [
+  {
+    name: 'Brooklyn Adult & Teen Challenge',
+    focus: 'Our monthly Food Pantry & Neighborhood Supper',
+    description:
+      'A non-profit serving New York since 1958, running a community soup kitchen and food pantry in Fort Greene. Home of our monthly food pantry service.',
+  },
+  {
+    name: 'Alliance for Positive Change',
+    focus: 'Harm-reduction kit builds · Gala beneficiary',
+    description:
+      'Supports New Yorkers living with HIV and other chronic health conditions. We assemble care kits with them, and they are the beneficiary of our annual gala.',
+  },
+  {
+    name: 'NYC Parks',
+    focus: '“It’s My Park” cleanups',
+    description:
+      'We join park rejuvenation and cleanup days to care for the public green spaces that make our city livable.',
+  },
+  {
+    name: 'Sure We Can',
+    focus: 'Recycling & sustainability',
+    description:
+      'A Brooklyn recycling and redemption non-profit supporting canners and a greener city, where our members volunteer.',
+  },
+  {
+    name: 'Alzheimer’s Association',
+    focus: 'Walk to End Alzheimer’s',
+    description:
+      'We walk and fundraise for the third-largest funder of Alzheimer’s research in the world.',
+  },
+  {
+    name: 'Rotary District 7230',
+    focus: 'Our home district',
+    description:
+      'We serve alongside Rotary and Rotaract clubs across New York through district-wide days of service and initiatives.',
+  },
+];
+
 const reasons = [
   {
     title: 'Reach Young Professionals',
@@ -181,10 +220,36 @@ export default function PartnersPage() {
         </div>
       </section>
 
-      {/* Current Partners placeholder */}
+      {/* Community Partners */}
       <section className="section-padding bg-white dark:bg-gray-950">
         <div className="container-page">
-          <div className="text-center max-w-2xl mx-auto mb-8">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <p className="text-sm font-semibold text-gold uppercase tracking-wider mb-3">
+              Organizations We Serve With
+            </p>
+            <h2 className="text-3xl font-display font-bold text-gray-900 dark:text-white">
+              Our community partners
+            </h2>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">
+              Service happens shoulder to shoulder. These are the organizations we volunteer,
+              fundraise, and build community with across New York City.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {communityPartners.map((p) => (
+              <div
+                key={p.name}
+                className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 flex flex-col"
+              >
+                <h3 className="font-display font-bold text-gray-900 dark:text-white">{p.name}</h3>
+                <p className="text-xs font-semibold text-cranberry uppercase tracking-wide mt-1 mb-3">
+                  {p.focus}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{p.description}</p>
+              </div>
+            ))}
+          </div>
+          <div className="text-center max-w-2xl mx-auto mt-14 pt-10 border-t border-gray-100 dark:border-gray-800">
             <p className="text-sm font-semibold text-gold uppercase tracking-wider mb-3">
               Our Network
             </p>

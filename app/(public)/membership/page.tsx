@@ -84,6 +84,33 @@ export default function MembershipPage() {
         </div>
       </section>
 
+      {/* Induction */}
+      <section className="section-padding bg-cranberry/5 dark:bg-cranberry/10">
+        <div className="container-page">
+          <div className="max-w-3xl mx-auto text-center">
+            <p className="text-sm font-semibold text-gold uppercase tracking-wider mb-3">The Induction</p>
+            <h2 className="text-3xl font-display font-bold text-gray-900 dark:text-white mb-4">
+              Becoming an official Rotaractor
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+              Once you&apos;ve attended a few meetings and completed your application, you&apos;re welcomed
+              in at a <strong>new-member induction</strong> — a short, meaningful ceremony held at one of our
+              general meetings. You&apos;ll be introduced to the club, share a brief bio about who you are and why
+              you&apos;re joining, and officially become part of our chapter and the global Rotaract network of
+              250,000+ young leaders. Inductions happen throughout the year, so there&apos;s always a next one
+              to look forward to.
+            </p>
+            <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">
+              New members: send a short bio (who you are, your background, and why you want to join) to{' '}
+              <a href="mailto:rotaractnewyorkcity@gmail.com" className="text-cranberry font-medium hover:underline">
+                rotaractnewyorkcity@gmail.com
+              </a>
+              {' '}ahead of your induction meeting.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Benefits */}
       <section className="section-padding bg-gray-50 dark:bg-gray-900/50">
         <div className="container-page">
