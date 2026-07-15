@@ -23,6 +23,45 @@ import { IMPACT_STATS } from '@/lib/constants';
 
 // ---- Events ----
 
+/**
+ * Collapse recurring event series to a single card for public display.
+ *
+ * A recurring series (parent + monthly occurrences) is stored as many event
+ * docs so the portal can track RSVP/check-in per date — but the public site
+ * should show only ONE card per series: the next upcoming occurrence (so people
+ * register for the next date, not months in advance). The visible card rolls
+ * forward automatically as each occurrence passes. Non-recurring events pass
+ * through untouched. Result is sorted by date ascending.
+ */
+export function collapseRecurringSeries(events: RotaractEvent[]): RotaractEvent[] {
+  const now = new Date().toISOString();
+  const groups = new Map<string, RotaractEvent[]>();
+
+  for (const e of events) {
+    const key = e.recurrenceParentId || e.id; // parent + children share the parent id
+    const group = groups.get(key);
+    if (group) group.push(e);
+    else groups.set(key, [e]);
+  }
+
+  const representatives: RotaractEvent[] = [];
+  Array.from(groups.values()).forEach((group: RotaractEvent[]) => {
+    if (group.length === 1) {
+      representatives.push(group[0]);
+      return;
+    }
+    const upcoming = group
+      .filter((e) => e.date >= now)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    // Prefer the next upcoming occurrence; if the whole series is past, keep the
+    // most recent one so it still appears in event history.
+    const latestPast = group.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
+    representatives.push(upcoming[0] ?? latestPast);
+  });
+
+  return representatives.sort((a, b) => a.date.localeCompare(b.date));
+}
+
 export async function getPublicEvents(): Promise<RotaractEvent[]> {
   try {
     const snap = await adminDb
@@ -33,7 +72,8 @@ export async function getPublicEvents(): Promise<RotaractEvent[]> {
       .get();
 
     if (snap.empty) return defaultEvents;
-    return snap.docs.map((d) => serializeDoc({ id: d.id, ...d.data() }) as RotaractEvent);
+    const events = snap.docs.map((d) => serializeDoc({ id: d.id, ...d.data() }) as RotaractEvent);
+    return collapseRecurringSeries(events);
   } catch (e) {
     console.error('getPublicEvents error:', e);
     return defaultEvents;
