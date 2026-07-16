@@ -13,51 +13,40 @@ export const metadata: Metadata = generateMeta({
 });
 
 function MemberCard({ member }: { member: Awaited<ReturnType<typeof getBoardMembers>>[number] }) {
+  const initials = (member.name || '').split(' ').map((w) => w?.[0] || '').join('').slice(0, 2).toUpperCase();
   return (
-    <div className="group bg-white dark:bg-gray-900 rounded-3xl border border-gray-200/60 dark:border-gray-800 p-8 text-center hover:shadow-xl hover:shadow-cranberry-100/30 dark:hover:shadow-cranberry-900/20 hover:border-cranberry-200/80 dark:hover:border-cranberry-800/60 transition-all duration-300 flex flex-col items-center">
-      {/* Avatar */}
+    <div className="group relative aspect-[4/5] rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-800 shadow-sm hover:shadow-xl hover:shadow-cranberry-100/40 dark:hover:shadow-cranberry-900/20 transition-shadow duration-300">
+      {/* Portrait — full-bleed, or a quiet initials placeholder */}
       {member.photoURL ? (
-        <div className="w-24 h-24 mx-auto rounded-full overflow-hidden mb-5 ring-4 ring-gray-100 dark:ring-gray-800 group-hover:ring-cranberry-200 dark:group-hover:ring-cranberry-800 transition-all duration-300 shadow-md">
-          <Image
-            src={member.photoURL}
-            alt={member.name}
-            width={96}
-            height={96}
-            className="w-full h-full object-cover"
-          />
-        </div>
+        <Image
+          src={member.photoURL}
+          alt={member.name}
+          fill
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
+          className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+        />
       ) : (
-        <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-cranberry-100 to-cranberry-200 dark:from-cranberry-900/40 dark:to-cranberry-800/30 flex items-center justify-center mb-5 ring-4 ring-gray-100 dark:ring-gray-800 shadow-md">
-          <span className="text-2xl font-display font-bold text-cranberry">
-            {(member.name || '').split(' ').map((w) => w?.[0] || '').join('')}
-          </span>
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-cranberry-100 to-cranberry-200 dark:from-cranberry-900/40 dark:to-cranberry-800/30">
+          <span className="text-4xl font-display font-bold text-cranberry">{initials}</span>
         </div>
       )}
 
-      {/* Name & title */}
-      <h3 className="font-display font-bold text-lg text-gray-900 dark:text-white group-hover:text-cranberry transition-colors leading-tight">
-        {member.name}
-      </h3>
-      <p className="text-sm font-semibold text-cranberry mt-1.5 tracking-wide uppercase">{member.title}</p>
+      {/* Bottom scrim — identity, always legible */}
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-4 pt-16 pb-4">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-gold">{member.title}</p>
+        <h3 className="font-display font-bold text-white leading-tight mt-0.5">{member.name}</h3>
+      </div>
 
-      {/* Divider */}
-      <div className="w-8 h-px bg-gray-200 dark:bg-gray-700 mx-auto my-4 group-hover:bg-cranberry-300 dark:group-hover:bg-cranberry-700 transition-colors duration-300" />
-
-      {/* Bio */}
-      {member.bio && (
-        <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-3 leading-relaxed flex-1">{member.bio}</p>
-      )}
-
-      {/* LinkedIn */}
+      {/* LinkedIn — glass chip */}
       {member.linkedIn && member.linkedIn !== '#' && (
         <a
           href={member.linkedIn}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 mt-4 text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-azure dark:hover:text-azure transition-colors"
+          aria-label={`${member.name} on LinkedIn`}
+          className="absolute top-2.5 right-2.5 z-20 w-8 h-8 rounded-lg bg-black/35 text-white/90 hover:bg-azure backdrop-blur-sm flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
-          <svg aria-hidden="true" className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-          Connect on LinkedIn
+          <svg aria-hidden="true" className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
         </a>
       )}
     </div>
@@ -98,8 +87,6 @@ function PastBoardCard({ board }: { board: Awaited<ReturnType<typeof getPastBoar
 
 export default async function LeadershipPage() {
   const [board, pastBoards] = await Promise.all([getBoardMembers(), getPastBoards()]);
-  const topRow = board.slice(0, 3);
-  const bottomRow = board.slice(3);
 
   return (
     <>
@@ -108,23 +95,12 @@ export default async function LeadershipPage() {
       <section className="section-padding bg-white dark:bg-gray-950">
         <div className="container-page max-w-5xl">
 
-          {/* Top row — up to 3 cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {topRow.map((member) => (
+          {/* Current board — photo-first cards in a uniform grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
+            {board.map((member) => (
               <MemberCard key={member.id} member={member} />
             ))}
           </div>
-
-          {/* Bottom row — remaining cards, centered */}
-          {bottomRow.length > 0 && (
-            <div className="mt-6 flex flex-wrap justify-center gap-6">
-              {bottomRow.map((member) => (
-                <div key={member.id} className="w-full sm:w-[calc(50%-12px)] md:w-[calc(33.333%-16px)]">
-                  <MemberCard member={member} />
-                </div>
-              ))}
-            </div>
-          )}
 
           {/* Past boards — archived rosters from previous Rotary years */}
           {pastBoards.length > 0 && (
