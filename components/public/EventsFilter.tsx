@@ -33,7 +33,7 @@ export default function EventsFilter({ events }: EventsFilterProps) {
   const now = useMemo(() => new Date(), []);
 
   const filtered = useMemo(() => {
-    return events
+    const sorted = events
       .filter((e) => {
         const q = search.toLowerCase();
         const matchSearch =
@@ -51,7 +51,23 @@ export default function EventsFilter({ events }: EventsFilterProps) {
           ? new Date(a.date).getTime() - new Date(b.date).getTime()
           : new Date(b.date).getTime() - new Date(a.date).getTime(),
       );
+    // Collapse each recurring series to a single representative card. The list is
+    // already sorted for the active tab, so the first occurrence we keep is the
+    // soonest upcoming (or most recent past) — the remaining occurrences are hidden.
+    const seenSeries = new Set<string>();
+    return sorted.filter((e) => {
+      if (!e.isRecurring) return true;
+      const key = e.recurrenceParentId || e.id;
+      if (seenSeries.has(key)) return false;
+      seenSeries.add(key);
+      return true;
+    });
   }, [events, search, typeFilter, timeTab, now]);
+
+  const frequencyLabel = (e: RotaractEvent) => {
+    const f = e.recurrence?.frequency;
+    return f ? f.charAt(0).toUpperCase() + f.slice(1) : 'Recurring';
+  };
 
   return (
     <>
@@ -140,6 +156,9 @@ export default function EventsFilter({ events }: EventsFilterProps) {
 
               {/* Type badge — top right */}
               <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                {event.isRecurring && (
+                  <Badge variant="cranberry">🔁 {frequencyLabel(event)}</Badge>
+                )}
                 <Badge variant={typeColors[event.type] || 'gray'}>
                   {event.type === 'service' ? '🤝 Service' : event.type === 'paid' ? '🎟️ Ticketed' : event.type === 'hybrid' ? '⭐ Hybrid' : '✓ Free'}
                 </Badge>
