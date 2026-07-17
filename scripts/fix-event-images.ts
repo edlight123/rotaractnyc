@@ -27,7 +27,21 @@ async function albumPhotos(albumSlug: string): Promise<string[]> {
     .map((d) => ({ url: d.data().url as string, order: d.data().order ?? 9999 }))
     .filter((p) => p.url)
     .sort((x, y) => x.order - y.order);
-  return Array.from(new Set(photos.map((p) => p.url)));
+  // Keep only ONE photo per capture "scene" (same minute = burst frames that look
+  // identical), so distinct events get visually different images, not near-dupes.
+  const scene = (url: string) => {
+    const m = url.split('?')[0].match(/PHOTO-(\d{4}-\d{2}-\d{2}-\d{2}-\d{2})/);
+    return m ? m[1] : url.split('?')[0];
+  };
+  const seenScene = new Set<string>();
+  const out: string[] = [];
+  for (const p of photos) {
+    const k = scene(p.url);
+    if (seenScene.has(k)) continue;
+    seenScene.add(k);
+    out.push(p.url);
+  }
+  return out;
 }
 
 async function eventBySlug(slug: string) {
