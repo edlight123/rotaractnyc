@@ -1,5 +1,12 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
-import { getAuth, type Auth } from 'firebase/auth';
+import {
+  getAuth,
+  initializeAuth,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
+  browserPopupRedirectResolver,
+  type Auth,
+} from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
@@ -45,7 +52,20 @@ let _db: Firestore | null = null;
 let _storage: FirebaseStorage | null = null;
 
 export function getFirebaseAuth(): Auth {
-  if (!_auth) _auth = getAuth(getFirebaseApp());
+  if (_auth) return _auth;
+  const app = getFirebaseApp();
+  // Prefer IndexedDB persistence (most durable in installed PWAs — the login
+  // survives closing the app), falling back to localStorage. Explicit
+  // initializeAuth also keeps popup/redirect Google sign-in working via the
+  // provided resolver. Falls back to getAuth if auth is already initialized.
+  try {
+    _auth = initializeAuth(app, {
+      persistence: [indexedDBLocalPersistence, browserLocalPersistence],
+      popupRedirectResolver: browserPopupRedirectResolver,
+    });
+  } catch {
+    _auth = getAuth(app);
+  }
   return _auth;
 }
 
