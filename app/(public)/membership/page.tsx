@@ -141,7 +141,7 @@ export default function MembershipPage() {
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Professional</p>
               <p className="text-4xl font-display font-bold text-cranberry">$85</p>
               <p className="text-sm text-gray-500 mt-1">per Rotary year</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">Includes Rotary International registration</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">Dues stay with the club — they fund our service, events &amp; operations</p>
             </div>
             <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Student</p>
@@ -154,6 +154,31 @@ export default function MembershipPage() {
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-6">
             The Rotary year runs July 1 – June 30. Dues can be paid online or in person.
           </p>
+        </div>
+      </section>
+
+      {/* Associate Membership */}
+      <section className="section-padding bg-cranberry/5 dark:bg-cranberry/10">
+        <div className="container-page">
+          <div className="max-w-3xl mx-auto text-center">
+            <p className="text-sm font-semibold text-gold uppercase tracking-wider mb-3">Already in another Rotaract club?</p>
+            <h2 className="text-3xl font-display font-bold text-gray-900 dark:text-white mb-4">Associate Membership</h2>
+            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+              Active members of another Rotaract club are welcome to take part in RCUN as{' '}
+              <strong>Associate Members</strong>. Because Rotary doesn&apos;t charge dues twice, Associates{' '}
+              <strong>pay no RCUN dues</strong> — so they join our meetings, service projects, and events at the
+              standard (non-member) rate and don&apos;t receive member perks or partner discounts. Associates
+              don&apos;t vote on club matters or hold office, and after their first three months are expected to
+              join a committee and get involved like everyone else.
+            </p>
+            <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">
+              Want the full benefits, perks, and a vote? Become a <strong>full member</strong> anytime by paying
+              annual dues. Questions?{' '}
+              <a href="mailto:rotaractnewyorkcity@gmail.com" className="text-cranberry font-medium hover:underline">
+                rotaractnewyorkcity@gmail.com
+              </a>
+            </p>
+          </div>
         </div>
       </section>
 
