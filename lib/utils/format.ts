@@ -39,3 +39,23 @@ export function formatCurrency(cents: number): string {
     minimumFractionDigits: 0,
   }).format(cents / 100);
 }
+
+/**
+ * Reduce Markdown-ish text to clean plain text for previews (cards, teasers).
+ * Strips emphasis, headings, code, list markers, and turns [text](url) into
+ * just the text — so authored Markdown never shows raw `**` on the site.
+ */
+export function toPlainText(input?: string | null): string {
+  if (!input) return '';
+  return input
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')       // images
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')     // links → link text
+    .replace(/`{1,3}([^`]*)`{1,3}/g, '$1')       // inline / fenced code
+    .replace(/(\*\*|__)(.*?)\1/g, '$2')          // bold
+    .replace(/(\*|_)(.*?)\1/g, '$2')             // italic
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')          // headings
+    .replace(/^\s*[-*+]\s+/gm, '')               // bullet markers
+    .replace(/\*\*|__/g, '')                     // any stray emphasis markers
+    .replace(/\s+/g, ' ')                        // collapse whitespace for 1–2 line previews
+    .trim();
+}

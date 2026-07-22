@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { SITE } from '@/lib/constants';
 import { generateMeta } from '@/lib/seo';
 import { getPublicEvents, getPublishedArticles, getHeroSlides, getCarouselPhotos, getTestimonials, getImpactStats } from '@/lib/firebase/queries';
-import { formatDate } from '@/lib/utils/format';
+import { formatDate, toPlainText } from '@/lib/utils/format';
 import Badge from '@/components/ui/Badge';
 import HeroSlideshow from '@/components/public/HeroSlideshow';
 import TestimonialsCarousel from '@/components/public/TestimonialsCarousel';
@@ -214,8 +214,8 @@ export default async function HomePage() {
                     </div>
                   </div>
                   <div className="p-5">
-                    <h3 className="font-display font-bold text-gray-900 dark:text-white group-hover:text-cranberry transition-colors line-clamp-2">{event.title}</h3>
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{event.description}</p>
+                    <h3 className="font-display font-bold text-gray-900 dark:text-white group-hover:text-cranberry transition-colors line-clamp-2">{toPlainText(event.title)}</h3>
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{toPlainText(event.description)}</p>
                     <div className="mt-3 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                       <span>{event.time}</span>
                       <span>·</span>
