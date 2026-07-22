@@ -15,6 +15,7 @@ import DuesBanner from '@/components/portal/DuesBanner';
 import AnnouncementBanner from '@/components/portal/AnnouncementBanner';
 import MobileBottomNav from '@/components/portal/MobileBottomNav';
 import InstallPrompt from '@/components/portal/InstallPrompt';
+import SandraChat from '@/components/SandraChat';
 import Spinner from '@/components/ui/Spinner';
 import { TutorialProvider } from '@/components/portal/tutorial';
 import { cn } from '@/lib/utils/cn';
@@ -558,6 +559,9 @@ export default function PortalShell({ children }: { children: React.ReactNode })
         unreadAnnouncements={unread.announcements}
         onOpenMore={() => setSidebarOpen(true)}
       />
+
+      {/* Sandra — member assistant (endpoint scopes answers to the member's role) */}
+      <SandraChat />
     </div>
     </TutorialProvider>
   );
