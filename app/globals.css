@@ -157,6 +157,52 @@
            dark:hover:border-cranberry-800;
   }
 
+  /* ══════════════════════════════════════════════════
+     Civic Editorial — portal-scoped surfaces
+     Warm "annual-report" canvas, soft halo shadows,
+     editorial serif headings. Applied only under
+     .portal-theme so the public site is unaffected.
+     ══════════════════════════════════════════════════ */
+  .portal-theme {
+    @apply bg-cream text-ink dark:bg-[#17120f] dark:text-gray-100;
+  }
+  /* Elevated surface (replaces flat 1px-border cards inside the portal) */
+  .p-card {
+    @apply bg-white dark:bg-[#211a16] rounded-card border border-black/[0.06] dark:border-white/[0.07] shadow-soft;
+  }
+  .p-tile {
+    @apply bg-white dark:bg-[#211a16] rounded-tile border border-black/[0.05] dark:border-white/[0.06] shadow-tile;
+  }
+  /* Branded dashboard hero */
+  .p-hero {
+    @apply relative overflow-hidden rounded-card text-white shadow-lift;
+    background: linear-gradient(135deg, #3d0a14 0%, #5e0f28 46%, #9b1b30 108%);
+  }
+  /* Quick-action tile */
+  .p-qa {
+    @apply flex flex-col gap-2.5 p-tile p-4
+           transition-transform transition-shadow duration-150
+           hover:-translate-y-0.5 hover:shadow-soft;
+  }
+  .p-ic {
+    @apply w-9 h-9 rounded-[11px] grid place-items-center text-white shrink-0;
+  }
+  /* Status chips */
+  .p-chip {
+    @apply inline-flex items-center gap-1.5 rounded-full text-xs font-bold px-2.5 py-1;
+  }
+  .p-chip-good {
+    @apply p-chip bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300;
+  }
+  .p-chip-bad {
+    @apply p-chip bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300;
+  }
+  /* Gold "premium" pill (member badge, highlights) */
+  .p-pill-gold {
+    @apply inline-flex items-center rounded-full text-[10px] font-extrabold uppercase tracking-[0.08em]
+           text-gold-800 border border-gold px-2 py-0.5 dark:text-gold-300;
+  }
+
   /* Badges */
   .badge {
     @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;

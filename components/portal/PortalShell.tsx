@@ -347,7 +347,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
 
   return (
     <TutorialProvider>
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen portal-theme">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -360,7 +360,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
       <aside
         ref={sidebarRef}
         className={cn(
-          'fixed top-0 left-0 z-50 h-full w-[272px] bg-white dark:bg-gray-900 border-r border-gray-200/80 dark:border-gray-800/80 transform transition-transform duration-300 ease-out lg:translate-x-0 flex flex-col',
+          'fixed top-0 left-0 z-50 h-full w-[272px] bg-paper dark:bg-[#1c1613] border-r border-black/[0.06] dark:border-white/[0.07] transform transition-transform duration-300 ease-out lg:translate-x-0 flex flex-col',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
         aria-label="Portal navigation"
@@ -415,14 +415,14 @@ export default function PortalShell({ children }: { children: React.ReactNode })
                       className={cn(
                         'flex items-center gap-3 px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors duration-150',
                         isActive(item.href)
-                          ? 'bg-cranberry-50 text-cranberry-800 dark:bg-cranberry-900/25 dark:text-cranberry-300'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800/60'
+                          ? 'bg-cranberry text-white shadow-tile'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-black/[0.04] dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/[0.06]'
                       )}
                     >
                       <span aria-hidden="true" className={cn(
                         'shrink-0 transition-colors',
                         isActive(item.href)
-                          ? 'text-cranberry dark:text-cranberry-400'
+                          ? 'text-white'
                           : 'text-gray-400 dark:text-gray-500'
                       )}>
                         {item.icon}
@@ -430,7 +430,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
                       <span className="flex-1 truncate">{item.label}</span>
                       {item.href === '/portal/directory' && pendingCount > 0 && (
                         <span
-                          className="shrink-0 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-cranberry text-white text-[11px] font-bold tabular-nums"
+                          className="shrink-0 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-gold text-[#3a2c06] text-[11px] font-bold tabular-nums"
                           aria-label={`${pendingCount} member${pendingCount !== 1 ? 's' : ''} pending approval`}
                         >
                           {pendingCount > 99 ? '99+' : pendingCount}
@@ -461,6 +461,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
               </p>
               <p className="text-[11px] text-gray-400 capitalize leading-tight">{member.role}</p>
             </div>
+            <span className="p-pill-gold shrink-0">{member.memberType === 'associate' ? 'Associate' : 'Member'}</span>
           </Link>
 
           {/* Bottom actions row */}
