@@ -49,7 +49,7 @@ export default function EventSidebar({
 
       {/* QR Code for check-in */}
       {!isPast && (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-5">
+        <div className="p-card p-5">
           <h3 className="font-display font-semibold text-gray-900 dark:text-white mb-3 text-sm">Your Check-in QR Code</h3>
           <EventQRCode eventId={event.id} />
         </div>

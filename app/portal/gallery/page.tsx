@@ -70,7 +70,7 @@ export default function PortalGalleryPage() {
             <Link
               key={album.id}
               href={`/portal/gallery/${album.id}`}
-              className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 overflow-hidden hover:shadow-xl hover:border-cranberry-200 dark:hover:border-cranberry-800 transition-all duration-300"
+              className="group p-card overflow-hidden hover:shadow-xl hover:border-cranberry-200 dark:hover:border-cranberry-800 transition-all duration-300"
             >
               <div className="relative aspect-[4/3] overflow-hidden">
                 {album.coverPhotoUrl ? (

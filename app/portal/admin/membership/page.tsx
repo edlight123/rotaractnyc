@@ -263,7 +263,7 @@ export default function MembershipAdminPage() {
           { label: 'New this month', value: newThisMonth },
           { label: 'Incomplete profiles', value: incompleteProfiles },
         ].map((s) => (
-          <div key={s.label} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+          <div key={s.label} className="p-card p-4">
             <p className={`text-2xl font-display font-bold ${s.highlight ? 'text-cranberry' : 'text-gray-900 dark:text-white'}`}>{s.value}</p>
             <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
           </div>
@@ -282,7 +282,7 @@ export default function MembershipAdminPage() {
         ) : (
           <div className="space-y-2">
             {pending.map((m) => (
-              <div key={m.id} className="flex items-center gap-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 px-4 py-3">
+              <div key={m.id} className="flex items-center gap-3 p-card px-4 py-3">
                 <Avatar src={m.photoURL} alt={nameOf(m)} size="sm" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{nameOf(m)}</p>
@@ -315,7 +315,7 @@ export default function MembershipAdminPage() {
             {recentJoiners.map((m) => {
               const pct = profileCompletion(m);
               return (
-                <div key={m.id} className="flex items-center gap-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 px-4 py-3">
+                <div key={m.id} className="flex items-center gap-3 p-card px-4 py-3">
                   <Avatar src={m.photoURL} alt={nameOf(m)} size="sm" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{nameOf(m)}</p>
@@ -376,7 +376,7 @@ export default function MembershipAdminPage() {
             <p className="text-sm text-gray-400">Every active member has an org email 🎉</p>
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
+          <div className="p-card divide-y divide-gray-100 dark:divide-gray-800">
             {/* Members still needing an org email */}
             {needsOrgEmail.map((m) => (
               <div key={m.id} className="flex items-center gap-3 px-4 py-3">
@@ -450,7 +450,7 @@ export default function MembershipAdminPage() {
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
               Active members with an @rotaractnyc.org address. Suspending is reversible in Google Admin.
             </p>
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
+            <div className="p-card divide-y divide-gray-100 dark:divide-gray-800">
               {hasOrgEmail.map((m) => (
                 <div key={m.id} className="flex items-center gap-3 px-4 py-3">
                   <Avatar src={m.photoURL} alt={nameOf(m)} size="sm" />

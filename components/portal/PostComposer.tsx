@@ -34,7 +34,7 @@ export default function PostComposer({ onSubmit }: PostComposerProps) {
   const isOverLimit = charsLeft < 0;
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 hover:border-gray-300/80 dark:hover:border-gray-700 transition-all duration-200 overflow-hidden">
+    <div className="p-card hover:border-gray-300/80 dark:hover:border-gray-700 transition-all duration-200 overflow-hidden">
       <div className="p-5 sm:p-6">
         <div className="flex gap-3.5">
           <Avatar src={member?.photoURL} alt={member?.displayName || ''} size="md" className="mt-0.5" />

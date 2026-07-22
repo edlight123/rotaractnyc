@@ -149,7 +149,7 @@ export default function ServiceHoursPage() {
           ) : pendingEntries.length === 0 ? (
             <EmptyState icon={<svg aria-hidden="true" className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} title="All caught up" description="No pending service hours to review." />
           ) : (
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
+            <div className="p-card divide-y divide-gray-100 dark:divide-gray-800">
               {pendingEntries.map((entry) => (
                 <div key={entry.id} className="px-4 py-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -195,7 +195,7 @@ export default function ServiceHoursPage() {
           ) : serviceHours.length === 0 ? (
             <EmptyState icon={<svg aria-hidden="true" className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} title="No service hours logged" description="Click 'Log Hours' to submit your first service contribution." />
           ) : (
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
+            <div className="p-card divide-y divide-gray-100 dark:divide-gray-800">
               {serviceHours.map((entry) => (
                 <div key={entry.id} className="px-4 py-3">
                   <div className="flex items-center justify-between">

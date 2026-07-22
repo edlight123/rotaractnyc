@@ -10,7 +10,7 @@ export default function EventDetailSkeleton() {
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-5">
           <div className="aspect-[16/9] bg-gray-200 dark:bg-gray-800 rounded-2xl" />
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 space-y-4">
+          <div className="p-card p-6 space-y-4">
             <div className="flex gap-2">
               <div className="h-6 w-16 bg-gray-200 dark:bg-gray-800 rounded-full" />
               <div className="h-6 w-20 bg-gray-200 dark:bg-gray-800 rounded-full" />
@@ -22,7 +22,7 @@ export default function EventDetailSkeleton() {
               ))}
             </div>
           </div>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 space-y-3">
+          <div className="p-card p-6 space-y-3">
             <div className="h-6 w-40 bg-gray-200 dark:bg-gray-800 rounded" />
             <div className="h-4 w-full bg-gray-200 dark:bg-gray-800 rounded" />
             <div className="h-4 w-5/6 bg-gray-200 dark:bg-gray-800 rounded" />

@@ -119,7 +119,7 @@ export function TutorialTooltip({ step, stepIndex, totalSteps, targetRect }: Too
         }}
         role="tooltip"
       >
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl p-5 animate-scale-in">
+        <div className="p-card dark:border-gray-700 shadow-2xl p-5 animate-scale-in">
           <div className="flex items-start gap-3 mb-3">
             <div className="w-8 h-8 rounded-lg bg-cranberry/10 flex items-center justify-center shrink-0 mt-0.5">
               <span className="text-cranberry font-bold text-sm">{stepIndex + 1}</span>

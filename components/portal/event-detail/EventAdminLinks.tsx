@@ -12,7 +12,7 @@ export default function EventAdminLinks({ eventId }: EventAdminLinksProps) {
     <div className="grid sm:grid-cols-2 gap-3">
       <a
         href={`/portal/events/${eventId}/attendees`}
-        className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-4 flex items-center justify-between gap-4 hover:border-cranberry/40 hover:shadow-sm transition-all group"
+        className="p-card p-4 flex items-center justify-between gap-4 hover:border-cranberry/40 hover:shadow-sm transition-all group"
       >
         <div className="min-w-0">
           <p className="font-semibold text-gray-900 dark:text-white text-sm">View All Attendees</p>

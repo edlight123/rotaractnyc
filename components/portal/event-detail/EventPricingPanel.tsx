@@ -17,7 +17,7 @@ export default function EventPricingPanel({ event }: EventPricingPanelProps) {
   const { pricing } = event;
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6">
+    <div className="p-card p-6">
       <h3 className="font-display font-semibold text-gray-900 dark:text-white mb-4 text-lg">Pricing</h3>
 
       {pricing.tiers?.length ? (

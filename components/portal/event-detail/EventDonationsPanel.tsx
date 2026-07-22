@@ -17,7 +17,7 @@ export default function EventDonationsPanel({ acceptsDonations, donations, summa
   if (!acceptsDonations || donations.length === 0 || !summary) return null;
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6">
+    <div className="p-card p-6">
       <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
         <h3 className="font-display font-semibold text-gray-900 dark:text-white text-lg">
           Donations Received

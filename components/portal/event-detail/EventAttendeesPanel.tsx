@@ -23,7 +23,7 @@ export default function EventAttendeesPanel({
   if (distinctAttendeeCount <= 0) return null;
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-4 sm:p-6">
+    <div className="p-card p-4 sm:p-6">
       <h3 className="font-display font-semibold text-gray-900 dark:text-white mb-3 text-base">
         Attendees <span className="text-gray-400 dark:text-gray-500 font-normal text-sm">({distinctAttendeeCount})</span>
         {goingCount > distinctAttendeeCount && (
