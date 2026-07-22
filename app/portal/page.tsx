@@ -8,12 +8,10 @@ import { useDues } from '@/hooks/useDues';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import Avatar from '@/components/ui/Avatar';
-import Badge from '@/components/ui/Badge';
 import Tabs from '@/components/ui/Tabs';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
 import ProgressRing from '@/components/ui/ProgressRing';
-import PageHeader, { SectionHeader } from '@/components/portal/PageHeader';
 import PostComposerModal from '@/components/portal/PostComposerModal';
 import FeedCard from '@/components/portal/FeedCard';
 import ProfileCompletionCard from '@/components/portal/ProfileCompletionCard';
@@ -128,7 +126,6 @@ export default function PortalDashboard() {
   })();
 
   const firstName = member?.firstName || member?.displayName?.split(' ')[0] || 'Member';
-  const dateLine = `${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} — here's your community at a glance.`;
   const duesPaid = duesStatus === 'PAID' || duesStatus === 'PAID_OFFLINE' || duesStatus === 'WAIVED';
 
   return (
@@ -159,25 +156,44 @@ export default function PortalDashboard() {
       {/* ═══════ HEADER + STAT STRIP ═══════ */}
       {/* On mobile: only show in overview tab. On sm+: always show */}
       <section className={mobileView !== 'overview' ? 'hidden sm:block' : ''}>
-        <PageHeader
-          eyebrow="Portal"
-          title={`${greeting}, ${firstName}`}
-          subtitle={dateLine}
-        />
+        {/* Branded hero — the dashboard's signature anchor */}
+        <div className="p-hero px-6 sm:px-8 pt-7 pb-[4.5rem]">
+          <svg aria-hidden="true" viewBox="0 0 100 100" className="pointer-events-none absolute -right-10 -top-8 w-64 h-64 text-white/[0.06]">
+            <g fill="currentColor"><path d="M50 8l4 9a37 37 0 016 1.6l6.8-6.6 8.4 4.8-2.4 9.2a37 37 0 014.4 4.4l9.2-2.4 4.8 8.4-6.6 6.8a37 37 0 011.6 6l9 4v9.6l-9 4a37 37 0 01-1.6 6l6.6 6.8-4.8 8.4-9.2-2.4a37 37 0 01-4.4 4.4l2.4 9.2-8.4 4.8-6.8-6.6a37 37 0 01-6 1.6l-4 9h-9.6l-4-9a37 37 0 01-6-1.6l-6.8 6.6-8.4-4.8 2.4-9.2a37 37 0 01-4.4-4.4l-9.2 2.4L4.9 63l6.6-6.8A37 37 0 019.9 50.2l-9-4V36.6l9-4a37 37 0 011.6-6L4.9 19.8l4.8-8.4 9.2 2.4a37 37 0 014.4-4.4l-2.4-9.2 8.4-4.8L34.1 2z" /></g>
+            <circle cx="50" cy="50" r="18" fill="none" stroke="#3d0a14" strokeWidth="7" />
+          </svg>
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-gold">
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+          </p>
+          <h1 className="font-serif font-semibold text-3xl sm:text-4xl leading-tight tracking-tight mt-2">
+            {greeting}, {firstName}.
+          </h1>
+          <div className="w-[52px] h-[3px] bg-gold rounded mt-4 mb-3" />
+          <p className="text-sm text-white/80 max-w-[52ch]">
+            Your club at a glance — {totalHours} service {totalHours === 1 ? 'hour' : 'hours'} logged,{' '}
+            {upcomingEvents.length} {upcomingEvents.length === 1 ? 'event' : 'events'} on the horizon, and dues{' '}
+            {duesPaid ? 'squared away for the year' : 'awaiting payment'}.
+          </p>
+        </div>
 
-        <div className="mt-6 grid grid-cols-3 divide-x divide-gray-200 dark:divide-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-          <div className="px-5 py-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">Service hours this year</p>
-            <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums text-gray-900 dark:text-white">{totalHours}</p>
+        {/* Stat tiles overlapping the hero base */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 -mt-12 px-1 relative z-[2]">
+          <div className="p-tile shadow-soft px-5 py-4">
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.1em] text-gray-500">Service hours · this year</p>
+            <p className="mt-2 font-serif font-semibold text-3xl leading-none tracking-tight tabular-nums text-gray-900 dark:text-white">
+              {totalHours}<span className="font-sans text-base font-semibold text-gray-400"> / {SERVICE_HOURS_GOAL}h</span>
+            </p>
           </div>
-          <div className="px-5 py-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">Upcoming events</p>
-            <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums text-gray-900 dark:text-white">{upcomingEvents.length}</p>
+          <div className="p-tile shadow-soft px-5 py-4">
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.1em] text-gray-500">Upcoming events</p>
+            <p className="mt-2 font-serif font-semibold text-3xl leading-none tracking-tight tabular-nums text-gray-900 dark:text-white">{upcomingEvents.length}</p>
           </div>
-          <div className="px-5 py-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">Dues</p>
-            <div className="mt-2">
-              <Badge variant={duesPaid ? 'green' : 'red'}>{duesPaid ? 'Paid' : 'Unpaid'}</Badge>
+          <div className="p-tile shadow-soft px-5 py-4">
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.1em] text-gray-500">Membership dues</p>
+            <div className="mt-2.5">
+              <span className={duesPaid ? 'p-chip-good' : 'p-chip-bad'}>
+                <span className="w-1.5 h-1.5 rounded-full bg-current" />{duesPaid ? 'Paid' : 'Unpaid'}
+              </span>
             </div>
           </div>
         </div>
@@ -194,21 +210,17 @@ export default function PortalDashboard() {
       {/* ═══════ QUICK ACTIONS ═══════ */}
       {/* On mobile: only show in overview tab. On sm+: always show */}
       <section className={mobileView !== 'overview' ? 'hidden sm:block' : ''}>
-        <SectionHeader title="Quick actions" />
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
-          <div className="grid sm:grid-cols-2 gap-1">
-            {quickActions.filter((action) => !action.roles || (member?.role && action.roles.includes(member.role))).map((action) => (
-              <Link
-                key={action.href}
-                href={action.href}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-              >
-                <span className="w-4 h-4 shrink-0 text-gray-500">{action.icon}</span>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">{action.label}</span>
-                <span className="text-xs text-gray-500 truncate">{action.description}</span>
-              </Link>
-            ))}
-          </div>
+        <h2 className="font-serif text-lg font-semibold text-gray-900 dark:text-white px-1 mb-3.5 mt-8">Quick actions</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {quickActions.filter((action) => !action.roles || (member?.role && action.roles.includes(member.role))).map((action, i) => (
+            <Link key={action.href} href={action.href} className="p-qa">
+              <span className={`p-ic ${['bg-cranberry', 'bg-gold text-[#3a2c06]', 'bg-azure', 'bg-cranberry-900'][i % 4]}`}>{action.icon}</span>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">{action.label}</p>
+                <p className="text-[11.5px] text-gray-400 mt-0.5">{action.description}</p>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
 
@@ -221,7 +233,7 @@ export default function PortalDashboard() {
           {/* Composer trigger card */}
           <div
             onClick={() => setShowComposer(true)}
-            className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 cursor-pointer transition-colors"
+            className="flex items-center gap-3 p-4 p-card cursor-pointer hover:shadow-md transition-shadow"
           >
             <Avatar src={member?.photoURL} alt={member?.displayName || ''} size="md" />
             <div className="flex-1 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-4 py-2.5">
@@ -285,10 +297,10 @@ export default function PortalDashboard() {
         <aside className={`lg:col-span-5 xl:col-span-4 space-y-5 lg:sticky lg:top-24 lg:self-start ${mobileView !== 'widgets' ? 'hidden lg:block' : ''}`}>
 
           {/* Service Hours Progress */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+          <div className="p-card p-5">
             <div className="flex items-baseline justify-between mb-4">
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Service progress</h3>
+                <h3 className="font-serif text-base font-semibold text-gray-900 dark:text-white">Service progress</h3>
                 <p className="text-xs text-gray-500 mt-0.5">Annual goal: <span className="tabular-nums">{SERVICE_HOURS_GOAL}</span>h</p>
               </div>
               <Link href="/portal/service-hours" className="text-xs font-medium text-cranberry hover:text-cranberry-800 dark:text-cranberry-400 dark:hover:text-cranberry-300 transition-colors">
@@ -318,9 +330,9 @@ export default function PortalDashboard() {
           </div>
 
           {/* Upcoming Events */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+          <div className="p-card p-5">
             <div className="flex items-baseline justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+              <h3 className="font-serif text-base font-semibold text-gray-900 dark:text-white">
                 Upcoming events
                 {upcomingEvents.length > 0 && (
                   <span className="ml-2 text-xs font-normal text-gray-400 tabular-nums">{upcomingEvents.length}</span>
@@ -350,11 +362,11 @@ export default function PortalDashboard() {
                     className="group flex items-center gap-3 py-3"
                   >
                     {/* Date badge */}
-                    <div className="rounded-lg bg-gray-100 dark:bg-gray-800 w-11 h-11 flex flex-col items-center justify-center shrink-0 tabular-nums">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 leading-none">
+                    <div className="rounded-xl bg-gradient-to-b from-cranberry to-cranberry-900 text-white w-11 h-11 flex flex-col items-center justify-center shrink-0 tabular-nums shadow-tile">
+                      <p className="text-[9.5px] font-bold uppercase tracking-wide opacity-85 leading-none">
                         {new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}
                       </p>
-                      <p className="text-base font-semibold text-gray-900 dark:text-white leading-tight tabular-nums">
+                      <p className="font-serif text-lg font-semibold leading-tight tabular-nums">
                         {new Date(event.date).getDate()}
                       </p>
                     </div>

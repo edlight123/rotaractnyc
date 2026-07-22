@@ -59,10 +59,25 @@ module.exports = {
           900: '#005dAA',
           950: '#0a2c56',
         },
+        // Civic Editorial portal surfaces (warm, "annual-report" canvas)
+        cream: '#F3EEE4',
+        paper: '#FBF8F2',
+        ink: '#241C18',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         display: ['Manrope', 'Inter', 'system-ui', 'sans-serif'],
+        // Editorial display face — used in the portal for headings & big numerals
+        serif: ['var(--font-fraunces)', 'Iowan Old Style', 'Palatino Linotype', 'Palatino', 'Georgia', 'serif'],
+      },
+      boxShadow: {
+        tile: '0 1px 2px rgba(40,28,20,0.05)',
+        soft: '0 12px 30px -10px rgba(40,28,20,0.16)',
+        lift: '0 26px 50px -18px rgba(40,28,20,0.26)',
+      },
+      borderRadius: {
+        card: '20px',
+        tile: '16px',
       },
       animation: {
         'fade-in': 'fadeIn 0.6s ease-out forwards',
