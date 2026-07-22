@@ -440,7 +440,7 @@ export default function EventCard({
 
   return (
     <div
-      className="group relative bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden animate-in fade-in slide-in-from-bottom-2"
+      className="group relative p-card shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden animate-in fade-in slide-in-from-bottom-2"
       style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'both' }}
     >
       {/* Coloured top accent bar */}

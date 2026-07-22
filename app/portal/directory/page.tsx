@@ -339,7 +339,7 @@ export default function DirectoryPage() {
         {isAdmin && pendingList.length > 0 && (
           <section aria-label="Pending member approvals">
             <SectionHeader title="Pending approval" count={pendingList.length} />
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <div className="p-card overflow-hidden">
               <ul className="divide-y divide-gray-100 dark:divide-gray-800">
                 {(pendingExpanded ? pendingList : pendingList.slice(0, 3)).map((m) => {
                   const isDup = duplicateEmails.has((m.email || '').toLowerCase());
@@ -493,7 +493,7 @@ export default function DirectoryPage() {
               ))}
             </div>
           ) : viewMode === 'list' ? (
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
+            <div className="p-card divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
               {filtered.map((m) => (
                 <MemberCard
                   key={m.id}
@@ -506,7 +506,7 @@ export default function DirectoryPage() {
             </div>
           ) : (
             /* Table view */
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <div className="p-card overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>

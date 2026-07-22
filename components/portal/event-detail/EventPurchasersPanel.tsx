@@ -78,7 +78,7 @@ export default function EventPurchasersPanel({ eventId, purchasers, summary, onR
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-4 sm:p-6">
+    <div className="p-card p-4 sm:p-6">
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <h3 className="font-display font-semibold text-gray-900 dark:text-white text-lg">
           Ticket Purchasers

@@ -63,7 +63,7 @@ export default function FeedCard({ post, onLike, onComment }: FeedCardProps) {
   const authorDisplay = post.authorName?.trim() || 'Member';
 
   return (
-    <article className="group/card bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/70 dark:border-gray-800 shadow-sm hover:shadow-md hover:border-gray-300/80 dark:hover:border-gray-700 transition-all duration-200 overflow-hidden">
+    <article className="group/card p-card shadow-sm hover:shadow-md hover:border-gray-300/80 dark:hover:border-gray-700 transition-all duration-200 overflow-hidden">
 
       {/* ── Top accent bar ── */}
       {post.type === 'announcement' && (

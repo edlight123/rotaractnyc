@@ -58,7 +58,7 @@ export default function EventHeader({
   ];
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-5 overflow-hidden">
+    <div className="p-card p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-5 overflow-hidden">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant={colorFor(event.type)} className="capitalize">{event.type}</Badge>

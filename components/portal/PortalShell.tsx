@@ -461,7 +461,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
               </p>
               <p className="text-[11px] text-gray-400 capitalize leading-tight">{member.role}</p>
             </div>
-            <span className="p-pill-gold shrink-0">{member.memberType === 'associate' ? 'Associate' : 'Member'}</span>
+            <span className="p-pill-gold shrink-0">Member</span>
           </Link>
 
           {/* Bottom actions row */}

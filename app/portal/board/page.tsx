@@ -391,7 +391,7 @@ function PastBoardsSection({ isPresident }: { isPresident: boolean }) {
       </div>
 
       {showArchiveForm && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 mb-3 flex flex-col sm:flex-row sm:items-end gap-3">
+        <div className="p-card p-4 mb-3 flex flex-col sm:flex-row sm:items-end gap-3">
           <div className="flex-1">
             <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
               Rotary year to file the current roster under
@@ -414,7 +414,7 @@ function PastBoardsSection({ isPresident }: { isPresident: boolean }) {
       ) : (
         <div className="space-y-2">
           {boards.map((pb) => (
-            <div key={pb.year} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+            <div key={pb.year} className="p-card">
               <div className="flex items-center gap-3 px-4 py-3">
                 <button
                   onClick={() => setExpandedYear(expandedYear === pb.year ? null : pb.year)}
@@ -668,7 +668,7 @@ export default function BoardManagerPage() {
 
       {/* Roster */}
       {board.length === 0 ? (
-        <div className="text-center py-16 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
+        <div className="text-center py-16 p-card">
           <Users className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
           <h3 className="font-display font-bold text-gray-900 dark:text-white mb-2">
             No board members yet
@@ -685,7 +685,7 @@ export default function BoardManagerPage() {
           {board.map((entry, i) => (
             <div
               key={entry.uid}
-              className="flex items-center gap-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 px-4 py-3 group"
+              className="flex items-center gap-3 p-card px-4 py-3 group"
             >
               {/* Reorder arrows */}
               <div className="flex flex-col gap-0.5 shrink-0">

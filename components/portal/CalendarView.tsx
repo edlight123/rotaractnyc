@@ -87,7 +87,7 @@ export default function CalendarView({ events, initialMonth }: CalendarViewProps
   const goToday = () => setCursor(startOfMonth(new Date()));
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 overflow-hidden">
+    <div className="p-card overflow-hidden">
       {/* ── Month toolbar ── */}
       <div className="flex items-center justify-between gap-3 p-4 border-b border-gray-100 dark:border-gray-800">
         <h2 className="text-lg font-display font-bold text-gray-900 dark:text-white">{monthLabel}</h2>

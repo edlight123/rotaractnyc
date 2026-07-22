@@ -378,7 +378,7 @@ export default function DocumentsPage() {
         onDragEnd={() => { setDraggedDocId(null); setDragOverFolderId(null); }}
         className={`transition-opacity ${draggedDocId === doc.id ? 'opacity-40' : ''}`}
       >
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all p-4 sm:p-5">
+        <div className="p-card hover:border-gray-300 dark:hover:border-gray-700 transition-all p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-4 min-w-0">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${colors.bg}`}>

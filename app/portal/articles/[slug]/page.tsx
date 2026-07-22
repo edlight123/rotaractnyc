@@ -67,7 +67,7 @@ export default function PortalArticleDetailPage() {
         <img src={article.coverImage} alt={article.title} className="rounded-2xl w-full h-64 sm:h-80 object-cover" />
       )}
 
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 sm:p-8">
+      <div className="p-card p-6 sm:p-8">
         {/* Meta */}
         <div className="flex items-center gap-2 mb-4">
           <Badge variant={categoryColors[article.category] || 'gray'}>{article.category}</Badge>

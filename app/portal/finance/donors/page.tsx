@@ -153,15 +153,15 @@ export default function DonorsPage() {
       {/* Summary cards */}
       {summary && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-5">
+          <div className="p-card p-5">
             <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Total Raised</p>
             <p className="mt-1 text-2xl font-display font-bold text-cranberry">{formatCurrency(summary.totalRaisedCents)}</p>
           </div>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-5">
+          <div className="p-card p-5">
             <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Donors</p>
             <p className="mt-1 text-2xl font-display font-bold text-gray-900 dark:text-white">{summary.donorCount}</p>
           </div>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-5">
+          <div className="p-card p-5">
             <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Donations</p>
             <p className="mt-1 text-2xl font-display font-bold text-gray-900 dark:text-white">{summary.totalDonationCount}</p>
           </div>
@@ -188,7 +188,7 @@ export default function DonorsPage() {
           description="Donations made through the website will appear here once received."
         />
       ) : (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 overflow-hidden">
+        <div className="p-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-800/60 text-left">

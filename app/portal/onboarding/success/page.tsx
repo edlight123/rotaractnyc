@@ -37,7 +37,7 @@ export default function OnboardingSuccessPage() {
         Your profile has been submitted for approval. A board member will review your application shortly. In the meantime, feel free to explore the portal.
       </p>
 
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 text-left">
+      <div className="p-card p-6 text-left">
         <h3 className="font-display font-bold text-gray-900 dark:text-white mb-3">Next Steps</h3>
         <ul className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
           <li className="flex items-start gap-3">

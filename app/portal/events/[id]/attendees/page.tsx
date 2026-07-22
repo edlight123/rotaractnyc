@@ -345,7 +345,7 @@ export default function EventAttendeesPage() {
       </button>
 
       {/* Header */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 sm:p-8">
+      <div className="p-card p-6 sm:p-8">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-wider text-cranberry mb-1.5">
@@ -447,7 +447,7 @@ export default function EventAttendeesPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-4 sm:p-5">
+      <div className="p-card p-4 sm:p-5">
         <div className="grid gap-3 md:grid-cols-[1fr_auto_auto_auto]">
           <div className="relative">
             <svg
@@ -508,7 +508,7 @@ export default function EventAttendeesPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 overflow-hidden">
+      <div className="p-card overflow-hidden">
         {filtered.length === 0 ? (
           <div className="p-10">
             <EmptyState

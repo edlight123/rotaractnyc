@@ -166,6 +166,10 @@
   .portal-theme {
     @apply bg-cream text-ink dark:bg-[#17120f] dark:text-gray-100;
   }
+  /* Route the shared .card utility through the warm treatment inside the portal */
+  .portal-theme .card {
+    @apply rounded-card border-black/[0.06] dark:border-white/[0.07] shadow-soft dark:bg-[#211a16];
+  }
   /* Elevated surface (replaces flat 1px-border cards inside the portal) */
   .p-card {
     @apply bg-white dark:bg-[#211a16] rounded-card border border-black/[0.06] dark:border-white/[0.07] shadow-soft;

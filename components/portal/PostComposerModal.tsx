@@ -482,7 +482,7 @@ export default function PostComposerModal({ open, onClose, onSubmit }: PostCompo
                   onClick={() => setShowEmoji(!showEmoji)}
                 />
                 {showEmoji && (
-                  <div className="absolute bottom-full left-0 mb-2 w-[300px] sm:w-[340px] max-h-[240px] overflow-y-auto bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl p-3 z-50 animate-scale-in origin-bottom-left">
+                  <div className="absolute bottom-full left-0 mb-2 w-[300px] sm:w-[340px] max-h-[240px] overflow-y-auto p-card shadow-2xl p-3 z-50 animate-scale-in origin-bottom-left">
                     {EMOJIS.map((row, ri) => (
                       <div key={ri} className="flex flex-wrap gap-0.5 mb-1.5 last:mb-0">
                         {row.map((emoji, ei) => (

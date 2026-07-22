@@ -152,7 +152,7 @@ export default function MessagesPage() {
 
       {/* Compose */}
       {showCompose && (
-        <div ref={composeRef} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 scroll-mt-4 max-h-[70vh] overflow-y-auto sm:max-h-none sm:overflow-visible">
+        <div ref={composeRef} className="p-card p-6 scroll-mt-4 max-h-[70vh] overflow-y-auto sm:max-h-none sm:overflow-visible">
           <h3 className="font-display font-bold text-gray-900 dark:text-white mb-4">New Message</h3>
           <form onSubmit={handleSend} className="space-y-4">
             <Select
@@ -200,7 +200,7 @@ export default function MessagesPage() {
             return (
               <SwipeableMessageCard key={msg.id} onArchive={() => handleArchive(msg.id)}>
               <div
-                className={`bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-4 sm:p-5 transition-all hover:border-gray-300 dark:hover:border-gray-700 ${isUnread ? 'border-l-4 !border-l-cranberry' : ''}`}
+                className={`p-card p-4 sm:p-5 transition-all hover:border-gray-300 dark:hover:border-gray-700 ${isUnread ? 'border-l-4 !border-l-cranberry' : ''}`}
               >
                 <button
                   className="w-full text-left"

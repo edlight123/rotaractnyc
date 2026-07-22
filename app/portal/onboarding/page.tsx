@@ -196,7 +196,7 @@ export default function OnboardingPage() {
         ))}
       </div>
 
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 sm:p-8">
+      <div className="p-card p-6 sm:p-8">
         {/* Step 1: Personal Info */}
         {step === 1 && (
           <div className="space-y-5">

@@ -121,7 +121,7 @@ function PropertyRow({
 /** A grouped card of property rows with a section title. */
 function PropertySection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6">
+    <div className="p-card p-6">
       <h3 className="font-display font-bold text-gray-900 dark:text-white mb-2">{title}</h3>
       <dl className="divide-y divide-gray-100 dark:divide-gray-800">{children}</dl>
     </div>
@@ -481,7 +481,7 @@ export default function PortalMemberDetailPage() {
       </div>
 
       {/* Profile Header */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 sm:p-8">
+      <div className="p-card p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row items-start gap-6">
           <div className="relative shrink-0">
             <Avatar src={member.photoURL} alt={member.displayName} size="xl" />
@@ -665,7 +665,7 @@ export default function PortalMemberDetailPage() {
 
         {/* Interests */}
         {member.interests && member.interests.length > 0 && (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6">
+          <div className="p-card p-6">
             <h3 className="font-display font-bold text-gray-900 dark:text-white mb-4">Interests</h3>
             <div className="flex flex-wrap gap-2">
               {member.interests.map((i) => (
@@ -698,7 +698,7 @@ export default function PortalMemberDetailPage() {
 
       {/* Admin: edit profile fields on behalf of this member */}
       {isBoard && !isSelf && (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 space-y-4">
+        <div className="p-card p-6 space-y-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
               <h3 className="font-display font-bold text-gray-900 dark:text-white">Edit Profile</h3>
@@ -806,7 +806,7 @@ export default function PortalMemberDetailPage() {
 
       {/* Admin actions */}
       {isBoard && !isSelf && (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 space-y-4">
+        <div className="p-card p-6 space-y-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
               <h3 className="font-display font-bold text-gray-900 dark:text-white">Admin Actions</h3>
@@ -879,7 +879,7 @@ export default function PortalMemberDetailPage() {
 
       {/* Provisioning result: temporary credentials (shown once) */}
       {isBoard && provisionResult && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 space-y-4">
+        <div className="p-card p-5 space-y-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Org email created</h3>

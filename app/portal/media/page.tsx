@@ -826,7 +826,7 @@ export default function MediaManagerPage() {
       </div>
 
       {SECTIONS.map((section) => (
-        <div key={section.key} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-5">
+        <div key={section.key} className="p-card p-6 space-y-5">
           {/* Section header */}
           <div>
             <div className="flex items-center gap-2 mb-1">

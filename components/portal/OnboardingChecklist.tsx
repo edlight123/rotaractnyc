@@ -72,7 +72,7 @@ export default function OnboardingChecklist({
   if (dismissed) return null;
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-5 shadow-sm">
+    <div className="p-card p-5 shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-display font-bold text-gray-900 dark:text-white text-sm">

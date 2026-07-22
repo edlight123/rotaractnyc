@@ -303,7 +303,7 @@ export default function DuesPage() {
       {activeTab === 'my-dues' && (
         <div className="max-w-3xl mx-auto space-y-8">
           {/* Status Card */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+          <div className="p-card p-5">
             <div className="text-center">
               <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Rotary Year {cycleName}</p>
               <Badge
@@ -404,7 +404,7 @@ export default function DuesPage() {
           </div>
 
           {/* Info */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+          <div className="p-card p-5">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">About Annual Dues</h3>
             <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
               <li className="flex items-start gap-2"><span className="text-cranberry mt-0.5">•</span>The Rotary year runs July 1 – June 30</li>
@@ -458,7 +458,7 @@ export default function DuesPage() {
               </div>
 
               {/* Members Dues Table — Desktop */}
-              <div className="hidden sm:block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+              <div className="hidden sm:block p-card overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -544,7 +544,7 @@ export default function DuesPage() {
                     const badge = STATUS_BADGES[m.status];
                     const displayAmount = m.amount || (m.memberType === 'student' ? cycleAmounts.student : cycleAmounts.professional);
                     return (
-                      <div key={m.memberId + idx} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 space-y-3">
+                      <div key={m.memberId + idx} className="p-card p-4 space-y-3">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="font-medium text-gray-900 dark:text-white truncate">{m.memberName}</p>
@@ -603,7 +603,7 @@ export default function DuesPage() {
               {/* Cycle Settings & Payment Methods — side by side */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Cycle Settings */}
-                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+                <div className="p-card p-5">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Dues Cycles</h3>
                     <Button
@@ -659,7 +659,7 @@ export default function DuesPage() {
                 </div>
 
                 {/* Payment Methods Settings */}
-                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+                <div className="p-card p-5">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Payment Methods</h3>
                     {!editingPayment && (

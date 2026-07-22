@@ -8,7 +8,7 @@ interface EventAboutProps {
 /** "About this event" card — formatted description plus optional tag chips. */
 export default function EventAbout({ event }: EventAboutProps) {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/60 dark:border-gray-800 p-6 sm:p-8">
+    <div className="p-card p-6 sm:p-8">
       <h2 className="font-display font-semibold text-gray-900 dark:text-white mb-4 text-lg">About this event</h2>
       <EventDescription
         text={event.description}
