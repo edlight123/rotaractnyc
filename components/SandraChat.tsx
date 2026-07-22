@@ -11,11 +11,25 @@ import { useEffect, useRef, useState } from 'react';
 import { useChat } from 'ai/react';
 import { MessageCircle, X, Send, Sparkles } from 'lucide-react';
 
-const SUGGESTIONS = [
-  'How do I join the club?',
-  'What events are coming up?',
-  'What are the committees?',
-];
+type Variant = 'public' | 'portal';
+
+const SUGGESTIONS: Record<Variant, string[]> = {
+  public: [
+    'How do I join the club?',
+    'What events are coming up?',
+    'What are the committees?',
+  ],
+  portal: [
+    'How do I log my service hours?',
+    'When’s the next event?',
+    'How do I pay my dues?',
+  ],
+};
+
+const GREETING: Record<Variant, string> = {
+  public: 'Hi! I’m Sandra, the club’s assistant. Ask me about joining, events, committees, or anything about Rotaract NYC.',
+  portal: 'Hi! I’m Sandra, your club assistant. Ask me about events, service hours, dues, committees, or where to find club documents.',
+};
 
 /** Strip any stray Markdown the model emits — the chat renders plain text. */
 const clean = (s: string) =>
@@ -57,7 +71,7 @@ function renderRich(text: string): Array<string | JSX.Element> {
   return out;
 }
 
-export default function SandraChat() {
+export default function SandraChat({ variant = 'public' }: { variant?: Variant }) {
   const [open, setOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -128,10 +142,10 @@ export default function SandraChat() {
             {messages.length === 0 && (
               <div className="space-y-4">
                 <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-gray-100 dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-800 dark:text-gray-200">
-                  Hi! I’m Sandra, the club’s assistant. Ask me about joining, events, committees, or anything about Rotaract NYC.
+                  {GREETING[variant]}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {SUGGESTIONS.map((s) => (
+                  {SUGGESTIONS[variant].map((s) => (
                     <button
                       key={s}
                       onClick={() => append({ role: 'user', content: s })}
