@@ -61,9 +61,7 @@ export async function POST(request: NextRequest) {
       temperature: 0.4,
       maxTokens: 700,
     });
-    return result.toDataStreamResponse({
-      getErrorMessage: (e) => (e instanceof Error ? e.message : String(e)),
-    });
+    return result.toDataStreamResponse();
   } catch (err) {
     console.error('[sandra] generation error:', err);
     return NextResponse.json(
