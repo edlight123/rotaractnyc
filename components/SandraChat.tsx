@@ -17,6 +17,14 @@ const SUGGESTIONS = [
   'What are the committees?',
 ];
 
+/** Strip any stray Markdown the model emits — the chat renders plain text. */
+const clean = (s: string) =>
+  s
+    .replace(/\*\*/g, '')
+    .replace(/`/g, '')
+    .replace(/^#{1,6}\s*/gm, '')
+    .replace(/^\s*[-*]\s+/gm, '• ');
+
 export default function SandraChat() {
   const [open, setOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -114,7 +122,7 @@ export default function SandraChat() {
                       : 'max-w-[85%] rounded-2xl rounded-tl-sm bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3.5 py-2.5 text-sm whitespace-pre-wrap'
                   }
                 >
-                  {m.content}
+                  {m.role === 'user' ? m.content : clean(m.content)}
                 </div>
               </div>
             ))}
