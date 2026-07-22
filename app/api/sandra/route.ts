@@ -8,7 +8,7 @@ import { buildSystemPrompt, type Viewer } from '@/lib/sandra-knowledge';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const MODEL = process.env.SANDRA_MODEL || 'gemini-2.5-flash';
+const MODEL = process.env.SANDRA_MODEL || 'gemini-flash-latest';
 const BOARD_ROLES = ['admin', 'president', 'board', 'treasurer', 'secretary', 'vice-president'];
 const MAX_MESSAGES = 20; // keep context (and cost) bounded
 
