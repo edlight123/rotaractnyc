@@ -561,7 +561,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
       />
 
       {/* Sandra — member assistant (endpoint scopes answers to the member's role) */}
-      <SandraChat />
+      <SandraChat variant="portal" />
     </div>
     </TutorialProvider>
   );
