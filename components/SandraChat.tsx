@@ -25,6 +25,38 @@ const clean = (s: string) =>
     .replace(/^#{1,6}\s*/gm, '')
     .replace(/^\s*[-*]\s+/gm, '• ');
 
+/** Turn URLs and /portal paths into clickable links (chat renders plain text). */
+const LINK_RE = /(https?:\/\/[^\s<>]+|\/portal\/[a-zA-Z0-9/_-]+)/g;
+function renderRich(text: string): Array<string | JSX.Element> {
+  const out: Array<string | JSX.Element> = [];
+  let last = 0;
+  let key = 0;
+  let m: RegExpExecArray | null;
+  LINK_RE.lastIndex = 0;
+  while ((m = LINK_RE.exec(text)) !== null) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    let url = m[0];
+    let trail = '';
+    const t = url.match(/[.,!?;:)]+$/);
+    if (t) { trail = t[0]; url = url.slice(0, -trail.length); }
+    const external = url.startsWith('http');
+    out.push(
+      <a
+        key={key++}
+        href={url}
+        {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+        className="underline font-medium text-cranberry hover:text-cranberry-800 dark:text-cranberry-300 break-words"
+      >
+        {url}
+      </a>,
+    );
+    if (trail) out.push(trail);
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+
 export default function SandraChat() {
   const [open, setOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -122,7 +154,7 @@ export default function SandraChat() {
                       : 'max-w-[85%] rounded-2xl rounded-tl-sm bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3.5 py-2.5 text-sm whitespace-pre-wrap'
                   }
                 >
-                  {m.role === 'user' ? m.content : clean(m.content)}
+                  {m.role === 'user' ? m.content : renderRich(clean(m.content))}
                 </div>
               </div>
             ))}

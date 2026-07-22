@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
       model: google(MODEL),
       system: buildSystemPrompt(viewer) + grounding,
       messages,
-      temperature: 0.4,
+      temperature: 0.2,
       maxTokens: 800,
     });
     return result.toDataStreamResponse();
