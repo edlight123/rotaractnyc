@@ -412,11 +412,12 @@ export default function MembershipAdminPage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{nameOf(m)}</p>
                         <p className="text-xs text-gray-500 truncate">
-                          {r.paused
-                            ? 'Emails paused — share manually'
-                            : r.emailed
-                              ? 'Emailed to personal address'
-                              : 'Provisioned'}
+                          {/* Credential emails send with ignorePause=true, so a
+                              successful send is real even when bulk emails are
+                              paused — check `emailed` first. */}
+                          {r.emailed
+                            ? '✓ Login details emailed to their personal address'
+                            : 'Couldn’t auto-email — copy & share the details below'}
                         </p>
                       </div>
                       <Badge variant="green" className="shrink-0">Provisioned</Badge>
