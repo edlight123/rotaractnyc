@@ -61,13 +61,15 @@ export async function GET(request: Request) {
 
     // 2. Process each upcoming event
     for (const eventDoc of eventsSnap.docs) {
+      // Field names mirror the RotaractEvent shape in types/index.ts. The time
+      // of day is `time`, not `startTime` — reading the latter put "undefined"
+      // in the reminder email where the start time should be.
       const event = eventDoc.data() as {
         title: string;
         date: string;
-        startTime: string;
+        time: string;
         location: string;
         status: string;
-        visibility: string;
       };
 
       // 2a. Find RSVPs for this event where status is 'going' or 'maybe'
@@ -79,15 +81,31 @@ export async function GET(request: Request) {
 
       // 2b. Process each RSVP'd member
       for (const rsvpDoc of rsvpsSnap.docs) {
+        // An RSVP identifies its member with `memberId` (see the RSVP
+        // interface in types/index.ts and the writer in
+        // /api/portal/events/rsvp). This read used `userId`, which is always
+        // undefined — every lookup below then failed and no member ever
+        // received an event reminder.
         const rsvp = rsvpDoc.data() as {
           eventId: string;
-          userId: string;
+          memberId: string;
           status: string;
         };
 
+        // Guard explicitly rather than letting `.doc(undefined)` throw into
+        // the catch below, which is what hid the bug: the failure surfaced
+        // only as an incremented error count.
+        if (!rsvp.memberId) {
+          console.warn(
+            `[event-reminders] RSVP ${rsvpDoc.id} has no memberId, skipping.`,
+          );
+          skipped++;
+          continue;
+        }
+
         try {
           // 2c. Check if a reminder was already sent for this event+user combo
-          const dedupId = `${eventDoc.id}_${rsvp.userId}`;
+          const dedupId = `${eventDoc.id}_${rsvp.memberId}`;
           const dedupSnap = await adminDb
             .collection('event_reminders_sent')
             .doc(dedupId)
@@ -101,12 +119,12 @@ export async function GET(request: Request) {
           // Look up the member's email and name
           const userSnap = await adminDb
             .collection('members')
-            .doc(rsvp.userId)
+            .doc(rsvp.memberId)
             .get();
 
           if (!userSnap.exists) {
             console.warn(
-              `[event-reminders] User ${rsvp.userId} not found, skipping.`,
+              `[event-reminders] User ${rsvp.memberId} not found, skipping.`,
             );
             skipped++;
             continue;
@@ -128,7 +146,7 @@ export async function GET(request: Request) {
           const email = eventReminderEmail(user.displayName, {
             title: event.title,
             date: formattedDate,
-            time: event.startTime,
+            time: event.time,
             location: event.location,
           });
 
@@ -150,14 +168,14 @@ export async function GET(request: Request) {
             .doc(dedupId)
             .set({
               eventId: eventDoc.id,
-              userId: rsvp.userId,
+              memberId: rsvp.memberId,
               sentAt: new Date().toISOString(),
             });
 
           sent++;
         } catch (err) {
           console.error(
-            `[event-reminders] Error sending reminder for event ${eventDoc.id}, user ${rsvp.userId}:`,
+            `[event-reminders] Error sending reminder for event ${eventDoc.id}, member ${rsvp.memberId}:`,
             err,
           );
           errors++;

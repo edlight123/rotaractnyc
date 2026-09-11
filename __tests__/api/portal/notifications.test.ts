@@ -32,6 +32,9 @@ const mockAdminAuth = adminAuth as jest.Mocked<typeof adminAuth>;
 const mockAdminDb = adminDb as jest.Mocked<typeof adminDb>;
 const mockCookies = cookies as unknown as jest.Mock;
 
+// Must mirror DEFAULT_PREFERENCES in app/api/portal/notifications/route.ts.
+// The push* keys were added there without updating this copy, which left both
+// default-preference assertions failing.
 const DEFAULT_PREFERENCES = {
   duesReminders: true,
   eventReminders: true,
@@ -39,6 +42,11 @@ const DEFAULT_PREFERENCES = {
   announcements: true,
   weeklyDigest: false,
   boardEventDigest: true,
+  pushEnabled: true,
+  pushMessages: true,
+  pushAnnouncements: true,
+  pushEvents: true,
+  pushDues: true,
 };
 
 function makePatchRequest(body: Record<string, any>): NextRequest {
