@@ -201,7 +201,41 @@ export async function POST(request: Request) {
       console.warn('Account ensure / claims update failed (non-blocking):', e);
     }
 
-    return NextResponse.json({ success: true, autoApproved, migratedFromInvite, accountType });
+    // ── Wrong-Google-account detection ──────────────────────────────────
+    // A provisioned member has two addresses: the personal one their member
+    // doc is keyed on (`email`) and the Workspace one issued to them
+    // (`orgEmail`). Picking the Workspace account in Google's account chooser
+    // mints a brand-new uid with no member doc, so they land here as a
+    // supporter and the portal looks empty to them — previously with no
+    // explanation at all.
+    //
+    // We deliberately only REPORT this, never migrate the member doc onto the
+    // new uid: that doc belongs to a different, live auth identity, and
+    // uid-keyed data (RSVPs, dues, committee rosters, check-ins) hangs off it.
+    // Moving it would break their working sign-in and orphan those records.
+    let memberAccountMismatch: { registeredEmail: string } | null = null;
+    if (accountType === 'supporter' && email) {
+      try {
+        for (const field of ['orgEmail', 'personalEmail'] as const) {
+          const q = await adminDb.collection('members').where(field, '==', email).limit(2).get();
+          const other = q.docs.find((d) => d.id !== decoded.uid);
+          if (other) {
+            memberAccountMismatch = { registeredEmail: (other.data()?.email as string) || '' };
+            break;
+          }
+        }
+      } catch (e) {
+        console.warn('Member account mismatch check failed (non-blocking):', e);
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      autoApproved,
+      migratedFromInvite,
+      accountType,
+      memberAccountMismatch,
+    });
   } catch (error: any) {
     const message = error?.message || String(error);
     console.error('Session creation error:', message);
