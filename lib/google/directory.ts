@@ -162,6 +162,48 @@ export async function createWorkspaceUser(
   };
 }
 
+export interface ResetWorkspacePasswordResult {
+  orgEmail: string;
+  temporaryPassword: string;
+  /** True when the account is suspended, so the new password won't let them in. */
+  suspended: boolean;
+}
+
+/**
+ * Issue a fresh temporary password for an existing Workspace user.
+ *
+ * The temporary password from provisioning is generated once, never stored,
+ * and returned only in that one API response — so when a member loses it, or
+ * it expires, or they half-finish the forced change, there is nothing to look
+ * up and no way to re-send it. This mints a new one.
+ *
+ * Same `admin.directory.user` scope and same `users.update` call already used
+ * by suspendWorkspaceUser, so it needs no additional Admin console setup.
+ *
+ * `changePasswordAtNextLogin` is set again so the member still chooses their
+ * own password, exactly as on first provisioning. A suspended account is
+ * reported rather than silently reactivated — re-enabling someone who was
+ * deliberately offboarded should be its own explicit action.
+ */
+export async function resetWorkspacePassword(
+  orgEmail: string,
+): Promise<ResetWorkspacePasswordResult> {
+  if (!isDirectoryConfigured()) {
+    throw new Error('Workspace provisioning is not configured.');
+  }
+
+  const existing = await directory().users.get({ userKey: orgEmail });
+  const suspended = existing.data.suspended === true;
+
+  const temporaryPassword = generateTemporaryPassword();
+  await directory().users.update({
+    userKey: orgEmail,
+    requestBody: { password: temporaryPassword, changePasswordAtNextLogin: true },
+  });
+
+  return { orgEmail, temporaryPassword, suspended };
+}
+
 /**
  * Suspend (deactivate) a Workspace user — used on offboarding so the paid seat
  * can be reclaimed without permanently deleting the account/history.
