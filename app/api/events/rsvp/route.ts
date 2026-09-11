@@ -137,7 +137,6 @@ export async function POST(request: NextRequest) {
 
     await guestRsvpRef.set(guestRsvpData);
 
-    // Send confirmation email (non-blocking)
     const emailData = guestRsvpConfirmationEmail(name.trim(), {
       title: event.title,
       date: event.date,
@@ -146,16 +145,34 @@ export async function POST(request: NextRequest) {
       slug: event.slug,
     });
 
-    sendEmail({
+    // Await the send. Returning first leaves this promise unsettled, and a
+    // serverless function can be frozen the instant its response goes out —
+    // dropping the request to Resend mid-flight. That failed silently and
+    // intermittently: the response below still promised a confirmation email
+    // that was never sent.
+    //
+    // Registration itself must still succeed if Resend is down, so a failure
+    // is logged and surfaced in the payload rather than thrown.
+    const emailResult = await sendEmail({
       to: email.toLowerCase().trim(),
       subject: emailData.subject,
       html: emailData.html,
       text: emailData.text,
-    }).catch((err) => console.error('Failed to send guest RSVP confirmation:', err));
+    }).catch((err) => {
+      console.error('Failed to send guest RSVP confirmation:', err);
+      return { success: false as const, error: err?.message || 'send failed' };
+    });
+
+    if (!emailResult.success) {
+      console.error('Guest RSVP confirmation not sent:', emailResult.error);
+    }
 
     return NextResponse.json({
       success: true,
-      message: "You're registered! Check your email for confirmation.",
+      emailSent: emailResult.success,
+      message: emailResult.success
+        ? "You're registered! Check your email for confirmation."
+        : "You're registered! We couldn't send your confirmation email, but your spot is saved.",
       rsvpId: guestRsvpRef.id,
     });
   } catch (error: any) {

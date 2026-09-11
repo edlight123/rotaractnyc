@@ -63,14 +63,24 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString(),
     });
 
-    // Send confirmation email (fire-and-forget — don't block the response)
-    sendEmail({
+    // Await the send. Returning first leaves this promise unsettled, and a
+    // serverless function can be frozen the instant its response goes out —
+    // dropping the request to Resend mid-flight. Joining the waitlist must
+    // still succeed if Resend is down, so a failure is logged, not thrown.
+    const emailResult = await sendEmail({
       to: email,
       ...waitlistConfirmationEmail(email, eventTitle, eventSlug),
-    }).catch((err) => console.error('[Waitlist] Confirmation email failed:', err));
+    }).catch((err) => {
+      console.error('[Waitlist] Confirmation email failed:', err);
+      return { success: false as const, error: err?.message || 'send failed' };
+    });
+
+    if (!emailResult.success) {
+      console.error('[Waitlist] Confirmation email not sent:', emailResult.error);
+    }
 
     return NextResponse.json(
-      { message: 'Successfully joined the waitlist.' },
+      { message: 'Successfully joined the waitlist.', emailSent: emailResult.success },
       { status: 201 },
     );
   } catch (error) {
