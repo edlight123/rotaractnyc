@@ -10,6 +10,7 @@ import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithCustomToken,
   sendEmailVerification,
   updateProfile,
   sendSignInLinkToEmail,
@@ -26,13 +27,25 @@ import type { Account, Member } from '@/types';
 // and completing sign-in on the same device (Firebase email-link requirement).
 const MAGIC_LINK_EMAIL_KEY = 'rotaract_emailForSignIn';
 
+/**
+ * Why a signed-in user has no member profile. Currently only set when they
+ * signed in with a Google account (typically their @rotaractnyc.org Workspace
+ * address) that differs from the one their membership is registered under —
+ * see the mismatch check in /api/portal/auth/session.
+ */
+export interface MemberAccountMismatch {
+  registeredEmail: string;
+}
+
 interface AuthContextType {
   user: User | null;
   account: Account | null;
   member: Member | null;
+  memberAccountMismatch: MemberAccountMismatch | null;
   loading: boolean;
   sessionReady: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInAsRegisteredMember: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, name: string) => Promise<void>;
   sendMagicLink: (email: string, redirectPath?: string) => Promise<void>;
@@ -45,9 +58,11 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   account: null,
   member: null,
+  memberAccountMismatch: null,
   loading: true,
   sessionReady: false,
   signInWithGoogle: async () => {},
+  signInAsRegisteredMember: async () => {},
   signInWithEmail: async () => {},
   signUpWithEmail: async () => {},
   sendMagicLink: async () => {},
@@ -60,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [account, setAccount] = useState<Account | null>(null);
   const [member, setMember] = useState<Member | null>(null);
+  const [memberAccountMismatch, setMemberAccountMismatch] = useState<MemberAccountMismatch | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionReady, setSessionReady] = useState(false);
 
@@ -72,6 +88,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(getAuth(), async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
+        // Re-enter the loading state while we resolve this user's profile.
+        // Without this, a sign-in that follows a sign-out (where `loading` was
+        // already false) would briefly expose `user` set + `member` still null,
+        // which reads as "signed in but not a member" to consumers.
+        setLoading(true);
         let resolvedMember: Member | null = null;
         let resolvedAccount: Account | null = null;
         let idToken: string | null = null;
@@ -105,6 +126,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setSessionReady(true);
               const data = await res.json().catch(() => null);
               serverAutoApproved = !!(data?.autoApproved || data?.migratedFromInvite);
+              setMemberAccountMismatch(
+                data?.memberAccountMismatch?.registeredEmail
+                  ? { registeredEmail: data.memberAccountMismatch.registeredEmail }
+                  : null,
+              );
             } else {
               console.error('Auth: Session cookie creation returned', res.status);
               setSessionReady(false);
@@ -162,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setMember(null);
         setAccount(null);
+        setMemberAccountMismatch(null);
         setSessionReady(false);
         setLoading(false);
       }
@@ -189,6 +216,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw err;
       }
     }
+  };
+
+  /**
+   * Completes a Workspace-account sign-in by swapping this session onto the
+   * member's own canonical Firebase user.
+   *
+   * Called when someone signed in with their provisioned @rotaractnyc.org
+   * address, which has its own uid and no member doc. The server verifies the
+   * Workspace address maps to exactly one active member (see
+   * /api/portal/auth/org-signin) and returns a custom token for that member's
+   * existing uid; signing in with it makes them that user, so every uid-keyed
+   * record resolves as normal.
+   *
+   * Firebase's linking API cannot express this — one account per provider per
+   * user, and both accounts here are google.com.
+   */
+  const signInAsRegisteredMember = async () => {
+    const authInstance = getAuth();
+    const current = authInstance.currentUser;
+    if (!current) throw new Error('NOT_SIGNED_IN');
+
+    const idToken = await current.getIdToken();
+    const res = await fetch('/api/portal/auth/org-signin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.customToken) {
+      throw new Error(data?.error || 'Could not complete workspace sign-in.');
+    }
+
+    // onAuthStateChanged picks this up: it re-establishes the session cookie
+    // for the canonical uid and loads the member profile.
+    await signInWithCustomToken(authInstance, data.customToken);
   };
 
   // ── Email + password ──────────────────────────────────────────────────
@@ -294,11 +356,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setMember(null);
     setAccount(null);
+    setMemberAccountMismatch(null);
     setSessionReady(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, account, member, loading, sessionReady, signInWithGoogle, signInWithEmail, signUpWithEmail, sendMagicLink, completeMagicLink, sendPasswordReset, signOut }}>
+    <AuthContext.Provider value={{ user, account, member, memberAccountMismatch, loading, sessionReady, signInWithGoogle, signInAsRegisteredMember, signInWithEmail, signUpWithEmail, sendMagicLink, completeMagicLink, sendPasswordReset, signOut }}>
       {children}
     </AuthContext.Provider>
   );

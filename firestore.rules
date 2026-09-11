@@ -73,10 +73,18 @@ service cloud.firestore {
       allow create: if isOwner(memberId)
                     && request.resource.data.status == 'pending';
 
-      // Members can update their own profile (but not role or status)
+      // Members can update their own profile, but not the fields that decide
+      // who they are or what they can reach.
+      //
+      // `orgEmail` is security-relevant: /api/portal/auth/org-signin maps a
+      // verified @rotaractnyc.org Workspace sign-in onto the member that
+      // claims it, so a self-editable orgEmail would let a member redirect
+      // someone else's Workspace address at their own record. It is written
+      // only by the provisioning API routes (Admin SDK), never the client —
+      // as are `personalEmail` and the `provisioning` block beside it.
       allow update: if isOwner(memberId)
                     && !request.resource.data.diff(resource.data).affectedKeys()
-                        .hasAny(['role', 'status']);
+                        .hasAny(['role', 'status', 'orgEmail', 'personalEmail', 'provisioning']);
 
       // Board+ can update any member (role changes, approval, etc.)
       allow update: if isBoard();

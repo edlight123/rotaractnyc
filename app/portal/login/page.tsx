@@ -8,11 +8,21 @@ import Button from '@/components/ui/Button';
 import { SITE } from '@/lib/constants';
 
 export default function PortalLoginPage() {
-  const { user, member, loading, sessionReady, signInWithGoogle } = useAuth();
+  const {
+    user,
+    member,
+    memberAccountMismatch,
+    loading,
+    sessionReady,
+    signInWithGoogle,
+    signInAsRegisteredMember,
+    signOut,
+  } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/portal';
   const [signingIn, setSigningIn] = useState(false);
+  const [continuing, setContinuing] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -24,6 +34,26 @@ export default function PortalLoginPage() {
       router.refresh();
     }
   }, [loading, user, member, sessionReady, redirect, router]);
+
+  // Signed in successfully, but this account has no member profile — so the
+  // redirect effect above never fires. Previously the page just sat there
+  // looking like the sign-in button had done nothing; now we say why.
+  const signedInWithoutMembership = !loading && !!user && sessionReady && !member;
+
+  // Swap this Workspace-account session onto the member's own uid.
+  const handleContinueAsMember = async () => {
+    setError('');
+    setContinuing(true);
+    try {
+      await signInAsRegisteredMember();
+      // On success onAuthStateChanged takes over: the session cookie is
+      // re-established for the member's uid, `member` populates, and the
+      // redirect effect above fires. Leave the spinner up until then.
+    } catch (err: any) {
+      setError(err?.message || 'Could not continue. Please sign in with your registered account.');
+      setContinuing(false);
+    }
+  };
 
   const handleSignIn = async () => {
     setError('');
@@ -70,6 +100,66 @@ export default function PortalLoginPage() {
           {loading ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-cranberry" />
+            </div>
+          ) : signedInWithoutMembership ? (
+            <div className="space-y-4">
+              {error && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl">
+                  <p className="text-sm text-red-700 dark:text-red-400 text-center">{error}</p>
+                </div>
+              )}
+
+              <div className="p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl">
+                <p className="text-sm font-semibold text-amber-900 dark:text-amber-300">
+                  {memberAccountMismatch ? 'Continue to your membership' : 'No member access yet'}
+                </p>
+                <p className="text-sm text-amber-800 dark:text-amber-400 mt-1.5 leading-relaxed">
+                  You&apos;re signed in as <span className="font-medium">{user?.email}</span>.{' '}
+                  {memberAccountMismatch ? (
+                    <>
+                      Your membership is registered under{' '}
+                      <span className="font-medium">{memberAccountMismatch.registeredEmail}</span>.
+                      Continue to open the portal as that member.
+                    </>
+                  ) : (
+                    <>
+                      That account isn&apos;t an approved member. If you just joined, your
+                      membership is pending board approval.
+                    </>
+                  )}
+                </p>
+              </div>
+
+              {memberAccountMismatch && (
+                <Button
+                  onClick={handleContinueAsMember}
+                  size="lg"
+                  className="w-full"
+                  disabled={continuing}
+                >
+                  {continuing
+                    ? 'Opening your portal…'
+                    : `Continue as ${memberAccountMismatch.registeredEmail}`}
+                </Button>
+              )}
+
+              <Button
+                onClick={() => signOut()}
+                variant="secondary"
+                size="lg"
+                className="w-full"
+                disabled={continuing}
+              >
+                Use a different account
+              </Button>
+
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center leading-relaxed">
+                Not a member? You can still{' '}
+                <a href="/account" className="text-cranberry hover:underline">
+                  visit your supporter account
+                </a>
+                .
+              </p>
             </div>
           ) : (
             <>
