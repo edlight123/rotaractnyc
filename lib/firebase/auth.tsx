@@ -10,6 +10,7 @@ import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithCustomToken,
   sendEmailVerification,
   updateProfile,
   sendSignInLinkToEmail,
@@ -44,6 +45,7 @@ interface AuthContextType {
   loading: boolean;
   sessionReady: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInAsRegisteredMember: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, name: string) => Promise<void>;
   sendMagicLink: (email: string, redirectPath?: string) => Promise<void>;
@@ -60,6 +62,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   sessionReady: false,
   signInWithGoogle: async () => {},
+  signInAsRegisteredMember: async () => {},
   signInWithEmail: async () => {},
   signUpWithEmail: async () => {},
   sendMagicLink: async () => {},
@@ -215,6 +218,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  /**
+   * Completes a Workspace-account sign-in by swapping this session onto the
+   * member's own canonical Firebase user.
+   *
+   * Called when someone signed in with their provisioned @rotaractnyc.org
+   * address, which has its own uid and no member doc. The server verifies the
+   * Workspace address maps to exactly one active member (see
+   * /api/portal/auth/org-signin) and returns a custom token for that member's
+   * existing uid; signing in with it makes them that user, so every uid-keyed
+   * record resolves as normal.
+   *
+   * Firebase's linking API cannot express this — one account per provider per
+   * user, and both accounts here are google.com.
+   */
+  const signInAsRegisteredMember = async () => {
+    const authInstance = getAuth();
+    const current = authInstance.currentUser;
+    if (!current) throw new Error('NOT_SIGNED_IN');
+
+    const idToken = await current.getIdToken();
+    const res = await fetch('/api/portal/auth/org-signin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.customToken) {
+      throw new Error(data?.error || 'Could not complete workspace sign-in.');
+    }
+
+    // onAuthStateChanged picks this up: it re-establishes the session cookie
+    // for the canonical uid and loads the member profile.
+    await signInWithCustomToken(authInstance, data.customToken);
+  };
+
   // ── Email + password ──────────────────────────────────────────────────
   const signInWithEmail = async (email: string, password: string) => {
     await signInWithEmailAndPassword(getAuth(), email, password);
@@ -323,7 +361,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, account, member, memberAccountMismatch, loading, sessionReady, signInWithGoogle, signInWithEmail, signUpWithEmail, sendMagicLink, completeMagicLink, sendPasswordReset, signOut }}>
+    <AuthContext.Provider value={{ user, account, member, memberAccountMismatch, loading, sessionReady, signInWithGoogle, signInAsRegisteredMember, signInWithEmail, signUpWithEmail, sendMagicLink, completeMagicLink, sendPasswordReset, signOut }}>
       {children}
     </AuthContext.Provider>
   );
