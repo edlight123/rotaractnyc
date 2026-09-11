@@ -50,6 +50,10 @@ interface ProvisionResult {
   temporaryPassword: string;
   emailed: boolean;
   paused: boolean;
+  /** True when these credentials came from a password reset, not a new account. */
+  reset?: boolean;
+  /** Workspace account is suspended, so the new password won't let them in. */
+  suspended?: boolean;
 }
 
 const nameOf = (m: MemberRow) =>
@@ -70,6 +74,7 @@ export default function MembershipAdminPage() {
   const [actingId, setActingId] = useState<string | null>(null);
   const [provisioningId, setProvisioningId] = useState<string | null>(null);
   const [suspendingId, setSuspendingId] = useState<string | null>(null);
+  const [resettingId, setResettingId] = useState<string | null>(null);
   const [provisionResults, setProvisionResults] = useState<Record<string, ProvisionResult>>({});
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [provisionAllRunning, setProvisionAllRunning] = useState(false);
@@ -196,6 +201,53 @@ export default function MembershipAdminPage() {
       await provisionOne(m);
     } finally {
       setProvisioningId(null);
+    }
+  };
+
+  /**
+   * Issue a fresh temporary password for a member's Workspace account. The one
+   * from provisioning is generated once and never stored, so when it's lost or
+   * expired this is the only way back in short of the Google Admin console.
+   */
+  const resetPassword = async (m: MemberRow) => {
+    if (!m.orgEmail) return;
+    if (
+      !confirm(
+        `Reset the password for ${m.orgEmail}? Their current password stops working immediately, and they'll set a new one at next sign-in.`,
+      )
+    )
+      return;
+    setResettingId(m.id);
+    try {
+      const res = await fetch(`/api/portal/members/${m.id}/reset-workspace-password`, {
+        method: 'POST',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast(data.error || `Failed to reset the password for ${nameOf(m)}`, 'error');
+        return;
+      }
+      // Reuse the credential hand-off card below — same shape, same purpose.
+      setProvisionResults((prev) => ({
+        ...prev,
+        [m.id]: {
+          orgEmail: data.orgEmail,
+          temporaryPassword: data.temporaryPassword,
+          emailed: !!data.emailed,
+          paused: false,
+          reset: true,
+          suspended: !!data.suspended,
+        },
+      }));
+      toast(
+        data.emailed
+          ? `New password emailed to ${nameOf(m)}`
+          : `Password reset — copy and share the details below`,
+      );
+    } catch {
+      toast(`Failed to reset the password for ${nameOf(m)}`, 'error');
+    } finally {
+      setResettingId(null);
     }
   };
 
@@ -416,12 +468,22 @@ export default function MembershipAdminPage() {
                               successful send is real even when bulk emails are
                               paused — check `emailed` first. */}
                           {r.emailed
-                            ? '✓ Login details emailed to their personal address'
+                            ? r.reset
+                              ? '✓ New password emailed to their personal address'
+                              : '✓ Login details emailed to their personal address'
                             : 'Couldn’t auto-email — copy & share the details below'}
                         </p>
                       </div>
-                      <Badge variant="green" className="shrink-0">Provisioned</Badge>
+                      <Badge variant={r.reset ? 'azure' : 'green'} className="shrink-0">
+                        {r.reset ? 'Password reset' : 'Provisioned'}
+                      </Badge>
                     </div>
+                    {r.suspended && (
+                      <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
+                        This Workspace account is suspended — the new password won’t work until
+                        it’s re-enabled in Google Admin.
+                      </p>
+                    )}
                     <div className="mt-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3 space-y-2">
                       <div className="flex items-center gap-2">
                         <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500 w-20 shrink-0">Email</span>
@@ -459,14 +521,27 @@ export default function MembershipAdminPage() {
                     <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{nameOf(m)}</p>
                     <code className="text-xs text-gray-500 truncate block">{m.orgEmail}</code>
                   </div>
-                  <div className="shrink-0">
+                  <div className="shrink-0 flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => resetPassword(m)}
+                      loading={resettingId === m.id}
+                      disabled={
+                        (resettingId !== null && resettingId !== m.id) || suspendingId !== null
+                      }
+                    >
+                      Reset password
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
                       className="text-red-600 hover:text-red-700"
                       onClick={() => suspend(m)}
                       loading={suspendingId === m.id}
-                      disabled={suspendingId !== null && suspendingId !== m.id}
+                      disabled={
+                        (suspendingId !== null && suspendingId !== m.id) || resettingId !== null
+                      }
                     >
                       Suspend
                     </Button>
