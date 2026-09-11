@@ -284,6 +284,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await fetch('/api/portal/auth/session', { method: 'DELETE' });
     await firebaseSignOut(getAuth());
+    // Ask the service worker to drop its cached portal pages / API responses.
+    // They are keyed by URL alone (not by session), so they would otherwise be
+    // served to the next member who signs in on this device.
+    try {
+      navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_PORTAL_CACHE' });
+    } catch {
+      /* service worker unavailable — nothing cached to clear */
+    }
     setMember(null);
     setAccount(null);
     setSessionReady(false);
