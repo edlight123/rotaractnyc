@@ -1,8 +1,8 @@
-// @version 2026-05-05
+// @version 2026-07-23.mrwrxtf4
 // Service Worker for PWA offline capabilities
 // Version is updated at build time — see next.config.js generateBuildId or update manually.
 // Cache name uses a date-stamp so each deployment busts stale caches.
-const CACHE_VERSION = '2026-05-05';
+const CACHE_VERSION = '2026-07-23.mrwrxtf4';
 const CACHE_NAME = 'rotaractnyc-v' + CACHE_VERSION;
 
 const STATIC_CACHE = CACHE_NAME + '-static';
@@ -72,6 +72,18 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  // Sign-out — drop every cached portal page / API response. These are keyed
+  // by URL only, so leaving them behind would expose the previous member's
+  // data to the next person who signs in on this device.
+  if (event.data && event.data.type === 'CLEAR_PORTAL_CACHE') {
+    event.waitUntil(
+      caches.keys().then((names) =>
+        Promise.all(
+          names.filter((name) => name.endsWith('-portal')).map((name) => caches.delete(name)),
+        ),
+      ),
+    );
   }
 });
 
@@ -143,10 +155,20 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Portal GETs — stale-while-revalidate against a dedicated cache so the
-  // member portal stays usable on flaky connections (e.g. event venue wifi).
-  // Authenticated routes are scoped per-session by Firebase's session cookie,
-  // so the cached responses are private to the device's logged-in user.
+  // Portal GETs — network-FIRST against a dedicated cache, so the member
+  // portal stays usable on flaky connections (e.g. event venue wifi) without
+  // ever serving stale or another member's data while the network works.
+  //
+  // The cache is an offline fallback only, never a fast path. Serving a cache
+  // hit ahead of the network is wrong here for two reasons:
+  //   1. Cache entries are keyed by URL alone — the session cookie is NOT part
+  //      of the key — so a response stored for one signed-in member would be
+  //      replayed for the next member to sign in on the same device, and for a
+  //      member whose session has since expired (bypassing the middleware
+  //      session check entirely, since no request reaches the server).
+  //   2. Portal data is live. A cache hit pins pages like an event's attendee
+  //      roster to whatever it looked like on the previous visit, so newly
+  //      registered attendees never appear.
   const isPortalRead =
     url.pathname.startsWith('/portal') ||
     url.pathname.startsWith('/api/portal/');
@@ -155,31 +177,35 @@ self.addEventListener('fetch', (event) => {
     const PORTAL_CACHE = CACHE_NAME + '-portal';
     event.respondWith(
       (async () => {
-        const cache = await caches.open(PORTAL_CACHE);
-        const cachedPromise = cache.match(request);
-        const networkPromise = fetch(request)
-          .then((res) => {
-            // Only cache successful, basic-origin responses
-            if (res && res.status === 200 && res.type === 'basic') {
-              cache.put(request, res.clone()).then(() => trimCache(PORTAL_CACHE, MAX_PAGE_ENTRIES));
-            }
-            return res;
-          })
-          .catch(async () => {
-            const cached = await cachedPromise;
-            if (cached) return cached;
-            // For navigations, fall back to the offline page so members get
-            // a branded experience instead of a Chrome dino.
-            if (request.mode === 'navigate') {
-              return caches.match('/offline.html');
-            }
-            return new Response(JSON.stringify({ error: 'offline' }), {
-              status: 503,
-              headers: { 'Content-Type': 'application/json' },
-            });
+        try {
+          const res = await fetch(request);
+          // Only cache successful, basic-origin responses. Browser-initiated
+          // navigations use redirect: 'manual', so a middleware redirect
+          // arrives as an opaqueredirect (status 0) — passed through for the
+          // browser to follow, and never cached.
+          if (res && res.status === 200 && res.type === 'basic') {
+            const copy = res.clone();
+            caches
+              .open(PORTAL_CACHE)
+              .then((cache) =>
+                cache.put(request, copy).then(() => trimCache(PORTAL_CACHE, MAX_PAGE_ENTRIES)),
+              )
+              .catch(() => {});
+          }
+          return res;
+        } catch {
+          const cached = await caches.match(request, { cacheName: PORTAL_CACHE });
+          if (cached) return cached;
+          // For navigations, fall back to the offline page so members get
+          // a branded experience instead of a Chrome dino.
+          if (request.mode === 'navigate') {
+            return caches.match('/offline.html');
+          }
+          return new Response(JSON.stringify({ error: 'offline' }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' },
           });
-        const cached = await cachedPromise;
-        return cached || networkPromise;
+        }
       })(),
     );
     return;
