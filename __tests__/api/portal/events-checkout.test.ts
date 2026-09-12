@@ -71,12 +71,22 @@ function makeRequest(body: Record<string, unknown>) {
   });
 }
 
+
+/**
+ * An event date safely in the future. These fixtures previously hardcoded a
+ * date; once it passed, the route short-circuited with 410 "registration is
+ * closed" and the suite went red for reasons unrelated to what it tests.
+ */
+function futureDate(daysAhead = 30): string {
+  return new Date(Date.now() + daysAhead * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
 function mockPaidPortalEvent() {
   mockEventGet.mockResolvedValue({
     exists: true,
     data: () => ({
       title: 'Member Benefit Night',
-      date: '2026-06-01',
+      date: futureDate(),
       location: 'NYC',
       pricing: {
         memberPrice: 1500,

@@ -5,11 +5,20 @@
  * and RSVP confirmation email dispatch.
  */
 
+/**
+ * An event date safely in the future. These fixtures previously hardcoded a
+ * date; once it passed, the route short-circuited with 410 "registration is
+ * closed" and the suite went red for reasons unrelated to what it tests.
+ */
+function futureDate(daysAhead = 30): string {
+  return new Date(Date.now() + daysAhead * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
 const mockSet = jest.fn().mockResolvedValue(undefined);
 const mockGet = jest.fn().mockResolvedValue({ exists: false, data: () => null });
 const mockEventGet = jest.fn().mockResolvedValue({
   exists: true,
-  data: () => ({ title: 'Spring Gala', date: 'May 10, 2026', time: '7:00 PM', location: 'New York, NY', slug: 'spring-gala-2026' }),
+  data: () => ({ title: 'Spring Gala', date: futureDate(), time: '7:00 PM', location: 'New York, NY', slug: 'spring-gala-2026' }),
 });
 const mockDoc = jest.fn().mockReturnValue({ set: mockSet, get: mockGet, id: 'test-rsvp-id' });
 const mockEventDoc = jest.fn().mockReturnValue({ get: mockEventGet });

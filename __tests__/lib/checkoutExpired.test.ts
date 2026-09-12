@@ -91,7 +91,10 @@ describe('handleCheckoutExpired', () => {
 
     // Re-mock collection to give doc-level update
     const { adminDb } = require('@/lib/firebase/admin');
-    jest.spyOn(adminDb, 'collection').mockImplementation((name: string) => {
+    // `name` is typed as unknown by the spy's signature, so narrow it here
+    // rather than declaring a stricter parameter than the mock accepts.
+    jest.spyOn(adminDb, 'collection').mockImplementation((...args: unknown[]) => {
+      const name = args[0] as string;
       if (name === 'guest_rsvps') {
         return {
           where: jest.fn().mockReturnThis(),

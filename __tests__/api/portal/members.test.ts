@@ -18,8 +18,14 @@ const mockCollection = jest.fn().mockImplementation((name: string) => {
   if (name === 'members') {
     return {
       where: (...args: any[]) => {
-        // Distinguish between status filter (GET) and email filter (POST dup check)
-        if (args[0] === 'email') return mockWhereEmail(...args);
+        // Distinguish between status filter (GET) and email filters (POST dup
+        // check). POST checks BOTH `email` and `personalEmail` so that
+        // re-provisioning the same person is caught; only `email` was routed
+        // here, so the personalEmail query hit the GET mock, which has no
+        // .limit() — the POST test failed with "limit is not a function".
+        if (args[0] === 'email' || args[0] === 'personalEmail') {
+          return mockWhereEmail(...args);
+        }
         return mockWhere(...args);
       },
       doc: mockMemberDoc,
