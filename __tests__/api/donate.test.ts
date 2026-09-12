@@ -15,6 +15,17 @@ jest.mock('stripe', () => {
   }));
 });
 
+// An event-scoped donation looks the event up to check whether its donation
+// window has closed. Without this mock the route reaches the real Admin SDK,
+// throws "Firebase Admin credentials not configured", and returns 500 — which
+// is what made the event-attribution test fail.
+const mockEventGet = jest.fn().mockResolvedValue({ exists: false, data: () => null });
+jest.mock('@/lib/firebase/admin', () => ({
+  adminDb: {
+    collection: () => ({ doc: () => ({ get: () => mockEventGet() }) }),
+  },
+}));
+
 import { NextRequest } from 'next/server';
 
 // Must import AFTER mocks
