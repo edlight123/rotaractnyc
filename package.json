@@ -9,6 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "seed:portal": "node scripts/seed-portal.js",
+    "deploy:rules": "node scripts/deploy-firestore-rules.mjs",
+    "deploy:rules:dry": "node scripts/deploy-firestore-rules.mjs --dry-run",
     "import:photos": "npx tsx scripts/import-google-photos.ts",
     "import:photos:dry": "npx tsx scripts/import-google-photos.ts --dry-run",
     "test": "jest",
