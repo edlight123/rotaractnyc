@@ -6,6 +6,7 @@ import { getEventBySlug } from '@/lib/firebase/queries';
 import { formatDate, formatCurrency, toPlainText } from '@/lib/utils/format';
 import { ogImage } from '@/lib/utils/ogImage';
 import { hasMemberDiscount } from '@/lib/utils/pricing';
+import { isExternallyRegistered, resolveHost } from '@/lib/utils/eventAudience';
 import { SITE } from '@/lib/constants';
 import Badge from '@/components/ui/Badge';
 import GuestRsvpForm from '@/components/public/GuestRsvpForm';
@@ -59,6 +60,12 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
   // member-portal link instead.
   const memberDiscount = hasMemberDiscount(event);
 
+  // When the host runs registration we show none of our own registration UI.
+  // Collecting RSVPs the host never receives is worse than not listing the
+  // event at all — people would show up to an organiser with no record of them.
+  const external = isExternallyRegistered(event);
+  const hostLabel = event.hostName || 'the host';
+
   // Tickets sold for the scarcity nudge: prefer the event-level counter but
   // fall back to summing tier soldCounts if it's higher (the event counter can
   // briefly lag tier totals during high-volume sales).
@@ -78,11 +85,10 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
       name: event.location?.split(',')[0] || '',
       address: event.location || '',
     },
-    organizer: {
-      '@type': 'Organization',
-      name: SITE.name,
-      url: SITE.url,
-    },
+    // Don't let search engines attribute a partner's event to Rotaract NYC.
+    organizer: resolveHost(event) === 'rotaract'
+      ? { '@type': 'Organization', name: SITE.name, url: SITE.url }
+      : { '@type': 'Organization', name: event.hostName || SITE.name },
     ...(event.pricing && {
       offers: {
         '@type': 'Offer',
@@ -203,6 +209,8 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
 
             {/* ── Sold-out banner (event-level capacity + tier-level) ── */}
             {(() => {
+              // Capacity is meaningless for an event we do not run.
+              if (external) return null;
               const now = new Date();
               const tiers = event.pricing?.tiers ?? [];
               const allTiersSoldOrExpired =
@@ -249,12 +257,12 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
             })()}
 
             {/* ── Tickets-left urgency nudge (hidden once sold out or ended) ── */}
-            {!eventHasEnded(event) && (
+            {!external && !eventHasEnded(event) && (
               <TicketScarcity capacity={event.capacity} ticketsSold={ticketsSold} className="mt-10" />
             )}
 
             {/* Pricing */}
-            {event.pricing && (event.type === 'paid' || event.type === 'hybrid') && (
+            {!external && event.pricing && (event.type === 'paid' || event.type === 'hybrid') && (
               <div className="mt-10 p-6 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
                 <h3 className="font-display font-bold text-gray-900 dark:text-white mb-4">Pricing</h3>
 
@@ -362,6 +370,26 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
                       {' '}or relive the night in the{' '}
                       <Link href="/gallery" className="text-cranberry hover:underline font-medium">photo gallery</Link>.
                     </p>
+                  </div>
+                );
+              }
+              // The host runs registration — link out and show nothing of ours.
+              if (external) {
+                return (
+                  <div className="rounded-2xl border border-azure-200 dark:border-azure-900/40 bg-azure-50 dark:bg-azure-900/10 p-8 text-center">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Hosted by{' '}
+                      <span className="font-semibold text-gray-900 dark:text-white">{hostLabel}</span>.
+                      {' '}Registration is handled by them.
+                    </p>
+                    <a
+                      href={event.externalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-4 inline-flex items-center gap-2 rounded-lg bg-cranberry px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-cranberry-800 transition"
+                    >
+                      Register on {hostLabel}&rsquo;s site →
+                    </a>
                   </div>
                 );
               }
