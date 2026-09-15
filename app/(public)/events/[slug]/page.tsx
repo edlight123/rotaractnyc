@@ -6,7 +6,7 @@ import { getEventBySlug } from '@/lib/firebase/queries';
 import { formatDate, formatCurrency, toPlainText } from '@/lib/utils/format';
 import { ogImage } from '@/lib/utils/ogImage';
 import { hasMemberDiscount } from '@/lib/utils/pricing';
-import { isExternallyRegistered, resolveHost } from '@/lib/utils/eventAudience';
+import { externalRegistrationUrl, resolveHost } from '@/lib/utils/eventAudience';
 import { SITE } from '@/lib/constants';
 import Badge from '@/components/ui/Badge';
 import GuestRsvpForm from '@/components/public/GuestRsvpForm';
@@ -63,7 +63,8 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
   // When the host runs registration we show none of our own registration UI.
   // Collecting RSVPs the host never receives is worse than not listing the
   // event at all — people would show up to an organiser with no record of them.
-  const external = isExternallyRegistered(event);
+  const externalUrl = externalRegistrationUrl(event);
+  const external = externalUrl !== null;
   const hostLabel = event.hostName || 'the host';
 
   // Tickets sold for the scarcity nudge: prefer the event-level counter but
@@ -105,7 +106,11 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }}
+        // Escape `<` so a title, description or hostName containing
+        // "</script>" cannot close the block and inject markup.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(eventJsonLd).replace(/</g, '\\u003c'),
+        }}
       />
       {/* Hero */}
       <section
@@ -383,7 +388,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
                       {' '}Registration is handled by them.
                     </p>
                     <a
-                      href={event.externalUrl}
+                      href={externalUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mt-4 inline-flex items-center gap-2 rounded-lg bg-cranberry px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-cranberry-800 transition"

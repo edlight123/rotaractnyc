@@ -63,9 +63,30 @@ export function canSeeEvent(event: HostedEvent, viewer: Viewer): boolean {
   return !!viewer.role && BOARD_ROLES.includes(viewer.role);
 }
 
-/** The presence of externalUrl is the registration toggle — no separate flag. */
+/**
+ * The host's registration URL, or null when there isn't a usable one.
+ *
+ * Only http(s) is accepted. `externalUrl` is admin-entered free text that we
+ * render straight into an href, so a `javascript:` or `data:` value would be
+ * a script-injection vector. An unsafe value is treated as "no external
+ * registration" rather than rendered — the event then behaves as a normal
+ * one, which is visibly wrong to the admin who typed it and harmless to
+ * everyone else.
+ */
+export function externalRegistrationUrl(event: HostedEvent): string | null {
+  const raw = event.externalUrl?.trim();
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The presence of a usable externalUrl is the registration toggle — no separate flag. */
 export function isExternallyRegistered(event: HostedEvent): boolean {
-  return !!event.externalUrl && event.externalUrl.trim().length > 0;
+  return externalRegistrationUrl(event) !== null;
 }
 
 /**

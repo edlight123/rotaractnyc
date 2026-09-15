@@ -4,6 +4,7 @@ import {
   resolveCountsForServiceHours,
   canSeeEvent,
   isExternallyRegistered,
+  externalRegistrationUrl,
   visibleAudiences,
   HOST_LABELS,
 } from '@/lib/utils/eventAudience';
@@ -89,13 +90,28 @@ describe('canSeeEvent', () => {
   });
 });
 
-describe('isExternallyRegistered', () => {
+describe('isExternallyRegistered / externalRegistrationUrl', () => {
   it('is false when externalUrl is absent or blank', () => {
     expect(isExternallyRegistered({})).toBe(false);
     expect(isExternallyRegistered({ externalUrl: '   ' })).toBe(false);
   });
-  it('is true when externalUrl is set', () => {
+  it('is true for an http(s) URL', () => {
     expect(isExternallyRegistered({ externalUrl: 'https://thp.org/events/fall-event/' })).toBe(true);
+    expect(isExternallyRegistered({ externalUrl: 'http://example.org/e' })).toBe(true);
+  });
+  it('returns the URL unchanged when it is safe', () => {
+    expect(externalRegistrationUrl({ externalUrl: ' https://thp.org/e ' })).toBe('https://thp.org/e');
+  });
+  // externalUrl is admin-entered free text rendered straight into an href.
+  it.each([
+    'javascript:alert(1)',
+    'JavaScript:alert(1)',
+    'data:text/html,<script>alert(1)</script>',
+    'vbscript:msgbox(1)',
+    'not a url at all',
+  ])('rejects the unsafe scheme %s', (bad) => {
+    expect(externalRegistrationUrl({ externalUrl: bad })).toBeNull();
+    expect(isExternallyRegistered({ externalUrl: bad })).toBe(false);
   });
 });
 
