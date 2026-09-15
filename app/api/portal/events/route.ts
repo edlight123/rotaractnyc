@@ -169,6 +169,9 @@ export async function POST(request: NextRequest) {
       externalUrl,
       audience,
       countsForServiceHours,
+      venueVisibility,
+      memberPriceVisibility,
+      publicDescription,
       status,
       isRecurring,
       recurrence,
@@ -225,6 +228,10 @@ export async function POST(request: NextRequest) {
         typeof countsForServiceHours === 'boolean'
           ? countsForServiceHours
           : (host || 'rotaract') === 'rotaract',
+      // Volunteering shows its venue; everything else hides it by default.
+      venueVisibility: venueVisibility || (type === 'service' ? 'public' : 'members'),
+      memberPriceVisibility: memberPriceVisibility || 'members',
+      publicDescription: publicDescription || null,
       // The invariant the public queries depend on. Derived from audience
       // rather than trusted from the client, so the pair cannot disagree.
       isPublic: audience

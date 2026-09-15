@@ -10,6 +10,7 @@ import {
   defaultGallery,
   defaultTestimonials,
 } from '@/lib/defaults/data';
+import { redactEventForPublic, redactEventsForPublic } from '@/lib/utils/eventGating';
 import type {
   RotaractEvent,
   Article,
@@ -71,9 +72,11 @@ export async function getPublicEvents(): Promise<RotaractEvent[]> {
       .orderBy('date', 'asc')
       .get();
 
-    if (snap.empty) return defaultEvents;
+    if (snap.empty) return redactEventsForPublic(defaultEvents);
     const events = snap.docs.map((d) => serializeDoc({ id: d.id, ...d.data() }) as RotaractEvent);
-    return collapseRecurringSeries(events);
+    // Redact BEFORE the data leaves the server. These props are serialised
+    // into the RSC payload, so a field merely not rendered is still shipped.
+    return redactEventsForPublic(collapseRecurringSeries(events));
   } catch (e) {
     console.error('getPublicEvents error:', e);
     return defaultEvents;
@@ -90,12 +93,16 @@ export async function getEventBySlug(slug: string): Promise<RotaractEvent | null
       .get();
 
     if (!snap.empty) {
-      return serializeDoc({ id: snap.docs[0].id, ...snap.docs[0].data() }) as RotaractEvent;
+      return redactEventForPublic(
+        serializeDoc({ id: snap.docs[0].id, ...snap.docs[0].data() }) as RotaractEvent,
+      );
     }
     // fallback
-    return defaultEvents.find((e) => e.slug === slug) ?? null;
+    const fallback = defaultEvents.find((e) => e.slug === slug);
+    return fallback ? redactEventForPublic(fallback) : null;
   } catch {
-    return defaultEvents.find((e) => e.slug === slug) ?? null;
+    const fallback = defaultEvents.find((e) => e.slug === slug);
+    return fallback ? redactEventForPublic(fallback) : null;
   }
 }
 

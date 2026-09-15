@@ -2,7 +2,7 @@
  * Tests for lib/utils/calendar.ts
  */
 
-import { generateCalendarURL } from '@/lib/utils/calendar';
+import { generateCalendarURL, generateICSContent } from '@/lib/utils/calendar';
 
 describe('generateCalendarURL', () => {
   const baseEvent = {
@@ -107,5 +107,50 @@ describe('generateCalendarURL', () => {
     const url = generateCalendarURL(baseEvent);
     const parsed = new URL(url);
     expect(parsed.searchParams.get('sf')).toBe('true');
+  });
+});
+
+describe('display time is applied to the calendar entry', () => {
+  // The live Neighborhood Supper: date says 16:00Z (12:00 EDT), page says 3:30 PM.
+  // Add to Calendar used to export noon, 3.5 hours early.
+  const supper = {
+    title: 'Neighborhood Supper',
+    date: '2026-09-19T16:00:00.000Z',
+    time: '3:30 PM',
+    endTime: '6:30 PM',
+    location: 'Holy Trinity Neighborhood Center',
+  };
+
+  it('uses the displayed start time, not the date field', () => {
+    const url = generateCalendarURL(supper);
+    const dates = new URL(url).searchParams.get('dates') || '';
+    expect(dates).toMatch(/^20260919T153000/);
+  });
+
+  it('uses the displayed end time', () => {
+    const dates = new URL(generateCalendarURL(supper)).searchParams.get('dates') || '';
+    expect(dates.split('/')[1]).toMatch(/^20260919T183000/);
+  });
+
+  it('applies the same fix to the .ics content', () => {
+    const ics = generateICSContent(supper);
+    expect(ics).toContain('DTSTART;TZID=America/New_York:20260919T153000');
+    expect(ics).toContain('DTEND;TZID=America/New_York:20260919T183000');
+  });
+
+  it('falls back to the date when the time is unparseable', () => {
+    const dates = new URL(
+      generateCalendarURL({ ...supper, time: 'TBC', endTime: '' }),
+    ).searchParams.get('dates') || '';
+    expect(dates).toMatch(/^20260919T120000/);
+  });
+
+  it('handles midnight and noon correctly', () => {
+    const noon = new URL(generateCalendarURL({ ...supper, time: '12:00 PM', endTime: '' }))
+      .searchParams.get('dates') || '';
+    expect(noon).toMatch(/^20260919T120000/);
+    const midnight = new URL(generateCalendarURL({ ...supper, time: '12:00 AM', endTime: '' }))
+      .searchParams.get('dates') || '';
+    expect(midnight).toMatch(/^20260919T000000/);
   });
 });

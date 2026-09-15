@@ -206,6 +206,16 @@ export interface RotaractEvent {
   countsForServiceHours?: boolean;
   /** Who may see this event. Kept in sync with isPublic. */
   audience?: EventAudience;
+  /** Who sees the venue. Absent ⇒ derived from type: service shows it, others don't. */
+  venueVisibility?: DetailVisibility;
+  /** Who sees the member price. Absent ⇒ 'members'. */
+  memberPriceVisibility?: DetailVisibility;
+  /** Public blurb used when the venue is gated, so an address in `description` can't leak. */
+  publicDescription?: string;
+  /** Set by server-side redaction — the venue was withheld from this copy. */
+  venueHidden?: boolean;
+  /** Set by server-side redaction — the member price was withheld from this copy. */
+  memberPriceHidden?: boolean;
   // ── Donations (optional, opt-in per event) ──
   /** When true, the event accepts donations alongside (or instead of) tickets. */
   acceptsDonations?: boolean;
@@ -284,6 +294,8 @@ export type PostAudience = 'all' | 'board' | 'committee';
 export type EventHost = 'rotaract' | 'rotary' | 'community';
 /** Who may see an event. Resolved from `host` when absent — see lib/utils/eventAudience.ts. */
 export type EventAudience = 'public' | 'members' | 'board';
+/** Who may see a gated detail (venue, member price). */
+export type DetailVisibility = 'public' | 'members';
 
 export interface CommunityPost {
   id: string;

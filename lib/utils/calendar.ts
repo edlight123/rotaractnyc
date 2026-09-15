@@ -1,3 +1,29 @@
+/**
+ * Apply a display time like "3:30 PM" to a date.
+ *
+ * Both calendar builders previously accepted `time`/`endTime` and then ignored
+ * them, deriving everything from the `date` field's own time component. Those
+ * two disagree in real data: the Neighborhood Supper stores
+ * 2026-09-19T16:00:00.000Z and displays "3:30 PM", so Add to Calendar exported
+ * a noon event and volunteers acting on the reminder would arrive three and a
+ * half hours early.
+ *
+ * Returns a new Date; falls back to the original when `time` is absent or
+ * unparseable (e.g. the literal "TBC").
+ */
+function applyDisplayTime(date: Date, time?: string): Date {
+  if (!time) return date;
+  const m = /^\s*(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\.?\s*$/i.exec(time);
+  if (!m) return date;
+  let hours = parseInt(m[1], 10);
+  const minutes = m[2] ? parseInt(m[2], 10) : 0;
+  if (hours === 12) hours = 0;
+  if (m[3].toLowerCase() === 'p') hours += 12;
+  const out = new Date(date);
+  out.setHours(hours, minutes, 0, 0);
+  return out;
+}
+
 export function generateCalendarURL(event: {
   title: string;
   date: string;
@@ -7,8 +33,12 @@ export function generateCalendarURL(event: {
   location?: string;
   description?: string;
 }): string {
-  const startDate = new Date(event.date);
-  const endDate = event.endDate ? new Date(event.endDate) : new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+  const startDate = applyDisplayTime(new Date(event.date), event.time);
+  const endDate = event.endTime
+    ? applyDisplayTime(new Date(event.endDate ?? event.date), event.endTime)
+    : event.endDate
+      ? new Date(event.endDate)
+      : new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
 
   // Format as YYYYMMDDTHHmmss (local time, no trailing Z) — timezone is
   // specified via the ctz parameter so Google Calendar interprets the times
@@ -43,10 +73,12 @@ export function generateICSContent(event: {
   address?: string;
   description?: string;
 }): string {
-  const startDate = new Date(event.date);
-  const endDate = event.endDate
-    ? new Date(event.endDate)
-    : new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+  const startDate = applyDisplayTime(new Date(event.date), event.time);
+  const endDate = event.endTime
+    ? applyDisplayTime(new Date(event.endDate ?? event.date), event.endTime)
+    : event.endDate
+      ? new Date(event.endDate)
+      : new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
 
   const pad = (n: number) => String(n).padStart(2, '0');
   const toICSDate = (d: Date) =>
