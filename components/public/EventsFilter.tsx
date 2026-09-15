@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Badge from '@/components/ui/Badge';
 import { formatDate, formatCurrency, toPlainText } from '@/lib/utils/format';
-import { HOST_LABELS, resolveHost } from '@/lib/utils/eventAudience';
+import { HOST_LABELS, resolveHost, isExternallyRegistered } from '@/lib/utils/eventAudience';
 import type { RotaractEvent, EventType, EventHost } from '@/types';
 
 const typeColors: Record<string, 'cranberry' | 'green' | 'azure' | 'gold'> = {
@@ -196,7 +196,8 @@ export default function EventsFilter({ events, initialHost = 'all' }: EventsFilt
                 <Badge variant={typeColors[event.type] || 'gray'}>
                   {event.type === 'service' ? '🤝 Service' : event.type === 'paid' ? '🎟️ Ticketed' : event.type === 'hybrid' ? '⭐ Hybrid' : '✓ Free'}
                 </Badge>
-                {event.type !== 'free' && (!event.pricing || event.pricing.guestPrice === 0) && (
+                {/* We don't know a partner host's pricing — don't claim free. */}
+                {!isExternallyRegistered(event) && event.type !== 'free' && (!event.pricing || event.pricing.guestPrice === 0) && (
                   <Badge variant="green">✓ Free</Badge>
                 )}
               </div>
