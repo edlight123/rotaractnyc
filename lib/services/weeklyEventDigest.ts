@@ -27,6 +27,8 @@ import {
   weeklyEventDigestEmail,
   type DigestEventRow,
 } from '@/lib/email/templates';
+import { splitDigestRows, DIGEST_PARTNER_LIMIT } from '@/lib/services/digestPartners';
+import { SITE } from '@/lib/constants';
 
 // ── Tunables ────────────────────────────────────────────────────────────────
 
@@ -34,6 +36,11 @@ const UPCOMING_WINDOW_DAYS = 30;
 const PDF_ATTACH_WINDOW_DAYS = 14;
 const POST_EVENT_RECAP_WINDOW_DAYS = 7;
 const BOARD_ROLES = ['board', 'president', 'treasurer'] as const;
+
+// Recipients are board members (BOARD_ROLES + an opt-in), not the full
+// roster — so the digest deliberately includes members-only and board-only
+// events. Those paid Rotary Club of New York invitations are exactly what
+// this audience needs to see.
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -119,6 +126,9 @@ interface EventDoc {
   status: string;
   visibility?: string;
   isPublic?: boolean;
+  /** Who runs the event — absent on pre-2026-09 documents, meaning us. */
+  host?: string;
+  hostName?: string;
   /** Aggregate counters maintained transactionally by the Stripe webhook. */
   donationsTotalCents?: number;
   donationsCount?: number;
@@ -284,6 +294,8 @@ export async function runWeeklyEventDigest(
       dateLabel: formatHumanDate(ev.date),
       daysFromNow: days,
       location: ev.location,
+      host: ev.host ?? 'rotaract',
+      hostName: ev.hostName,
       totals: totalsToCounts(totals, donationsTotalCents, donationsCount),
       delta,
       pdfAttached: attachPdf,
@@ -344,14 +356,25 @@ export async function runWeeklyEventDigest(
     });
 
   const weekLabel = formatWeekLabel(now);
+  const {
+    ours: ourUpcoming,
+    partners: partnerUpcoming,
+    partnerTotal,
+  } = splitDigestRows(upcoming, DIGEST_PARTNER_LIMIT);
 
   for (const recipient of recipients) {
     const tpl = weeklyEventDigestEmail({
       recipientName: recipient.displayName || '',
       weekLabel,
-      upcoming,
+      upcoming: ourUpcoming,
       past,
       attachmentCount: attachments.length,
+      partners: partnerUpcoming,
+      partnerTotal,
+      // The portal, not /events: the digest can list members-only and
+      // board-only events, and the public page renders neither. Linking
+      // there would show a reader far fewer events than they just read about.
+      partnersUrl: `${SITE.url}/portal/events?host=community`,
     });
 
     try {
