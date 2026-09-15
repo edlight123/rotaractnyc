@@ -145,7 +145,7 @@ describe('redactEventForPublic — member price', () => {
 
 describe('memberDiscountAvailable — computed before the price is stripped', () => {
   const paid = (pricing: Record<string, unknown>) =>
-    evt({ type: 'paid', pricing } as Partial<RotaractEvent>);
+    evt({ type: 'paid', pricing } as unknown as Partial<RotaractEvent>);
 
   // Without this flag the page only sees `guestPrice > undefined`, which is
   // true for every paid event — so it would invite people to sign in for a

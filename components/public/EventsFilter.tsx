@@ -257,15 +257,11 @@ export default function EventsFilter({ events, initialHost = 'all' }: EventsFilt
                 </div>
               )}
 
-              {event.tags && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {event.tags.map((tag) => (
-                    <span key={tag} className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
+              {/* Tags are deliberately not rendered. They are an internal
+                  taxonomy — they still drive the search box above (see the
+                  filter predicate) — but a row of #hashtags adds visual noise
+                  to a card without telling a visitor anything the type and
+                  host badges don't already say. */}
             </div>
           </Link>
         ))}
