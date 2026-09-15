@@ -222,18 +222,27 @@ export default function EventsFilter({ events, initialHost = 'all' }: EventsFilt
                   </svg>
                   {event.time}{event.endTime ? ` – ${event.endTime}` : ''}
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  </svg>
-                  {event.location?.split(',')[0]}
-                </span>
+                {/* Omitted entirely when the venue is gated — a card is no
+                    place for a lock, and the server has already stripped it. */}
+                {event.location && (
+                  <span className="flex items-center gap-1.5">
+                    <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    </svg>
+                    {event.location.split(',')[0]}
+                  </span>
+                )}
               </div>
 
               {event.pricing && (event.type === 'paid' || event.type === 'hybrid') && (
                 <div className="mt-3 flex items-center gap-3 text-sm">
                   <span className="inline-flex items-center gap-1 bg-cranberry-50 dark:bg-cranberry-900/20 text-cranberry-700 dark:text-cranberry-300 px-2.5 py-1 rounded-lg font-semibold">
-                    {event.pricing.memberPrice === 0 ? 'Free for members' : formatCurrency(event.pricing.memberPrice)}
+                    {(event as { memberPriceHidden?: boolean; memberDiscountAvailable?: boolean }).memberPriceHidden
+                      ? ((event as { memberDiscountAvailable?: boolean }).memberDiscountAvailable
+                          ? 'Members save' : 'Same price')
+                      : event.pricing.memberPrice === 0
+                        ? 'Free for members'
+                        : formatCurrency(event.pricing.memberPrice)}
                     <span className="font-normal text-cranberry-500 dark:text-cranberry-400 text-xs">member</span>
                   </span>
                   <span className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2.5 py-1 rounded-lg font-semibold">

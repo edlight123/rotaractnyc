@@ -58,7 +58,10 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
   // Free and service events have no pricing, so "sign in for member pricing"
   // on a volunteer signup is both confusing and untrue — those get a plain
   // member-portal link instead.
-  const memberDiscount = hasMemberDiscount(event);
+  // Prefer the server-computed flag: once the member price is redacted,
+  // hasMemberDiscount() can only see `guestPrice > undefined` and would report
+  // a saving on every paid event, including ones that have none.
+  const memberDiscount = event.memberDiscountAvailable ?? hasMemberDiscount(event);
 
   // When the host runs registration we show none of our own registration UI.
   // Collecting RSVPs the host never receives is worse than not listing the
@@ -90,10 +93,12 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
     organizer: resolveHost(event) === 'rotaract'
       ? { '@type': 'Organization', name: SITE.name, url: SITE.url }
       : { '@type': 'Organization', name: event.hostName || SITE.name },
+    // The public price is what a member of the public pays. This used to
+    // publish memberPrice, so search engines were advertising the member rate.
     ...(event.pricing && {
       offers: {
         '@type': 'Offer',
-        price: (event.pricing.memberPrice / 100).toFixed(2),
+        price: ((event.pricing.guestPrice ?? 0) / 100).toFixed(2),
         priceCurrency: 'USD',
         availability: 'https://schema.org/InStock',
       },
@@ -179,6 +184,20 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
               </div>
               <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-5">
                 <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Location</p>
+                {(event as any).venueHidden ? (
+                  <>
+                    <p className="font-semibold text-gray-900 dark:text-white">
+                      Shared with members
+                    </p>
+                    <Link
+                      href="/portal/login"
+                      className="inline-flex items-center gap-1 text-xs text-cranberry hover:text-cranberry-700 dark:text-cranberry-400 mt-2 font-medium"
+                    >
+                      Sign in to see the location →
+                    </Link>
+                  </>
+                ) : (
+                <>
                 <p className="font-semibold text-gray-900 dark:text-white">{event.location}</p>
                 {(event.location || event.address) && (
                   <a
@@ -193,6 +212,8 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
                     </svg>
                     Get directions
                   </a>
+                )}
+                </>
                 )}
               </div>
             </div>
@@ -314,9 +335,19 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
                               <div className="flex flex-wrap gap-4">
                                 <div>
                                   <p className="text-xs font-semibold text-cranberry uppercase mb-1">Member</p>
-                                  <p className="text-xl font-display font-bold text-gray-900 dark:text-white">
-                                    {tier.memberPrice === 0 ? 'Free' : formatCurrency(tier.memberPrice)}
-                                  </p>
+                                  {(event as any).memberPriceHidden ? (
+                                    memberDiscount ? (
+                                      <Link href="/portal/login" className="text-sm font-semibold text-cranberry hover:underline">
+                                        Sign in →
+                                      </Link>
+                                    ) : (
+                                      <p className="text-sm text-gray-500 dark:text-gray-400">Same</p>
+                                    )
+                                  ) : (
+                                    <p className="text-xl font-display font-bold text-gray-900 dark:text-white">
+                                      {tier.memberPrice === 0 ? 'Free' : formatCurrency(tier.memberPrice)}
+                                    </p>
+                                  )}
                                 </div>
                                 <div>
                                   <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Guest</p>
@@ -337,9 +368,19 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
                         <p className="text-xs font-semibold text-cranberry uppercase mb-1">Member Price</p>
-                        <p className="text-2xl font-display font-bold text-gray-900 dark:text-white">
-                          {event.pricing.memberPrice === 0 ? 'Free' : formatCurrency(event.pricing.memberPrice)}
-                        </p>
+                        {(event as any).memberPriceHidden ? (
+                          memberDiscount ? (
+                            <Link href="/portal/login" className="text-lg font-display font-bold text-cranberry hover:underline">
+                              Members pay less — sign in →
+                            </Link>
+                          ) : (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Same as guest price</p>
+                          )
+                        ) : (
+                          <p className="text-2xl font-display font-bold text-gray-900 dark:text-white">
+                            {event.pricing.memberPrice === 0 ? 'Free' : formatCurrency(event.pricing.memberPrice)}
+                          </p>
+                        )}
                       </div>
                       <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
                         <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Guest Price</p>

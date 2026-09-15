@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, serializeDoc } from '@/lib/firebase/admin';
+import { redactEventForPublic } from '@/lib/utils/eventGating';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +22,9 @@ export async function GET(request: NextRequest) {
       if (!doc.exists) {
         return NextResponse.json({ error: 'Event not found' }, { status: 404 });
       }
-      return NextResponse.json(serializeDoc({ id: doc.id, ...doc.data() }));
+      return NextResponse.json(
+        redactEventForPublic(serializeDoc({ id: doc.id, ...doc.data() }) as never),
+      );
     }
 
     // List public, published events.
@@ -44,16 +47,16 @@ export async function GET(request: NextRequest) {
       .limit(EVENT_LIST_LIMIT)
       .get();
 
-    const events = snapshot.docs.map((doc) => serializeDoc({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    // Public endpoint — strip member-only venue and pricing before responding.
+    const events = snapshot.docs.map((doc) =>
+      redactEventForPublic(serializeDoc({ id: doc.id, ...doc.data() }) as never),
+    );
 
     return NextResponse.json(events);
   } catch (error) {
     console.error('Error fetching events:', error);
     // Return default events as fallback
     const { defaultEvents } = await import('@/lib/defaults/data');
-    return NextResponse.json(defaultEvents);
+    return NextResponse.json(defaultEvents.map(redactEventForPublic));
   }
 }

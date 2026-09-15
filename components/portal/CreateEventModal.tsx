@@ -9,7 +9,8 @@ import FileUpload from '@/components/ui/FileUpload';
 import { apiPost, apiPatch } from '@/hooks/useFirestore';
 import { uploadFile, validateFile } from '@/lib/firebase/upload';
 import { HOST_LABELS, resolveAudience, resolveCountsForServiceHours } from '@/lib/utils/eventAudience';
-import type { RotaractEvent, EventType, EventHost, EventAudience, EventPricing, TicketTier, RecurrenceFrequency, RecurrenceRule } from '@/types';
+import { resolveVenueVisibility, resolveMemberPriceVisibility } from '@/lib/utils/eventGating';
+import type { RotaractEvent, EventType, EventHost, EventAudience, DetailVisibility, EventPricing, TicketTier, RecurrenceFrequency, RecurrenceRule } from '@/types';
 
 interface CreateEventModalProps {
   open: boolean;
@@ -215,6 +216,17 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
   const [externalUrl, setExternalUrl] = useState('');
   const [audience, setAudience] = useState<EventAudience>('public');
   const [countsForServiceHours, setCountsForServiceHours] = useState(true);
+  const [venueVisibility, setVenueVisibility] = useState<DetailVisibility>('members');
+  const [memberPriceVisibility, setMemberPriceVisibility] = useState<DetailVisibility>('members');
+  const [publicDescription, setPublicDescription] = useState('');
+
+  // Changing the type re-applies the venue default — volunteering shows its
+  // venue, everything else hides it — the same way changing host re-applies
+  // the audience default.
+  function handleTypeChange(next: EventType) {
+    setType(next);
+    setVenueVisibility(resolveVenueVisibility({ type: next }));
+  }
 
   // Changing the host re-applies the fail-closed defaults, so an admin who
   // switches an event to a partner does not silently leave it public.
@@ -300,6 +312,9 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
       setExternalUrl(event.externalUrl ?? '');
       setAudience(resolveAudience(event));
       setCountsForServiceHours(resolveCountsForServiceHours(event));
+      setVenueVisibility(resolveVenueVisibility(event));
+      setMemberPriceVisibility(resolveMemberPriceVisibility(event));
+      setPublicDescription(event.publicDescription ?? '');
       setStatus(event.status || 'draft');
       setCommitteeId(event.committeeId || '');
       setAcceptsDonations(event.acceptsDonations ?? false);
@@ -381,6 +396,9 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
     setExternalUrl('');
     setAudience('public');
     setCountsForServiceHours(true);
+    setVenueVisibility('members');
+    setMemberPriceVisibility('members');
+    setPublicDescription('');
     setStatus('draft');
     setAcceptsDonations(false);
     setFundraisingGoal('');
@@ -595,6 +613,9 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
         // the existing public queries, which filter on isPublic, stay correct.
         isPublic: audience === 'public',
         countsForServiceHours,
+        venueVisibility,
+        memberPriceVisibility,
+        publicDescription: publicDescription.trim() || undefined,
         status,
         committeeId: committeeId || null,
         acceptsDonations,
@@ -720,7 +741,7 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
                   </label>
                   <select
                     value={type}
-                    onChange={(e) => setType(e.target.value as EventType)}
+                    onChange={(e) => handleTypeChange(e.target.value as EventType)}
                     className={selectClass}
                   >
                     {EVENT_TYPES.map((t) => (
@@ -1331,6 +1352,55 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
                     Leave empty to take RSVPs on our site. Set it to send people to the host&rsquo;s own registration page instead.
                   </p>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Venue</label>
+                  <select
+                    value={venueVisibility}
+                    onChange={(e) => setVenueVisibility(e.target.value as DetailVisibility)}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white"
+                  >
+                    <option value="public">Show publicly</option>
+                    <option value="members">Members only — sign in to see it</option>
+                  </select>
+                  <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    Volunteering events show the venue by default; socials hide it.
+                  </p>
+                  {venueVisibility === 'members' && (
+                    <div className="mt-3 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3">
+                      <p className="text-xs text-amber-800 dark:text-amber-300">
+                        <strong>The description is still shown publicly.</strong> Keep the address in
+                        the Location field above, not in the description — or write a public blurb
+                        below, which replaces the description for non-members.
+                      </p>
+                      <textarea
+                        value={publicDescription}
+                        onChange={(e) => setPublicDescription(e.target.value)}
+                        rows={3}
+                        placeholder="Public blurb (optional) — shown instead of the description while the venue is hidden."
+                        className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {(type === 'paid' || type === 'hybrid') && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Member price</label>
+                    <select
+                      value={memberPriceVisibility}
+                      onChange={(e) => setMemberPriceVisibility(e.target.value as DetailVisibility)}
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white"
+                    >
+                      <option value="members">Members only — sign in to see it</option>
+                      <option value="public">Show publicly</option>
+                    </select>
+                    <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                      The guest price is always public. Hiding the member price makes the discount a
+                      reason to join.
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex items-start gap-3">
                   <input
