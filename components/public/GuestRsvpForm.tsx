@@ -8,6 +8,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
 import Modal from '@/components/ui/Modal';
 import CardPaymentForm from '@/components/ui/CardPaymentForm';
+import { SITE } from '@/lib/constants';
 import type { TicketTier } from '@/types';
 
 // ── Inline waitlist widget ─────────────────────────────────────
@@ -90,6 +91,12 @@ interface GuestRsvpFormProps {
   eventSlug: string;
   eventTitle: string;
   isPaid: boolean;
+  /**
+   * True only when a signed-in member actually pays less than a guest for this
+   * event. Free and service events have no pricing, so the membership pitch
+   * must not promise "discounted tickets" there.
+   */
+  hasMemberDiscount?: boolean;
   guestPrice?: number;
   earlyBirdPrice?: number;
   earlyBirdDeadline?: string;
@@ -101,6 +108,7 @@ export default function GuestRsvpForm({
   eventSlug,
   eventTitle,
   isPaid,
+  hasMemberDiscount = false,
   guestPrice,
   earlyBirdPrice,
   earlyBirdDeadline,
@@ -116,6 +124,12 @@ export default function GuestRsvpForm({
   const [promoCode, setPromoCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  // Whether the confirmation email actually went out. The free-RSVP endpoint
+  // reports this per registration; `null` means we don't know (paid checkout,
+  // or a Stripe redirect return) and we fall back to neutral wording. Claiming
+  // "a confirmation email has been sent" when the send failed is why missing
+  // confirmations went unnoticed for so long.
+  const [emailSent, setEmailSent] = useState<boolean | null>(null);
   const [error, setError] = useState('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [checkoutClientSecret, setCheckoutClientSecret] = useState('');
@@ -200,6 +214,7 @@ export default function GuestRsvpForm({
         }
       }
 
+      if (typeof rsvpData.emailSent === 'boolean') setEmailSent(rsvpData.emailSent);
       setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
@@ -229,17 +244,31 @@ export default function GuestRsvpForm({
           </svg>
         </div>
         <h3 className="font-display font-bold text-xl text-gray-900 dark:text-white mb-2">You&rsquo;re registered!</h3>
-        {email ? (
+        {emailSent === false ? (
+          <p className="text-sm text-amber-700 dark:text-amber-400 mb-6">
+            Your spot is saved, but we couldn&rsquo;t send your confirmation email
+            {email ? <> to <span className="font-medium">{email}</span></> : null}. Nothing else is
+            needed from you — email{' '}
+            <a href={`mailto:${SITE.email}`} className="underline hover:no-underline">{SITE.email}</a>{' '}
+            if you&rsquo;d like the details resent.
+          </p>
+        ) : email ? (
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
             A confirmation email has been sent to{' '}
-            <span className="font-medium text-gray-900 dark:text-white">{email}</span>.
+            <span className="font-medium text-gray-900 dark:text-white">{email}</span>. If it
+            doesn&rsquo;t arrive in a few minutes, check your spam folder.
           </p>
         ) : (
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">Check your email for confirmation details.</p>
         )}
         <div className="p-4 bg-white/60 dark:bg-gray-900/40 rounded-xl">
           <p className="text-sm text-gray-700 dark:text-gray-300">
-            💡 <strong>Members get discounted tickets and exclusive events.</strong>
+            💡{' '}
+            <strong>
+              {hasMemberDiscount
+                ? 'Members get discounted tickets and exclusive events.'
+                : 'Members get exclusive events, service opportunities, and a community of driven young professionals.'}
+            </strong>
           </p>
           <Link href="/membership" className="mt-2 inline-block text-sm font-semibold text-cranberry hover:underline">
             Learn about membership →
@@ -406,7 +435,12 @@ export default function GuestRsvpForm({
 
       <div className="mt-5 pt-4 border-t border-cranberry-100 dark:border-cranberry-900/30">
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          💡 <strong>Members get discounted tickets and exclusive events.</strong>{' '}
+          💡{' '}
+          <strong>
+            {hasMemberDiscount
+              ? 'Members get discounted tickets and exclusive events.'
+              : 'Members get exclusive events, service opportunities, and a community of driven young professionals.'}
+          </strong>{' '}
           <Link href="/membership" className="text-cranberry hover:underline font-medium">Learn more →</Link>
         </p>
       </div>

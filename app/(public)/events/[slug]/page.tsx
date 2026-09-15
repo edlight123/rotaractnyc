@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getEventBySlug } from '@/lib/firebase/queries';
-import { formatDate, formatCurrency } from '@/lib/utils/format';
+import { formatDate, formatCurrency, toPlainText } from '@/lib/utils/format';
 import { ogImage } from '@/lib/utils/ogImage';
+import { hasMemberDiscount } from '@/lib/utils/pricing';
 import { SITE } from '@/lib/constants';
 import Badge from '@/components/ui/Badge';
 import GuestRsvpForm from '@/components/public/GuestRsvpForm';
@@ -21,12 +22,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const event = await getEventBySlug(slug);
   if (!event) return {};
+  // Search snippets and link previews are plain text — strip the Markdown the
+  // description is authored in so "**Neighborhood Supper**" doesn't ship
+  // asterisks and all to Google and iMessage.
+  const summary = toPlainText(event.description).slice(0, 160);
   return {
     title: `${event.title} | Events | ${SITE.shortName}`,
-    description: event.description?.slice(0, 160),
+    description: summary,
     openGraph: {
       title: event.title,
-      description: event.description?.slice(0, 160),
+      description: summary,
       url: `${SITE.url}/events/${slug}`,
       type: 'website',
       siteName: SITE.name,
@@ -49,6 +54,11 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
     (event as any).coverImage ||
     null;
 
+  // Free and service events have no pricing, so "sign in for member pricing"
+  // on a volunteer signup is both confusing and untrue — those get a plain
+  // member-portal link instead.
+  const memberDiscount = hasMemberDiscount(event);
+
   // Tickets sold for the scarcity nudge: prefer the event-level counter but
   // fall back to summing tier soldCounts if it's higher (the event counter can
   // briefly lag tier totals during high-volume sales).
@@ -61,7 +71,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
     '@context': 'https://schema.org',
     '@type': 'Event',
     name: event.title,
-    description: event.description,
+    description: toPlainText(event.description),
     startDate: event.date,
     location: {
       '@type': 'Place',
@@ -375,6 +385,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
                     eventSlug={event.slug}
                     eventTitle={event.title}
                     isPaid={!!(event.pricing && (event.type === 'paid' || event.type === 'hybrid') && event.pricing.guestPrice > 0)}
+                    hasMemberDiscount={memberDiscount}
                     guestPrice={event.pricing?.guestPrice}
                     earlyBirdPrice={event.pricing?.earlyBirdPrice}
                     earlyBirdDeadline={event.pricing?.earlyBirdDeadline}
@@ -386,7 +397,9 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       Already a member?{' '}
                       <Link href="/portal/login" className="text-cranberry hover:underline font-medium">
-                        Sign in for member pricing
+                        {memberDiscount
+                          ? 'Sign in for member pricing'
+                          : 'Sign in to RSVP from the member portal'}
                       </Link>
                     </p>
                   </div>
