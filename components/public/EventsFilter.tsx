@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Badge from '@/components/ui/Badge';
-import { formatDate, formatCurrency } from '@/lib/utils/format';
+import { formatDate, formatCurrency, toPlainText } from '@/lib/utils/format';
 import type { RotaractEvent, EventType } from '@/types';
 
 const typeColors: Record<string, 'cranberry' | 'green' | 'azure' | 'gold'> = {
@@ -172,8 +172,12 @@ export default function EventsFilter({ events }: EventsFilterProps) {
               <h3 className="text-lg font-display font-bold text-gray-900 dark:text-white group-hover:text-cranberry transition-colors">
                 {event.title}
               </h3>
+              {/* Descriptions are authored with light Markdown (**bold**, `- `
+                  bullets) and rendered by <EventDescription> on the detail
+                  page. A card preview is plain text, so strip the syntax —
+                  otherwise the asterisks show up verbatim. */}
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                {event.description}
+                {toPlainText(event.description)}
               </p>
 
               <div className="mt-4 flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400">

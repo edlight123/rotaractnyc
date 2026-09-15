@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
+import { toPlainText } from '@/lib/utils/format';
 
 interface SearchResult {
   title: string;
@@ -53,7 +54,7 @@ export default function SearchModal({
         const items: SearchResult[] = [];
         if (Array.isArray(eventsRes)) {
           eventsRes.forEach((e: any) =>
-            items.push({ title: e.title, href: `/events/${e.slug}`, type: 'event', description: e.description?.slice(0, 80) })
+            items.push({ title: e.title, href: `/events/${e.slug}`, type: 'event', description: toPlainText(e.description).slice(0, 80) })
           );
         }
         if (Array.isArray(newsRes)) {

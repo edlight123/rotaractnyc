@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
-import { formatCurrency } from '@/lib/utils/format';
+import { formatCurrency, toPlainText } from '@/lib/utils/format';
 import type { RotaractEvent, RSVPStatus, EventType } from '@/types';
 
 /* Gradient placeholder colours per event type (no-image fallback). */
@@ -395,7 +395,7 @@ export default function EventCard({
 
         {/* Description */}
         <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
-          {event.description}
+          {toPlainText(event.description)}
         </p>
 
         {/* Meta row */}

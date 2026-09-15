@@ -146,3 +146,25 @@ export function getLowestGuestPrice(pricing: EventPricing): number {
   }
   return pricing.guestPrice;
 }
+
+/**
+ * Does signing in actually get this attendee a cheaper ticket?
+ *
+ * Only true for a ticketed event where a member pays less than a guest. Free
+ * and service (volunteering) events carry no `pricing` at all, so any UI that
+ * pitches "member pricing" must gate on this — otherwise a volunteer signup
+ * ends up advertising a discount that doesn't exist.
+ */
+export function hasMemberDiscount(event: {
+  type?: string;
+  pricing?: EventPricing | null;
+}): boolean {
+  const pricing = event.pricing;
+  if (!pricing) return false;
+  if (event.type !== 'paid' && event.type !== 'hybrid') return false;
+
+  if (pricing.tiers?.length) {
+    return pricing.tiers.some((t) => (t.guestPrice ?? 0) > (t.memberPrice ?? 0));
+  }
+  return (pricing.guestPrice ?? 0) > (pricing.memberPrice ?? 0);
+}
