@@ -13,6 +13,8 @@
     "deploy:rules:dry": "node scripts/deploy-firestore-rules.mjs --dry-run",
     "backfill:event-host": "node scripts/backfill-event-host-audience.mjs",
     "backfill:event-host:dry": "node scripts/backfill-event-host-audience.mjs --dry-run",
+    "deploy:indexes": "node scripts/deploy-firestore-indexes.mjs",
+    "deploy:indexes:dry": "node scripts/deploy-firestore-indexes.mjs --dry-run",
     "import:photos": "npx tsx scripts/import-google-photos.ts",
     "import:photos:dry": "npx tsx scripts/import-google-photos.ts --dry-run",
     "test": "jest",
