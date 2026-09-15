@@ -32,7 +32,7 @@ const TYPE_FILTERS = [
 export default function PortalEventsPage() {
   const { user, member } = useAuth();
   const { toast } = useToast();
-  const { data: firestoreEvents, loading } = usePortalEvents();
+  const { data: firestoreEvents, loading } = usePortalEvents({ signedIn: !!user, role: member?.role });
   const { data: memberRsvps } = useMemberRsvps(user?.uid ?? null);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('upcoming');

@@ -17,7 +17,7 @@ export default function ServiceHoursPage() {
   const { member } = useAuth();
   const { toast } = useToast();
   const { data: hours, loading } = useServiceHours(member?.id || null);
-  const { data: events } = usePortalEvents();
+  const { data: events } = usePortalEvents({ signedIn: !!member, role: member?.role });
   const [showForm, setShowForm] = useState(false);
   const [activeTab, setActiveTab] = useState('my-hours');
   const [pendingEntries, setPendingEntries] = useState<any[]>([]);
