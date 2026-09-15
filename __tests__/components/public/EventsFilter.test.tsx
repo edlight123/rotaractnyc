@@ -8,11 +8,6 @@ import { render, screen } from '@testing-library/react';
 import EventsFilter from '@/components/public/EventsFilter';
 import type { RotaractEvent } from '@/types';
 
-const mockSearchParams = new URLSearchParams();
-jest.mock('next/navigation', () => ({
-  useSearchParams: () => mockSearchParams,
-}));
-
 function evt(over: Partial<RotaractEvent>): RotaractEvent {
   const future = new Date(Date.now() + 30 * 864e5).toISOString();
   return {
@@ -38,10 +33,6 @@ describe('EventsFilter host chips', () => {
     evt({ id: 'c', title: 'Hunger Project Gala', slug: 'thp', host: 'community', hostName: 'The Hunger Project' }),
   ];
 
-  beforeEach(() => {
-    mockSearchParams.delete('host');
-  });
-
   it('renders all three bucket chips', () => {
     render(<EventsFilter events={events} />);
     expect(screen.getByRole('button', { name: 'Rotaract NYC' })).toBeInTheDocument();
@@ -56,24 +47,21 @@ describe('EventsFilter host chips', () => {
     expect(screen.getByText('Hunger Project Gala')).toBeInTheDocument();
   });
 
-  it('seeds the filter from ?host=community', () => {
-    mockSearchParams.set('host', 'community');
-    render(<EventsFilter events={events} />);
+  it('seeds the filter from initialHost="community"', () => {
+    render(<EventsFilter events={events} initialHost="community" />);
     expect(screen.getByText('Hunger Project Gala')).toBeInTheDocument();
     expect(screen.queryByText('Our Supper')).not.toBeInTheDocument();
     expect(screen.queryByText('District Conference')).not.toBeInTheDocument();
   });
 
-  it('falls back to All for an unrecognised ?host= value', () => {
-    mockSearchParams.set('host', 'nonsense');
+  it('shows everything when initialHost is omitted', () => {
     render(<EventsFilter events={events} />);
     expect(screen.getByText('Our Supper')).toBeInTheDocument();
     expect(screen.getByText('District Conference')).toBeInTheDocument();
   });
 
   it('treats an event with no host as a Rotaract event', () => {
-    mockSearchParams.set('host', 'rotaract');
-    render(<EventsFilter events={[evt({ id: 'z', title: 'Legacy Event', slug: 'legacy' })]} />);
+    render(<EventsFilter events={[evt({ id: 'z', title: 'Legacy Event', slug: 'legacy' })]} initialHost="rotaract" />);
     expect(screen.getByText('Legacy Event')).toBeInTheDocument();
   });
 

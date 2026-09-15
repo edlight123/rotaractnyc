@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
 import HeroSection from '@/components/public/HeroSection';
 import EventsFilter from '@/components/public/EventsFilter';
-import { CardGridSkeleton } from '@/components/ui/Skeleton';
 import { generateMeta } from '@/lib/seo';
 import { getPublicEvents } from '@/lib/firebase/queries';
 
@@ -14,8 +12,17 @@ export const metadata: Metadata = generateMeta({
   path: '/events',
 });
 
-export default async function EventsPage() {
-  const events = await getPublicEvents();
+export default async function EventsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ host?: string }>;
+}) {
+  const [events, { host }] = await Promise.all([getPublicEvents(), searchParams]);
+  // ?host= makes a filtered view shareable and is the target of the weekly
+  // digest's "See all N community & partner events" link. Resolved here rather
+  // than in the client component so the cards stay in the server HTML.
+  const initialHost =
+    host === 'rotaract' || host === 'rotary' || host === 'community' ? host : 'all';
 
   return (
     <>
@@ -23,11 +30,7 @@ export default async function EventsPage() {
 
       <section className="section-padding bg-white dark:bg-gray-950">
         <div className="container-page">
-          {/* EventsFilter reads ?host= via useSearchParams, which de-opts a
-              statically rendered page unless it sits behind a boundary. */}
-          <Suspense fallback={<CardGridSkeleton />}>
-            <EventsFilter events={events} />
-          </Suspense>
+          <EventsFilter events={events} initialHost={initialHost} />
         </div>
       </section>
     </>

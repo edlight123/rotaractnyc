@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import Badge from '@/components/ui/Badge';
@@ -25,19 +24,18 @@ const typeLabels: Record<string, string> = {
 
 interface EventsFilterProps {
   events: RotaractEvent[];
+  /**
+   * Initial host bucket, resolved from ?host= on the server.
+   *
+   * Deliberately a prop rather than a useSearchParams() call: reading search
+   * params in a client component forces its Suspense boundary to render the
+   * fallback during SSR, which would strip every event card out of the server
+   * HTML and replace the listing with a skeleton flash.
+   */
+  initialHost?: EventHost | 'all';
 }
 
-export default function EventsFilter({ events }: EventsFilterProps) {
-  const searchParams = useSearchParams();
-  // ?host= makes a filtered view shareable and is what the weekly digest's
-  // "See all N community & partner events" link points at. An unrecognised
-  // value falls back to All rather than showing nothing.
-  const hostParam = searchParams.get('host');
-  const initialHost: EventHost | 'all' =
-    hostParam === 'rotaract' || hostParam === 'rotary' || hostParam === 'community'
-      ? hostParam
-      : 'all';
-
+export default function EventsFilter({ events, initialHost = 'all' }: EventsFilterProps) {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<EventType | 'all'>('all');
   const [hostFilter, setHostFilter] = useState<EventHost | 'all'>(initialHost);
