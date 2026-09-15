@@ -180,6 +180,18 @@ host chips filter independently. Cards gain a host badge when `host` is not
 `EventsFilter.tsx` already holds `search`, `typeFilter` and `timeTab` state; `hostFilter`
 joins them in the same `useMemo` predicate. The recurring-series collapse is unchanged.
 
+**The host filter is URL-addressable**: `?host=rotaract | rotary | community`, read via
+`useSearchParams` to seed the initial state. This is required by the digest's "see all"
+link (§7) and makes the filtered view shareable — "here's what the district has coming
+up" becomes a link rather than an instruction. An unrecognised value falls back to
+`All` rather than erroring. The type filter stays component-local; only `host` needs a
+URL form, and adding the rest without a caller asking for it is speculative.
+
+`EventsFilter` is a client component and `useSearchParams` requires a Suspense boundary
+for the statically-rendered page (`app/(public)/events/page.tsx` sets
+`revalidate = 300`), so the component is wrapped in `<Suspense>` with the existing
+skeleton as fallback.
+
 ### 4. Event detail page
 
 When `externalUrl` is set, the entire registration apparatus is replaced by a single
@@ -207,8 +219,10 @@ renders one card stops looking abandoned. Only `audience === 'public'` events ap
 
 ### 6. Member portal
 
-Same three host chips. Members see public and members-only events; board members
-additionally see board-only ones, via the server-side predicate in §2.
+Same three host chips, and the same `?host=` query parameter as §3 — this is the page
+the digest's "see all" link lands on, so it must accept the filter from the URL.
+Members see public and members-only events; board members additionally see board-only
+ones, via the server-side predicate in §2.
 
 ### 7. Emails
 
@@ -216,16 +230,41 @@ additionally see board-only ones, via the server-side predicate in §2.
 `externalUrl` has no RSVPs by construction, so it cannot generate reminders. The
 behaviour is correct without special-casing.
 
-**Weekly digest — capped.** Rotaract events are listed in full, as today. Non-Rotaract
-events are capped at **three**, in a separate trailing section:
+**Weekly digest — capped, with a link to the rest.**
+
+First, a correction to an assumption made earlier in this design. The weekly digest is
+**not** a member newsletter. `lib/services/weeklyEventDigest.ts:300-317` selects
+recipients as members whose `role` is in `BOARD_ROLES` *and* who have opted in via
+`notification_preferences`. It is an internal board digest with a small, opted-in
+audience.
+
+That changes the audience rule: because every recipient is board, the digest includes
+events at **all three** audience levels, board-only included. An earlier draft of this
+spec said board-only events must be excluded "so they are never sent to the full
+roster" — that reasoning does not apply to a board-only distribution list, and applying
+it would have hidden exactly the events (paid Rotary Club of New York invitations)
+that the board most needs to see.
+
+Rotaract events are listed in full, as today. Non-Rotaract events are capped at
+**three**, in a separate trailing section, followed by a link to the rest:
 
 > *Also happening in the Rotary & NYC community*
+> … three events …
+> **See all 9 community & partner events →**
 
-Uncapped, a District conference season turns the digest into a listings dump and
-people stop opening it — at which point it stops working for our own events too. The
-cap is a constant, `DIGEST_PARTNER_LIMIT = 3`, tunable without a redesign. Only
-`audience in ['public','members']` events are included; board-only events are never
-sent to the full roster.
+The count is real, not a generic "see more", so a reader can tell at a glance whether
+the remainder is worth a click. When the total is three or fewer the link is omitted
+entirely rather than linking to a page showing nothing new.
+
+The cap is a constant, `DIGEST_PARTNER_LIMIT = 3`, tunable without a redesign.
+
+**The link target is `/portal/events?host=…`, not `/events`.** This is the wrinkle
+worth stating explicitly: the digest may list members-only and board-only events, and
+the public `/events` page renders neither. Linking there would send a board member
+from a digest listing nine events to a page showing perhaps two, with no explanation
+for the discrepancy. Recipients are authenticated members by construction, so the
+portal page — which applies the audience predicate from §2 — is the only target that
+can show them what the digest just promised.
 
 ### 8. Admin — `CreateEventModal`
 
@@ -256,7 +295,10 @@ Setting Visibility writes both `audience` and `isPublic`.
   absent ⇒ unchanged.
 - Defaults: creating a `community` event without specifying visibility yields
   `audience: 'members'`, `isPublic: false`.
-- Digest: with ten partner events, exactly three appear, in the trailing section.
+- Digest: with ten partner events, exactly three appear in the trailing section and the
+  link reads "See all 10 …"; with three or fewer, no link is rendered.
+- Digest includes a board-only event when one exists (the corrected rule in §7).
+- `?host=community` seeds the filter; `?host=nonsense` falls back to `All`.
 
 The existing 558 tests must stay green; none of the new fields change the behaviour of
 an event that omits them.
