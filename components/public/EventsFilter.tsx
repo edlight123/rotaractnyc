@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import Badge from '@/components/ui/Badge';
 import { formatDate, formatCurrency, toPlainText } from '@/lib/utils/format';
-import type { RotaractEvent, EventType } from '@/types';
+import { HOST_LABELS, resolveHost } from '@/lib/utils/eventAudience';
+import type { RotaractEvent, EventType, EventHost } from '@/types';
 
 const typeColors: Record<string, 'cranberry' | 'green' | 'azure' | 'gold'> = {
   free: 'green',
@@ -26,8 +28,19 @@ interface EventsFilterProps {
 }
 
 export default function EventsFilter({ events }: EventsFilterProps) {
+  const searchParams = useSearchParams();
+  // ?host= makes a filtered view shareable and is what the weekly digest's
+  // "See all N community & partner events" link points at. An unrecognised
+  // value falls back to All rather than showing nothing.
+  const hostParam = searchParams.get('host');
+  const initialHost: EventHost | 'all' =
+    hostParam === 'rotaract' || hostParam === 'rotary' || hostParam === 'community'
+      ? hostParam
+      : 'all';
+
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<EventType | 'all'>('all');
+  const [hostFilter, setHostFilter] = useState<EventHost | 'all'>(initialHost);
   const [timeTab, setTimeTab] = useState<'upcoming' | 'past'>('upcoming');
 
   const now = useMemo(() => new Date(), []);
@@ -42,9 +55,11 @@ export default function EventsFilter({ events }: EventsFilterProps) {
           (e.description || '').toLowerCase().includes(q) ||
           (e.tags || []).some((t) => t.toLowerCase().includes(q));
         const matchType = typeFilter === 'all' || e.type === typeFilter;
+        // Independent of type: "whose event is it" vs "what does it cost".
+        const matchHost = hostFilter === 'all' || resolveHost(e) === hostFilter;
         const isFuture = new Date(e.date) >= now;
         const matchTime = timeTab === 'upcoming' ? isFuture : !isFuture;
-        return matchSearch && matchType && matchTime;
+        return matchSearch && matchType && matchHost && matchTime;
       })
       .sort((a, b) =>
         timeTab === 'upcoming'
@@ -62,7 +77,7 @@ export default function EventsFilter({ events }: EventsFilterProps) {
       seenSeries.add(key);
       return true;
     });
-  }, [events, search, typeFilter, timeTab, now]);
+  }, [events, search, typeFilter, hostFilter, timeTab, now]);
 
   const frequencyLabel = (e: RotaractEvent) => {
     const f = e.recurrence?.frequency;
@@ -123,6 +138,24 @@ export default function EventsFilter({ events }: EventsFilterProps) {
         ))}
       </div>
 
+      {/* Host filter chips — a separate axis from type, so "free community
+          service event" stays expressible. */}
+      <div className="flex flex-wrap gap-2 mb-8">
+        {(['all', 'rotaract', 'rotary', 'community'] as const).map((val) => (
+          <button
+            key={val}
+            onClick={() => setHostFilter(val)}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              hostFilter === val
+                ? 'bg-azure text-white'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+            }`}
+          >
+            {val === 'all' ? 'All' : HOST_LABELS[val]}
+          </button>
+        ))}
+      </div>
+
       {/* Results */}
       <div className="grid md:grid-cols-2 gap-6">
         {filtered.map((event) => (
@@ -156,6 +189,9 @@ export default function EventsFilter({ events }: EventsFilterProps) {
 
               {/* Type badge — top right */}
               <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                {resolveHost(event) !== 'rotaract' && event.hostName && (
+                  <Badge variant="azure">{event.hostName}</Badge>
+                )}
                 {event.isRecurring && (
                   <Badge variant="cranberry">🔁 {frequencyLabel(event)}</Badge>
                 )}
@@ -231,15 +267,15 @@ export default function EventsFilter({ events }: EventsFilterProps) {
         <div className="text-center py-16">
           <p className="text-4xl mb-4">📅</p>
           <p className="text-gray-500 dark:text-gray-400 font-medium">
-            {search || typeFilter !== 'all'
+            {search || typeFilter !== 'all' || hostFilter !== 'all'
               ? 'No events match your filters.'
               : timeTab === 'upcoming'
                 ? 'No upcoming events. Check back soon!'
                 : 'No past events found.'}
           </p>
-          {(search || typeFilter !== 'all') && (
+          {(search || typeFilter !== 'all' || hostFilter !== 'all') && (
             <button
-              onClick={() => { setSearch(''); setTypeFilter('all'); }}
+              onClick={() => { setSearch(''); setTypeFilter('all'); setHostFilter('all'); }}
               className="mt-2 text-sm text-cranberry hover:underline"
             >
               Clear filters

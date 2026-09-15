@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import HeroSection from '@/components/public/HeroSection';
 import EventsFilter from '@/components/public/EventsFilter';
+import { CardGridSkeleton } from '@/components/ui/Skeleton';
 import { generateMeta } from '@/lib/seo';
 import { getPublicEvents } from '@/lib/firebase/queries';
 
@@ -21,7 +23,11 @@ export default async function EventsPage() {
 
       <section className="section-padding bg-white dark:bg-gray-950">
         <div className="container-page">
-          <EventsFilter events={events} />
+          {/* EventsFilter reads ?host= via useSearchParams, which de-opts a
+              statically rendered page unless it sits behind a boundary. */}
+          <Suspense fallback={<CardGridSkeleton />}>
+            <EventsFilter events={events} />
+          </Suspense>
         </div>
       </section>
     </>
