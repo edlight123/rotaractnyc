@@ -75,8 +75,27 @@ So events need an audience, and the default for anything not ours must be closed
 
 ### 1. Data model
 
-Three new optional fields on `RotaractEvent`, plus one for service hours. All optional,
-so **no backfill is required** — the 34 existing documents remain correct untouched.
+Three new optional fields on `RotaractEvent`, plus one for service hours.
+
+**A one-time backfill of the 34 existing documents is required.** An earlier draft of
+this spec claimed it was not; that was wrong, and the reason is worth recording because
+it constrains the whole design.
+
+The member portal does not read events through an API. `usePortalEvents`
+(`hooks/useFirestore.ts:151`) calls `useCollection('events', …)`, which issues a
+Firestore query **directly from the browser**. Enforcement therefore lives in
+`firestore.rules` — and Firestore rules are not filters. A query that *could* return a
+document the caller may not read fails in its entirety rather than silently omitting
+it. So the portal query must carry a `where` clause mirroring the rule.
+
+Firestore cannot express "field absent **or** field in [...]" in a single query, and a
+`where('audience', 'in', [...])` clause matches no document that lacks the field. With
+34 documents missing `audience`, the portal would show an empty list.
+
+So `host` and `audience` are written explicitly on every document: backfilled once for
+the existing 34, and always set on create and update thereafter. The read-time
+resolver below stays as defence-in-depth for any document that still slips through,
+but it is not the mechanism queries rely on.
 
 ```ts
 export type EventHost = 'rotaract' | 'rotary' | 'community';
@@ -154,13 +173,17 @@ and are unaffected.
 
 Enforced in three places, all server-side:
 
-1. **Public queries** (`lib/firebase/queries.ts`, `app/api/events/route.ts`) —
-   unchanged. They already filter `isPublic == true`, which by the invariant above
-   means `audience === 'public'`.
+1. **Public queries** (`lib/firebase/queries.ts:69,88,280,369`,
+   `app/api/events/route.ts:23`) — unchanged. They already filter `isPublic == true`,
+   which by the invariant above means `audience === 'public'`. These run server-side
+   with admin credentials, so rules do not apply to them; the `isPublic` filter is the
+   control.
 2. **Portal queries** — members see `audience in ['public','members']`. Users whose
    `role` is `board`, `president` or `treasurer` additionally see `audience === 'board'`.
-3. **`firestore.rules`** — the same predicate, so a direct client read cannot bypass
-   the API.
+3. **`firestore.rules`** — the real enforcement point for the portal, which queries
+   Firestore directly from the browser rather than through an API. The rule and the
+   portal's query constraints must agree exactly: rules reject whole queries rather
+   than filtering rows, so a mismatch shows members an error, not a shorter list.
 
 No audience filtering happens in React. A members-only event must never be present in
 a payload sent to an anonymous browser, regardless of what the UI would render.
@@ -305,8 +328,11 @@ an event that omits them.
 
 ## Safety / verification
 
-- **No migration.** Every new field is optional with an explicit default. Existing
-  documents are valid and behave identically.
+- **One-time backfill**, not a schema migration: `host` and `audience` are written onto
+  the 34 existing documents (all `host: 'rotaract'`, `audience: 'public'`), which
+  preserves their current behaviour exactly. Required because Firestore rules are not
+  filters and the portal queries the collection directly from the browser — see §1.
+  The backfill is idempotent and skips documents that already carry both fields.
 - **Fail closed.** Non-Rotaract events default to members-only.
 - **Enforcement is server-side**, mirrored in `firestore.rules`.
 - Verify after deploy: an anonymous request to `/api/events` returns no event whose
