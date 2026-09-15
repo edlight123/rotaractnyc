@@ -147,7 +147,10 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
               <Badge variant={event.type === 'service' ? 'azure' : event.type === 'paid' ? 'gold' : event.type === 'hybrid' ? 'cranberry' : 'green'}>
                 {event.type === 'service' ? '🤝 Service' : event.type === 'paid' ? '🎟️ Ticketed' : event.type === 'hybrid' ? '⭐ Hybrid' : '✓ Free'}
               </Badge>
-              {event.type !== 'free' && (!event.pricing || event.pricing.guestPrice === 0) && (
+              {/* Never assert "Free" for an event the host runs — we don't
+                  know their pricing, and claiming free on a ticketed event
+                  (e.g. The Hunger Project's Fall Event) is simply wrong. */}
+              {!external && event.type !== 'free' && (!event.pricing || event.pricing.guestPrice === 0) && (
                 <Badge variant="green">✓ Free</Badge>
               )}
               {event.pricing && event.pricing.guestPrice > 0 && event.type !== 'paid' && (

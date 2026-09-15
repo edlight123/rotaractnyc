@@ -4,7 +4,7 @@
 
 import '@testing-library/jest-dom';
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import EventsFilter from '@/components/public/EventsFilter';
 import type { RotaractEvent } from '@/types';
 
@@ -69,5 +69,40 @@ describe('EventsFilter host chips', () => {
     render(<EventsFilter events={events} />);
     expect(screen.getByText('The Hunger Project')).toBeInTheDocument();
     expect(screen.getByText('District 7230')).toBeInTheDocument();
+  });
+});
+
+describe('the "Free" badge and partner events', () => {
+  const ticketedPartner = evt({
+    id: 'thp',
+    title: 'Hunger Project Fall Event',
+    slug: 'thp-fall',
+    type: 'paid',
+    host: 'community',
+    hostName: 'The Hunger Project',
+    externalUrl: 'https://thp.org/events/fall-event/',
+  });
+
+  /** Scope to the card itself — the type-filter chips also read "✓ Free". */
+  function card(container: HTMLElement, slug: string) {
+    const el = container.querySelector(`a[href="/events/${slug}"]`);
+    if (!el) throw new Error(`no card for ${slug}`);
+    return within(el as HTMLElement);
+  }
+
+  // We have no idea what a partner charges. The old fallback badge asserted
+  // "Free" for any non-free event without pricing, which on a ticketed
+  // partner event is an outright false claim.
+  it('does not claim a ticketed partner event is free', () => {
+    const { container } = render(<EventsFilter events={[ticketedPartner]} />);
+    expect(card(container, 'thp-fall').queryByText('✓ Free')).not.toBeInTheDocument();
+    expect(card(container, 'thp-fall').getByText('The Hunger Project')).toBeInTheDocument();
+  });
+
+  it('still shows Free for one of our own non-free events without pricing', () => {
+    const { container } = render(
+      <EventsFilter events={[evt({ id: 'o', title: 'Our Service Day', slug: 'ours', type: 'service' })]} />,
+    );
+    expect(card(container, 'ours').getByText('✓ Free')).toBeInTheDocument();
   });
 });
