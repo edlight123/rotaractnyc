@@ -195,6 +195,17 @@ export interface RotaractEvent {
   status: 'draft' | 'published' | 'cancelled';
   /** Optional owning committee — its team can run this event (check-in, attendees). */
   committeeId?: string;
+  // ── Host & audience ──
+  /** Who runs this event. Absent ⇒ 'rotaract'. */
+  host?: EventHost;
+  /** Hosting organisation for attribution, e.g. "Rotary Metro NYC". */
+  hostName?: string;
+  /** When set, the host handles registration and we link out instead of taking RSVPs. */
+  externalUrl?: string;
+  /** Whether attendance counts toward members' service hours. */
+  countsForServiceHours?: boolean;
+  /** Who may see this event. Kept in sync with isPublic. */
+  audience?: EventAudience;
   // ── Donations (optional, opt-in per event) ──
   /** When true, the event accepts donations alongside (or instead of) tickets. */
   acceptsDonations?: boolean;
@@ -268,6 +279,11 @@ export interface Article {
 
 // ----- Community Post -----
 export type PostAudience = 'all' | 'board' | 'committee';
+
+/** Who runs an event. Absent on a document ⇒ 'rotaract'. */
+export type EventHost = 'rotaract' | 'rotary' | 'community';
+/** Who may see an event. Resolved from `host` when absent — see lib/utils/eventAudience.ts. */
+export type EventAudience = 'public' | 'members' | 'board';
 
 export interface CommunityPost {
   id: string;

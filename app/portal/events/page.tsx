@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Plus, CalendarDays } from 'lucide-react';
 import { useAuth } from '@/lib/firebase/auth';
 import { usePortalEvents, useMemberRsvps, apiGet, apiPost } from '@/hooks/useFirestore';
@@ -19,7 +20,15 @@ import PageContainer from '@/components/portal/PageContainer';
 import FilterBar, { FilterSelect } from '@/components/portal/FilterBar';
 import DataView, { ViewToggle, type ViewMode } from '@/components/portal/DataView';
 import { defaultEvents } from '@/lib/defaults/data';
-import type { RotaractEvent, RSVPStatus, EventType, PaymentSettings } from '@/types';
+import { resolveHost } from '@/lib/utils/eventAudience';
+import type { RotaractEvent, RSVPStatus, EventType, EventHost, PaymentSettings } from '@/types';
+
+const HOST_FILTERS = [
+  { value: 'all', label: 'All hosts' },
+  { value: 'rotaract', label: 'Rotaract NYC' },
+  { value: 'rotary', label: 'Rotary & District' },
+  { value: 'community', label: 'Community & Partner' },
+];
 
 const TYPE_FILTERS = [
   { value: 'all', label: 'All types' },
@@ -32,11 +41,18 @@ const TYPE_FILTERS = [
 export default function PortalEventsPage() {
   const { user, member } = useAuth();
   const { toast } = useToast();
-  const { data: firestoreEvents, loading } = usePortalEvents();
+  const { data: firestoreEvents, loading } = usePortalEvents({ signedIn: !!user, role: member?.role });
   const { data: memberRsvps } = useMemberRsvps(user?.uid ?? null);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('upcoming');
   const [typeFilter, setTypeFilter] = useState<EventType | 'all'>('all');
+  // Seeded from ?host= — this page is where the weekly digest's
+  // "See all N community & partner events" link lands.
+  const searchParams = useSearchParams();
+  const hostParam = searchParams.get('host');
+  const [hostFilter, setHostFilter] = useState<EventHost | 'all'>(
+    hostParam === 'rotaract' || hostParam === 'rotary' || hostParam === 'community' ? hostParam : 'all',
+  );
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [rsvpLoading, setRsvpLoading] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -99,8 +115,11 @@ export default function PortalEventsPage() {
       const q = search.toLowerCase();
       const matchSearch = title.includes(q) || desc.includes(q);
       const matchType = typeFilter === 'all' || e.type === typeFilter;
+      const matchHost = hostFilter === 'all' || resolveHost(e) === hostFilter;
       const isFuture = new Date(e.date) >= now;
-      return activeTab === 'upcoming' ? matchSearch && matchType && isFuture : matchSearch && matchType && !isFuture;
+      return activeTab === 'upcoming'
+        ? matchSearch && matchType && matchHost && isFuture
+        : matchSearch && matchType && matchHost && !isFuture;
     })
     .sort((a, b) =>
       activeTab === 'upcoming'
@@ -114,7 +133,8 @@ export default function PortalEventsPage() {
     const matchSearch =
       (e.title || '').toLowerCase().includes(q) || (e.description || '').toLowerCase().includes(q);
     const matchType = typeFilter === 'all' || e.type === typeFilter;
-    return matchSearch && matchType;
+    const matchHost = hostFilter === 'all' || resolveHost(e) === hostFilter;
+    return matchSearch && matchType && matchHost;
   });
 
   const handleRSVP = async (eventId: string, status: RSVPStatus) => {
@@ -275,6 +295,12 @@ export default function PortalEventsPage() {
             value={typeFilter}
             onChange={(v) => setTypeFilter(v as EventType | 'all')}
             options={TYPE_FILTERS}
+          />
+          <FilterSelect
+            label="Filter by host"
+            value={hostFilter}
+            onChange={(v) => setHostFilter(v as EventHost | 'all')}
+            options={HOST_FILTERS}
           />
         </FilterBar>
 

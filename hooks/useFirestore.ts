@@ -19,6 +19,7 @@ import {
   type DocumentData,
 } from 'firebase/firestore';
 import { db as getDb } from '@/lib/firebase/client';
+import { visibleAudiences, type Viewer } from '@/lib/utils/eventAudience';
 import { Timestamp } from 'firebase/firestore';
 
 // ─── Helpers ───
@@ -148,8 +149,19 @@ export function useEvents() {
   ]);
 }
 
-export function usePortalEvents() {
+/**
+ * Portal events, narrowed to what this viewer may read.
+ *
+ * The where('audience','in',…) clause is load-bearing, not cosmetic:
+ * firestore.rules reject a query that could return an unreadable document
+ * rather than filtering it out, so this must mirror `match /events` exactly.
+ * It also means every document needs an explicit `audience` field — see
+ * scripts/backfill-event-host-audience.mjs.
+ */
+export function usePortalEvents(viewer: Viewer) {
+  const audiences = useMemo(() => visibleAudiences(viewer), [viewer.signedIn, viewer.role]);
   return useCollection('events', [
+    where('audience', 'in', audiences),
     orderBy('date', 'desc'),
     limit(30),
   ]);

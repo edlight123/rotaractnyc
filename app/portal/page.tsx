@@ -56,7 +56,7 @@ export default function PortalDashboard() {
   const { user, member } = useAuth();
   const { toast } = useToast();
   const { data: posts, loading: postsLoading } = usePosts();
-  const { data: events, loading: eventsLoading } = usePortalEvents();
+  const { data: events, loading: eventsLoading } = usePortalEvents({ signedIn: !!user, role: member?.role });
   const { data: serviceHours } = useServiceHours(member?.id ?? null);
   const { data: myRsvps } = useMemberRsvps(member?.id ?? null);
   const { status: duesStatus } = useDues();

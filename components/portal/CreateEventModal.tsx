@@ -8,7 +8,8 @@ import Textarea from '@/components/ui/Textarea';
 import FileUpload from '@/components/ui/FileUpload';
 import { apiPost, apiPatch } from '@/hooks/useFirestore';
 import { uploadFile, validateFile } from '@/lib/firebase/upload';
-import type { RotaractEvent, EventType, EventPricing, TicketTier, RecurrenceFrequency, RecurrenceRule } from '@/types';
+import { HOST_LABELS, resolveAudience, resolveCountsForServiceHours } from '@/lib/utils/eventAudience';
+import type { RotaractEvent, EventType, EventHost, EventAudience, EventPricing, TicketTier, RecurrenceFrequency, RecurrenceRule } from '@/types';
 
 interface CreateEventModalProps {
   open: boolean;
@@ -206,8 +207,23 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [tags, setTags] = useState('');
   const [capacity, setCapacity] = useState('');
-  const [isPublic, setIsPublic] = useState(true);
   const [status, setStatus] = useState<'draft' | 'published' | 'cancelled'>('draft');
+
+  // ── Host & audience ──
+  const [host, setHost] = useState<EventHost>('rotaract');
+  const [hostName, setHostName] = useState('');
+  const [externalUrl, setExternalUrl] = useState('');
+  const [audience, setAudience] = useState<EventAudience>('public');
+  const [countsForServiceHours, setCountsForServiceHours] = useState(true);
+
+  // Changing the host re-applies the fail-closed defaults, so an admin who
+  // switches an event to a partner does not silently leave it public.
+  function handleHostChange(next: EventHost) {
+    setHost(next);
+    setAudience(resolveAudience({ host: next }));
+    setCountsForServiceHours(resolveCountsForServiceHours({ host: next }));
+    if (next === 'rotaract') setHostName('');
+  }
 
   // Donations (optional, opt-in)
   const [acceptsDonations, setAcceptsDonations] = useState(false);
@@ -279,7 +295,11 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
       setUploadProgress(null);
       setTags(event.tags?.join(', ') || '');
       setCapacity(event.capacity ? String(event.capacity) : '');
-      setIsPublic(event.isPublic ?? true);
+      setHost(event.host ?? 'rotaract');
+      setHostName(event.hostName ?? '');
+      setExternalUrl(event.externalUrl ?? '');
+      setAudience(resolveAudience(event));
+      setCountsForServiceHours(resolveCountsForServiceHours(event));
       setStatus(event.status || 'draft');
       setCommitteeId(event.committeeId || '');
       setAcceptsDonations(event.acceptsDonations ?? false);
@@ -356,7 +376,11 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
     setUploadProgress(null);
     setTags('');
     setCapacity('');
-    setIsPublic(true);
+    setHost('rotaract');
+    setHostName('');
+    setExternalUrl('');
+    setAudience('public');
+    setCountsForServiceHours(true);
     setStatus('draft');
     setAcceptsDonations(false);
     setFundraisingGoal('');
@@ -384,7 +408,7 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
     if (isEdit || !open) return;
     // Only save if there's meaningful content
     if (!title && !description && !date) return;
-    const draft = { title, slug, description, date, endDate, time, endTime, location, address, type, tags, capacity, isPublic, status: status, memberPrice, guestPrice, earlyBirdPrice, earlyBirdDeadline, recurrenceFrequency, recurrenceDays, recurrenceEndDate, recurrenceOccurrences, recurrenceEndType, savedAt: Date.now() };
+    const draft = { title, slug, description, date, endDate, time, endTime, location, address, type, tags, capacity, host, hostName, externalUrl, audience, countsForServiceHours, status: status, memberPrice, guestPrice, earlyBirdPrice, earlyBirdDeadline, recurrenceFrequency, recurrenceDays, recurrenceEndDate, recurrenceOccurrences, recurrenceEndType, savedAt: Date.now() };
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title, description, date, time, location, type, tags, memberPrice, guestPrice, isEdit, open]);
@@ -413,7 +437,11 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
       if (draft.type) setType(draft.type);
       if (draft.tags) setTags(draft.tags);
       if (draft.capacity) setCapacity(draft.capacity);
-      if (draft.isPublic !== undefined) setIsPublic(draft.isPublic);
+      if (draft.host) setHost(draft.host);
+      if (draft.hostName !== undefined) setHostName(draft.hostName);
+      if (draft.externalUrl !== undefined) setExternalUrl(draft.externalUrl);
+      if (draft.audience) setAudience(draft.audience);
+      if (draft.countsForServiceHours !== undefined) setCountsForServiceHours(draft.countsForServiceHours);
       if (draft.status) setStatus(draft.status);
       if (draft.memberPrice) setMemberPrice(draft.memberPrice);
       if (draft.guestPrice) setGuestPrice(draft.guestPrice);
@@ -559,7 +587,14 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
               .filter(Boolean)
           : [],
         capacity: capacity ? parseInt(capacity) : undefined,
-        isPublic,
+        host,
+        hostName: host === 'rotaract' ? undefined : hostName.trim() || undefined,
+        externalUrl: externalUrl.trim() || undefined,
+        audience,
+        // Invariant: isPublic === (audience === 'public'). Written together so
+        // the existing public queries, which filter on isPublic, stay correct.
+        isPublic: audience === 'public',
+        countsForServiceHours,
         status,
         committeeId: committeeId || null,
         acceptsDonations,
@@ -1240,20 +1275,77 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3 pt-6">
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isPublic}
-                      onChange={(e) => setIsPublic(e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cranberry-500/20 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-cranberry-600" />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    Visibility
                   </label>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Public Event</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Visible on the public website</p>
-                  </div>
+                  <select
+                    value={audience}
+                    onChange={(e) => setAudience(e.target.value as EventAudience)}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white"
+                  >
+                    <option value="public">Public — anyone can see it</option>
+                    <option value="members">Members only</option>
+                    <option value="board">Board only</option>
+                  </select>
+                  <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    Partner events default to members only. Choose Public only when the host has told us it&rsquo;s open to everyone.
+                  </p>
+                </div>
+              </div>
+
+              {/* ── Host & registration ── */}
+              <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40 p-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Host</label>
+                  <select
+                    value={host}
+                    onChange={(e) => handleHostChange(e.target.value as EventHost)}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white"
+                  >
+                    {(Object.keys(HOST_LABELS) as EventHost[]).map((h) => (
+                      <option key={h} value={h}>{HOST_LABELS[h]}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {host !== 'rotaract' && (
+                  <Input
+                    label="Hosted by"
+                    required
+                    value={hostName}
+                    onChange={(e) => setHostName(e.target.value)}
+                    placeholder="Rotary Metro NYC"
+                  />
+                )}
+
+                <div>
+                  <Input
+                    label="Registration URL"
+                    type="url"
+                    value={externalUrl}
+                    onChange={(e) => setExternalUrl(e.target.value)}
+                    placeholder="https://rotarymetronyc.org/event/..."
+                  />
+                  <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    Leave empty to take RSVPs on our site. Set it to send people to the host&rsquo;s own registration page instead.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="counts-service-hours"
+                    checked={countsForServiceHours}
+                    onChange={(e) => setCountsForServiceHours(e.target.checked)}
+                    className="mt-1 rounded border-gray-300 dark:border-gray-600"
+                  />
+                  <label htmlFor="counts-service-hours">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Counts toward service hours</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Tick for partner volunteering that Rotaract NYC sponsors.
+                    </p>
+                  </label>
                 </div>
               </div>
 

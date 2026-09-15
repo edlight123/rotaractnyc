@@ -12,8 +12,17 @@ export const metadata: Metadata = generateMeta({
   path: '/events',
 });
 
-export default async function EventsPage() {
-  const events = await getPublicEvents();
+export default async function EventsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ host?: string }>;
+}) {
+  const [events, { host }] = await Promise.all([getPublicEvents(), searchParams]);
+  // ?host= makes a filtered view shareable and is the target of the weekly
+  // digest's "See all N community & partner events" link. Resolved here rather
+  // than in the client component so the cards stay in the server HTML.
+  const initialHost =
+    host === 'rotaract' || host === 'rotary' || host === 'community' ? host : 'all';
 
   return (
     <>
@@ -21,7 +30,7 @@ export default async function EventsPage() {
 
       <section className="section-padding bg-white dark:bg-gray-950">
         <div className="container-page">
-          <EventsFilter events={events} />
+          <EventsFilter events={events} initialHost={initialHost} />
         </div>
       </section>
     </>

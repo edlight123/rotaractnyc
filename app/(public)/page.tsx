@@ -5,6 +5,7 @@ import { SITE } from '@/lib/constants';
 import { generateMeta } from '@/lib/seo';
 import { getPublicEvents, getPublishedArticles, getHeroSlides, getCarouselPhotos, getTestimonials, getImpactStats } from '@/lib/firebase/queries';
 import { formatDate, toPlainText } from '@/lib/utils/format';
+import { resolveHost } from '@/lib/utils/eventAudience';
 import Badge from '@/components/ui/Badge';
 import HeroSlideshow from '@/components/public/HeroSlideshow';
 import TestimonialsCarousel from '@/components/public/TestimonialsCarousel';
@@ -68,9 +69,20 @@ export default async function HomePage() {
   // Does the carousel have any community-liked photos yet?
   const hasLikes = carouselPhotos.some((p) => (p.likes ?? 0) > 0);
 
-  // Take only the next 3 upcoming events (filter out past)
+  // Our own events fill the slots first; partner events top up the remainder,
+  // so the section stops looking empty without a district conference
+  // outranking our own service work. getPublicEvents already filters
+  // isPublic, so only public events reach here.
   const now = new Date().toISOString();
-  const upcomingEvents = events.filter((e) => e.date >= now).slice(0, 3);
+  const upcomingEvents = events
+    .filter((e) => e.date >= now)
+    .sort((a, b) => {
+      const aOurs = resolveHost(a) === 'rotaract' ? 0 : 1;
+      const bOurs = resolveHost(b) === 'rotaract' ? 0 : 1;
+      if (aOurs !== bOurs) return aOurs - bOurs;
+      return a.date.localeCompare(b.date);
+    })
+    .slice(0, 3);
   // Take the 3 most recent articles
   const recentArticles = articles.slice(0, 3);
   return (

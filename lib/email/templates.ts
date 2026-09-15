@@ -1090,6 +1090,10 @@ export interface DigestEventRow {
   /** Days from now (negative for past, 0 for today). */
   daysFromNow: number;
   location?: string;
+  /** Event host, so the digest can separate ours from partners'. */
+  host?: string;
+  /** Hosting organisation, shown on partner rows. */
+  hostName?: string;
   totals: {
     members: number;
     guests: number;
@@ -1214,6 +1218,12 @@ export function weeklyEventDigestEmail(params: {
   upcoming: DigestEventRow[];
   past: DigestEventRow[];     // post-event recaps
   attachmentCount: number;
+  /** Non-Rotaract events, already capped by splitDigestRows. */
+  partners?: DigestEventRow[];
+  /** Uncapped partner count, so the "See all N" link can be accurate. */
+  partnerTotal?: number;
+  /** Where "See all N" points — the portal, not /events. */
+  partnersUrl?: string;
 }): { subject: string; html: string; text: string } {
   const { recipientName, weekLabel, upcoming, past, attachmentCount } = params;
   const greeting = recipientName ? `Hi ${escapeHtml(recipientName.split(' ')[0])},` : 'Hi board,';
@@ -1226,6 +1236,29 @@ export function weeklyEventDigestEmail(params: {
     ? `
       <p style="color:${TEXT_MUTED}; font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin:24px 0 8px;">Last 7 days</p>
       ${past.map(digestEventCard).join('')}` : '';
+
+  // Partner events, capped. The link is omitted when nothing is hidden, so we
+  // never send someone to a page showing exactly what they just read.
+  const partnerRows = params.partners ?? [];
+  const partnerTotal = params.partnerTotal ?? 0;
+  const seeAllHtml =
+    partnerTotal > partnerRows.length && params.partnersUrl
+      ? `<p style="margin:12px 0 0;"><a href="${params.partnersUrl}" style="color:${CRIMSON}; font-weight:600; text-decoration:none;">See all ${partnerTotal} community &amp; partner events →</a></p>`
+      : '';
+  const partnersHtml =
+    partnerRows.length > 0
+      ? `
+      <p style="color:${TEXT_MUTED}; font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin:24px 0 8px;">Also happening in the Rotary &amp; NYC community</p>
+      ${partnerRows.map(digestEventCard).join('')}${seeAllHtml}`
+      : '';
+  const partnersText =
+    partnerRows.length > 0
+      ? `\n\nALSO HAPPENING IN THE ROTARY & NYC COMMUNITY\n` +
+        partnerRows.map((e) => `- ${e.title} — ${e.dateLabel}${e.hostName ? ` (${e.hostName})` : ''}`).join('\n') +
+        (partnerTotal > partnerRows.length && params.partnersUrl
+          ? `\nSee all ${partnerTotal} community & partner events: ${params.partnersUrl}`
+          : '')
+      : '';
 
   const totalAttendees = upcoming.reduce((s, e) => s + e.totals.totalAttendees, 0);
   const totalRevenue = upcoming.reduce((s, e) => s + e.totals.revenueCents, 0);
@@ -1251,6 +1284,7 @@ export function weeklyEventDigestEmail(params: {
 
       <p style="color:${TEXT_MUTED}; font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin:24px 0 8px;">Upcoming</p>
       ${upcomingHtml}
+      ${partnersHtml}
       ${pastHtml}
 
       ${muted(`Deltas (▲ / ▼) compare to last Monday's digest. Manage which emails you receive in <a href="${SITE.url}/portal/settings" style="color:${CRIMSON};">portal settings</a>.`)}
@@ -1266,6 +1300,7 @@ export function weeklyEventDigestEmail(params: {
         `${e.totals.donationsCount > 0 ? ` · ${fmtMoney(e.totals.donationsTotalCents)} donations (${e.totals.donationsCount})` : ''}` +
         (e.pdfAttached ? '  [PDF attached]' : '')
       )).join('\n\n') +
+      partnersText +
       (past.length > 0
         ? `\n\nPost-event recaps:\n` + past.map((e) =>
             `• ${e.title} — ${e.dateLabel}: ${e.totals.checkedIn}/${e.totals.totalAttendees} checked in, ${fmtMoney(e.totals.revenueCents)} revenue` +

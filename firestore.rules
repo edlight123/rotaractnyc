@@ -143,8 +143,24 @@ service cloud.firestore {
     // Events (public + portal)
     // ───────────────────────────────────────
     match /events/{eventId} {
-      // Public events readable by anyone (must be published); portal members see all
-      allow read: if (resource.data.isPublic == true && resource.data.status == 'published') || isMember();
+      // Audience resolution must stay identical to resolveAudience() in
+      // lib/utils/eventAudience.ts, and to the where() constraints in
+      // usePortalEvents. Rules are not filters: a query that could return an
+      // unreadable document fails entirely, so a mismatch shows members an
+      // error rather than a shorter list.
+      //
+      // Fail closed: an event that is not ours and carries no explicit
+      // audience is members-only.
+      function eventAudience() {
+        return resource.data.get('audience',
+          resource.data.get('host', 'rotaract') == 'rotaract' ? 'public' : 'members');
+      }
+
+      allow read: if (resource.data.isPublic == true
+                      && resource.data.status == 'published'
+                      && eventAudience() == 'public')
+                  || (isMember() && eventAudience() == 'members')
+                  || (isBoard() && eventAudience() == 'board');
 
       // Board+ can manage events
       allow create, update, delete: if isBoard();
