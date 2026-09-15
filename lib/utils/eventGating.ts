@@ -18,6 +18,7 @@
  * the pages are server-rendered and props are serialised into the RSC
  * payload, so a field that is merely not rendered is still in the HTML.
  */
+import { hasMemberDiscount } from '@/lib/utils/pricing';
 import type { DetailVisibility, RotaractEvent } from '@/types';
 
 type GatedEvent = Pick<RotaractEvent, 'type'> &
@@ -65,6 +66,10 @@ export function redactEventForPublic(event: RotaractEvent): RotaractEvent {
   delete out.publicDescription;
 
   if (hasPricing(event) && resolveMemberPriceVisibility(event) === 'members' && event.pricing) {
+    // Decide this while the member price is still here. Afterwards the page
+    // only sees `guestPrice > undefined`, which is true for every paid event
+    // — including ones where members pay exactly the same.
+    out.memberDiscountAvailable = hasMemberDiscount(event);
     const pricing = { ...event.pricing } as Record<string, unknown>;
     delete pricing.memberPrice;
     if (Array.isArray(pricing.tiers)) {

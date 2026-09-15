@@ -142,3 +142,54 @@ describe('redactEventForPublic — member price', () => {
     expect(JSON.stringify(r)).not.toContain('"memberPrice":');
   });
 });
+
+describe('memberDiscountAvailable — computed before the price is stripped', () => {
+  const paid = (pricing: Record<string, unknown>) =>
+    evt({ type: 'paid', pricing } as Partial<RotaractEvent>);
+
+  // Without this flag the page only sees `guestPrice > undefined`, which is
+  // true for every paid event — so it would invite people to sign in for a
+  // saving that does not exist.
+  it('is true when members genuinely pay less', () => {
+    const r = redactEventForPublic(paid({ memberPrice: 7000, guestPrice: 7500 }));
+    expect(r.memberDiscountAvailable).toBe(true);
+    expect(r.pricing?.memberPrice).toBeUndefined();
+  });
+
+  it('is false when member and guest pay the same', () => {
+    const r = redactEventForPublic(paid({ memberPrice: 7500, guestPrice: 7500 }));
+    expect(r.memberDiscountAvailable).toBe(false);
+  });
+
+  it('is true when any tier discounts members', () => {
+    const r = redactEventForPublic(
+      paid({
+        memberPrice: 0,
+        guestPrice: 0,
+        tiers: [
+          { id: 'a', label: 'GA', memberPrice: 5000, guestPrice: 5000, sortOrder: 0 },
+          { id: 'b', label: 'VIP', memberPrice: 8000, guestPrice: 9500, sortOrder: 1 },
+        ],
+      }),
+    );
+    expect(r.memberDiscountAvailable).toBe(true);
+  });
+
+  it('is false when no tier discounts members', () => {
+    const r = redactEventForPublic(
+      paid({
+        memberPrice: 0,
+        guestPrice: 0,
+        tiers: [{ id: 'a', label: 'GA', memberPrice: 5000, guestPrice: 5000, sortOrder: 0 }],
+      }),
+    );
+    expect(r.memberDiscountAvailable).toBe(false);
+  });
+
+  it('is not set when the member price is published anyway', () => {
+    const r = redactEventForPublic(
+      evt({ type: 'paid', memberPriceVisibility: 'public', pricing: { memberPrice: 7000, guestPrice: 7500 } } as Partial<RotaractEvent>),
+    );
+    expect(r.memberDiscountAvailable).toBeUndefined();
+  });
+});

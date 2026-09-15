@@ -58,7 +58,10 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
   // Free and service events have no pricing, so "sign in for member pricing"
   // on a volunteer signup is both confusing and untrue — those get a plain
   // member-portal link instead.
-  const memberDiscount = hasMemberDiscount(event);
+  // Prefer the server-computed flag: once the member price is redacted,
+  // hasMemberDiscount() can only see `guestPrice > undefined` and would report
+  // a saving on every paid event, including ones that have none.
+  const memberDiscount = event.memberDiscountAvailable ?? hasMemberDiscount(event);
 
   // When the host runs registration we show none of our own registration UI.
   // Collecting RSVPs the host never receives is worse than not listing the
@@ -333,9 +336,13 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
                                 <div>
                                   <p className="text-xs font-semibold text-cranberry uppercase mb-1">Member</p>
                                   {(event as any).memberPriceHidden ? (
-                                    <Link href="/portal/login" className="text-sm font-semibold text-cranberry hover:underline">
-                                      Sign in →
-                                    </Link>
+                                    memberDiscount ? (
+                                      <Link href="/portal/login" className="text-sm font-semibold text-cranberry hover:underline">
+                                        Sign in →
+                                      </Link>
+                                    ) : (
+                                      <p className="text-sm text-gray-500 dark:text-gray-400">Same</p>
+                                    )
                                   ) : (
                                     <p className="text-xl font-display font-bold text-gray-900 dark:text-white">
                                       {tier.memberPrice === 0 ? 'Free' : formatCurrency(tier.memberPrice)}
@@ -362,9 +369,13 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
                       <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
                         <p className="text-xs font-semibold text-cranberry uppercase mb-1">Member Price</p>
                         {(event as any).memberPriceHidden ? (
-                          <Link href="/portal/login" className="text-lg font-display font-bold text-cranberry hover:underline">
-                            Sign in to see →
-                          </Link>
+                          memberDiscount ? (
+                            <Link href="/portal/login" className="text-lg font-display font-bold text-cranberry hover:underline">
+                              Members pay less — sign in →
+                            </Link>
+                          ) : (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Same as guest price</p>
+                          )
                         ) : (
                           <p className="text-2xl font-display font-bold text-gray-900 dark:text-white">
                             {event.pricing.memberPrice === 0 ? 'Free' : formatCurrency(event.pricing.memberPrice)}

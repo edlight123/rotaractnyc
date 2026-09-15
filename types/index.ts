@@ -216,6 +216,13 @@ export interface RotaractEvent {
   venueHidden?: boolean;
   /** Set by server-side redaction — the member price was withheld from this copy. */
   memberPriceHidden?: boolean;
+  /**
+   * Set by server-side redaction: whether a member actually pays less.
+   * Computed BEFORE the member price is stripped — once it is gone the page
+   * cannot tell "discount hidden" from "no discount", and would invite people
+   * to sign in for a saving that doesn't exist.
+   */
+  memberDiscountAvailable?: boolean;
   // ── Donations (optional, opt-in per event) ──
   /** When true, the event accepts donations alongside (or instead of) tickets. */
   acceptsDonations?: boolean;

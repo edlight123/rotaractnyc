@@ -237,8 +237,9 @@ export default function EventsFilter({ events, initialHost = 'all' }: EventsFilt
               {event.pricing && (event.type === 'paid' || event.type === 'hybrid') && (
                 <div className="mt-3 flex items-center gap-3 text-sm">
                   <span className="inline-flex items-center gap-1 bg-cranberry-50 dark:bg-cranberry-900/20 text-cranberry-700 dark:text-cranberry-300 px-2.5 py-1 rounded-lg font-semibold">
-                    {(event as { memberPriceHidden?: boolean }).memberPriceHidden
-                      ? 'Members save'
+                    {(event as { memberPriceHidden?: boolean; memberDiscountAvailable?: boolean }).memberPriceHidden
+                      ? ((event as { memberDiscountAvailable?: boolean }).memberDiscountAvailable
+                          ? 'Members save' : 'Same price')
                       : event.pricing.memberPrice === 0
                         ? 'Free for members'
                         : formatCurrency(event.pricing.memberPrice)}
