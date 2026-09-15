@@ -164,6 +164,11 @@ export async function POST(request: NextRequest) {
       tags,
       capacity,
       isPublic,
+      host,
+      hostName,
+      externalUrl,
+      audience,
+      countsForServiceHours,
       status,
       isRecurring,
       recurrence,
@@ -209,7 +214,22 @@ export async function POST(request: NextRequest) {
       tags: tags || [],
       capacity: capacity || null,
       attendeeCount: 0,
-      isPublic: isPublic ?? true,
+      // Host & audience. Written explicitly on every document — the portal
+      // queries Firestore from the browser with where('audience','in',…) and
+      // that clause matches no document missing the field.
+      host: host || 'rotaract',
+      hostName: (host && host !== 'rotaract' && hostName) || null,
+      externalUrl: externalUrl || null,
+      audience: audience || ((host || 'rotaract') === 'rotaract' ? 'public' : 'members'),
+      countsForServiceHours:
+        typeof countsForServiceHours === 'boolean'
+          ? countsForServiceHours
+          : (host || 'rotaract') === 'rotaract',
+      // The invariant the public queries depend on. Derived from audience
+      // rather than trusted from the client, so the pair cannot disagree.
+      isPublic: audience
+        ? audience === 'public'
+        : (host || 'rotaract') === 'rotaract' && (isPublic ?? true),
       status: status || 'draft',
       // Optional owning committee — its whole team can run this event
       // (check-in, attendees). See lib/server/access.ts canManageEvent.
@@ -350,6 +370,13 @@ export async function PATCH(request: NextRequest) {
       if (!existing.empty) {
         updates.slug = `${updates.slug}-${Date.now().toString(36)}`;
       }
+    }
+
+    // Re-derive the invariant rather than trusting the client to send a
+    // consistent pair. A request that sets audience but leaves isPublic true
+    // would otherwise leak a members-only event through the public queries.
+    if (updates.audience) {
+      updates.isPublic = updates.audience === 'public';
     }
 
     await docRef.update({
