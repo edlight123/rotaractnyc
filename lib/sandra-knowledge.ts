@@ -1,3 +1,4 @@
+import { SITE } from '@/lib/constants';
 /**
  * Sandra — grounded knowledge base + system-prompt builder.
  *
@@ -10,6 +11,8 @@
  * Phase 1 is curated knowledge (below). Phase 2 can add retrieval over the
  * shared-Drive corpus; the scoping model here stays the same.
  */
+
+const COMMUNITY_URL_TOKEN = '__WHATSAPP_COMMUNITY_URL__';
 
 export type Viewer =
   | { tier: 'public' }
@@ -62,7 +65,7 @@ BOARD & ADMIN (for board / president / treasurer / secretary)
 const PUBLIC_LINKS = `
 PUBLIC LINKS (use these exact URLs — never invent or alter a link):
 - Join / become a member: https://rotaractnyc.org/membership
-- WhatsApp community (open to anyone): https://chat.whatsapp.com/LgXZYScjL0S3LuMLlHbolB
+- WhatsApp community (open to anyone): __WHATSAPP_COMMUNITY_URL__
 - Upcoming events: https://rotaractnyc.org/events
 - Contact us: https://rotaractnyc.org/contact
 - Donate: https://rotaractnyc.org/donate
@@ -100,8 +103,23 @@ YOU ARE SANDRA — the warm, concise assistant for the Rotaract Club at the Unit
 - Reply in plain, natural prose. Do NOT use Markdown — no **asterisks**, #headings, backticks, or bullet symbols — the chat shows plain text. For a short list, write items separated by commas or on their own lines with a leading "•". Always put a space between words and after punctuation.
 `;
 
-export function buildSystemPrompt(viewer: Viewer): string {
-  const parts = [GUARDRAILS, 'PUBLIC KNOWLEDGE:', PUBLIC_KNOWLEDGE, PUBLIC_LINKS];
+export interface PromptOptions {
+  /**
+   * The current WhatsApp community invite. Passed in rather than baked in,
+   * because it is editable from Site Settings — Sandra quoting last
+   * deploy's link after someone resets it would defeat the reset.
+   */
+  whatsappCommunityUrl?: string;
+}
+
+export function buildSystemPrompt(viewer: Viewer, options: PromptOptions = {}): string {
+  const communityUrl = options.whatsappCommunityUrl || SITE.whatsappCommunity;
+  const parts = [
+    GUARDRAILS,
+    'PUBLIC KNOWLEDGE:',
+    PUBLIC_KNOWLEDGE.replace(COMMUNITY_URL_TOKEN, communityUrl),
+    PUBLIC_LINKS.replace(COMMUNITY_URL_TOKEN, communityUrl),
+  ];
   if (viewer.tier === 'member' || viewer.tier === 'board') {
     parts.push('MEMBER KNOWLEDGE:', MEMBER_KNOWLEDGE, MEMBER_LINKS);
   }

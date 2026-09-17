@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/firebase/auth';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
+import CommunityLinkSetting from '@/components/portal/CommunityLinkSetting';
 import Spinner from '@/components/ui/Spinner';
 import type { ImpactStat } from '@/types';
 
@@ -147,6 +148,8 @@ export default function SiteSettingsPage() {
           Manage content displayed on the public website.
         </p>
       </div>
+
+      <CommunityLinkSetting />
 
       {/* Impact Stats Section */}
       <section className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
