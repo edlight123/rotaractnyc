@@ -6,6 +6,8 @@ import Input from './Input';
 
 interface SelectWithOtherProps {
   label?: string;
+  /** Marks the field required, same as the underlying Select. */
+  required?: boolean;
   value: string;
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
@@ -26,6 +28,7 @@ interface SelectWithOtherProps {
  */
 export default function SelectWithOther({
   label,
+  required,
   value,
   onChange,
   options,
@@ -72,6 +75,7 @@ export default function SelectWithOther({
     <div className="w-full space-y-2">
       <Select
         label={label}
+        required={required}
         value={selectValue}
         onChange={handleSelectChange}
         options={options}

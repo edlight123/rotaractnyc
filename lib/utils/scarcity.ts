@@ -90,3 +90,26 @@ export function getTicketScarcity(
   }
   return null;
 }
+
+/**
+ * Places left on a free, capacity-limited event — or null when there is
+ * nothing worth saying.
+ *
+ * Says what is LEFT, never how full the event is. "10 of 20 filled" reads as
+ * half-empty and puts people off; "10 spots left" reads as an invitation.
+ * Same number, opposite signal. Deliberately carries no urgency: these are
+ * volunteering shifts and free socials, not tickets.
+ *
+ * Returns null for an uncapped event, a full one (sold-out has its own UI),
+ * and an over-subscribed one — "-5 spots left" helps nobody.
+ */
+export function spotsRemainingLabel(
+  capacity: number | null | undefined,
+  claimed: number | null | undefined,
+): string | null {
+  if (capacity == null || capacity <= 0) return null;
+  const taken = Math.max(0, Math.floor(claimed ?? 0));
+  const remaining = capacity - taken;
+  if (remaining <= 0) return null;
+  return `${remaining} spot${remaining === 1 ? '' : 's'} left`;
+}

@@ -12,6 +12,7 @@ import SearchInput from '@/components/ui/SearchInput';
 import EmptyState from '@/components/ui/EmptyState';
 import { CardGridSkeleton, ListSkeleton } from '@/components/ui/Skeleton';
 import CreateEventModal from '@/components/portal/CreateEventModal';
+import CompleteProfileModal from '@/components/portal/CompleteProfileModal';
 import EventCheckoutModal from '@/components/portal/EventCheckoutModal';
 import EventCard from '@/components/portal/EventCard';
 import CalendarView from '@/components/portal/CalendarView';
@@ -21,6 +22,7 @@ import FilterBar, { FilterSelect } from '@/components/portal/FilterBar';
 import DataView, { ViewToggle, type ViewMode } from '@/components/portal/DataView';
 import { defaultEvents } from '@/lib/defaults/data';
 import { resolveHost } from '@/lib/utils/eventAudience';
+import { isProfileComplete } from '@/lib/utils/profileCompleteness';
 import type { RotaractEvent, RSVPStatus, EventType, EventHost, PaymentSettings } from '@/types';
 
 const HOST_FILTERS = [
@@ -56,6 +58,8 @@ export default function PortalEventsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [rsvpLoading, setRsvpLoading] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  // An RSVP held back until the member's profile is complete.
+  const [pendingRsvp, setPendingRsvp] = useState<{ eventId: string; status: RSVPStatus } | null>(null);
   // Optimistic RSVP state: eventId → status
   const [optimisticRsvps, setOptimisticRsvps] = useState<Record<string, RSVPStatus>>({});
   // Checkout modal state
@@ -146,6 +150,15 @@ export default function PortalEventsPage() {
 
   const handleRSVP = async (eventId: string, status: RSVPStatus) => {
     if (!user) return;
+
+    // Committing to an event is the moment to ask for the profile the club
+    // never managed to collect by email. Only 'going' is gated — blocking
+    // someone from marking themselves NOT going would be absurd.
+    if (status === 'going' && !isProfileComplete(member)) {
+      setPendingRsvp({ eventId, status });
+      return;
+    }
+
     // Optimistic update — show the status immediately
     const previousStatus = optimisticRsvps[eventId];
     setOptimisticRsvps((prev) => ({ ...prev, [eventId]: status }));
@@ -381,6 +394,31 @@ export default function PortalEventsPage() {
       )}
 
       {/* Create/Edit Event Modal */}
+      <CompleteProfileModal
+        open={pendingRsvp !== null}
+        member={member}
+        onClose={() => setPendingRsvp(null)}
+        onComplete={() => {
+          const resume = pendingRsvp;
+          setPendingRsvp(null);
+          // The member record in context is now stale, so this would loop
+          // straight back into the modal if it re-checked. Post directly.
+          if (resume) {
+            setOptimisticRsvps((prev) => ({ ...prev, [resume.eventId]: resume.status }));
+            apiPost('/api/portal/events/rsvp', { eventId: resume.eventId, status: resume.status })
+              .then(() => toast("You're going!"))
+              .catch((err: any) => {
+                setOptimisticRsvps((prev) => {
+                  const next = { ...prev };
+                  delete next[resume.eventId];
+                  return next;
+                });
+                toast(err.message || 'RSVP failed', 'error');
+              });
+          }
+        }}
+      />
+
       <CreateEventModal
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}

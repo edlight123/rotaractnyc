@@ -142,6 +142,14 @@ export default function MemberCard({ member: m, viewerRole, onMessage, variant =
             {m.committee || 'No committee'}
             {m.occupation ? ` · ${m.occupation}` : ''}
           </p>
+          {/* Bio was collected by onboarding and rendered nowhere, which is
+              part of why nobody filled it in. If we are going to require it,
+              it has to be worth writing. */}
+          {m.bio && (
+            <p className="mt-1.5 text-xs leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-2">
+              {m.bio}
+            </p>
+          )}
         </div>
 
         {/* Quick actions — above the stretched link */}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/firebase/auth';
+import { isProfileComplete, PROFILE_FIELD_PROMPTS } from '@/lib/utils/profileCompleteness';
 import { apiPatch, apiGet } from '@/hooks/useFirestore';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
@@ -44,6 +45,7 @@ export default function OnboardingPage() {
     phone: '',
     address: '',
     bio: '',
+    whyJoin: '',
     occupation: '',
     employer: '',
     birthday: '',
@@ -69,6 +71,7 @@ export default function OnboardingPage() {
         employer: member.employer || f.employer,
         memberType: member.memberType || f.memberType,
         bio: member.bio || f.bio,
+        whyJoin: member.whyJoin || f.whyJoin,
         linkedIn: member.linkedIn || f.linkedIn,
         birthday: member.birthday || f.birthday,
         interests: member.interests || f.interests,
@@ -139,6 +142,16 @@ export default function OnboardingPage() {
 
   const canProceedStep1 = form.firstName.trim() && form.lastName.trim() && form.phone.trim();
 
+  // The gate that was never written. Step 1 had one; step 2 did not, so
+  // every member clicked straight through "About You" and 35 of 38 finished
+  // onboarding without a bio between them. Same source of truth the
+  // dashboard prompt, the RSVP modal and the board's list use.
+  const canProceedStep2 = isProfileComplete({
+    bio: form.bio,
+    whyJoin: form.whyJoin,
+    occupation: form.occupation,
+  });
+
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
@@ -152,6 +165,7 @@ export default function OnboardingPage() {
         phone: form.phone.trim(),
         address: form.address.trim() || undefined,
         bio: form.bio.trim() || undefined,
+        whyJoin: form.whyJoin.trim() || undefined,
         occupation: form.occupation.trim() || undefined,
         employer: form.employer.trim() || undefined,
         birthday: form.birthday || undefined,
@@ -248,10 +262,11 @@ export default function OnboardingPage() {
           <div className="space-y-5">
             <h2 className="font-display font-bold text-gray-900 dark:text-white">About You</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Help other members get to know you.</p>
-            <SelectWithOther label="Occupation" options={occupationOpts} value={form.occupation} onChange={(v) => setForm({ ...form, occupation: v })} placeholder="Enter your occupation..." />
+            <SelectWithOther label="Occupation" required options={occupationOpts} value={form.occupation} onChange={(v) => setForm({ ...form, occupation: v })} placeholder="Enter your occupation..." />
             <Input label="Employer / School" value={form.employer} onChange={(e) => setForm({ ...form, employer: e.target.value })} placeholder="e.g., Google, NYU" />
             <Input label="LinkedIn URL" type="url" value={form.linkedIn} onChange={(e) => setForm({ ...form, linkedIn: e.target.value })} placeholder="https://linkedin.com/in/yourname" />
-            <Textarea label="Short Bio" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="Tell us a bit about yourself..." rows={3} />
+            <Textarea label="About You" required value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder={PROFILE_FIELD_PROMPTS.bio} rows={3} />
+            <Textarea label="Why You Want to Join" required value={form.whyJoin} onChange={(e) => setForm({ ...form, whyJoin: e.target.value })} placeholder={PROFILE_FIELD_PROMPTS.whyJoin} rows={3} />
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Areas of Interest</label>
               <div className="flex flex-wrap gap-2">
@@ -277,7 +292,7 @@ export default function OnboardingPage() {
             </div>
             <div className="flex justify-between">
               <Button variant="ghost" onClick={() => setStep(1)}>Back</Button>
-              <Button onClick={() => setStep(3)}>Continue</Button>
+              <Button onClick={() => setStep(3)} disabled={!canProceedStep2}>Continue</Button>
             </div>
           </div>
         )}
