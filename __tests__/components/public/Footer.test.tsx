@@ -29,28 +29,30 @@ describe('Footer component', () => {
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   });
 
-  it('contains Quick Links nav with aria-label', () => {
-    const nav = screen.getByRole('navigation', { name: /quick links/i });
-    expect(nav).toBeInTheDocument();
+  // The nine links are split across two labelled navs by intent — reading
+  // versus joining — rather than one "Quick Links" column nine items deep.
+  it('exposes both link groups as labelled navigation landmarks', () => {
+    expect(screen.getByRole('navigation', { name: /explore/i })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: /get involved/i })).toBeInTheDocument();
   });
 
-  it('renders all quick links', () => {
-    const nav = screen.getByRole('navigation', { name: /quick links/i });
-    const links = within(nav).getAllByRole('link');
-    const linkTexts = links.map((l) => l.textContent);
+  it('still reaches every destination the old single column did', () => {
+    const explore = within(screen.getByRole('navigation', { name: /explore/i }))
+      .getAllByRole('link')
+      .map((l) => l.getAttribute('href'));
+    const involved = within(screen.getByRole('navigation', { name: /get involved/i }))
+      .getAllByRole('link')
+      .map((l) => l.getAttribute('href'));
 
-    expect(linkTexts).toEqual(
-      expect.arrayContaining([
-        'About Us',
-        'Events',
-        'News',
-        'Membership',
-        'Gallery',
-        'Leadership',
-        'Contact',
-        'Donate',
-      ])
+    expect([...explore, ...involved].sort()).toEqual(
+      ['/about', '/contact', '/donate', '/events', '/gallery', '/leadership', '/membership', '/news', '/partners'].sort(),
     );
+  });
+
+  it('keeps the two columns close in length, which is why they were split', () => {
+    const count = (name: RegExp) =>
+      within(screen.getByRole('navigation', { name })).getAllByRole('link').length;
+    expect(Math.abs(count(/explore/i) - count(/get involved/i))).toBeLessThanOrEqual(1);
   });
 
   it('social links have aria-label attributes', () => {
@@ -89,21 +91,48 @@ describe('Footer component', () => {
     expect(screen.getByText(new RegExp(`© ${year}`))).toBeInTheDocument();
   });
 
-  it('renders "Join Rotaract NYC" CTA link', () => {
-    const cta = screen.getByRole('link', { name: /join rotaract nyc/i });
-    expect(cta).toBeInTheDocument();
-    expect(cta).toHaveAttribute('href', '/membership');
+  it('renders the membership CTA outside the link columns', () => {
+    // Two links now carry this name — the banner CTA and the "Get involved"
+    // entry — so assert on both rather than pinning the first match.
+    const all = screen.getAllByRole('link', { name: /become a member/i });
+    expect(all.length).toBe(2);
+    all.forEach((link) => expect(link).toHaveAttribute('href', '/membership'));
+
+    const banner = all.find((link) => !link.closest('nav'));
+    expect(banner).toBeDefined();
+  });
+
+  // Two doors, clearly labelled: the general inbox should not be the only
+  // way in, and someone asking to join should not have to guess.
+  it('lists the general and membership addresses separately', () => {
+    const general = screen.getByRole('link', { name: 'info@rotaractnyc.org' });
+    expect(general).toHaveAttribute('href', 'mailto:info@rotaractnyc.org');
+
+    const membership = screen.getByRole('link', { name: 'membership@rotaractnyc.org' });
+    expect(membership).toHaveAttribute('href', 'mailto:membership@rotaractnyc.org');
+  });
+
+  it('gives the member sign-in a plain name', () => {
+    const signIn = screen.getByRole('link', { name: /member sign-in/i });
+    expect(signIn).toHaveAttribute('href', '/portal/login');
+    // No trailing arrow glyph baked into the label.
+    expect(signIn.textContent).not.toMatch(/[→>]/);
+  });
+
+  it('states the meeting time, which is the question people arrive with', () => {
+    expect(screen.getByText(/2nd & 4th Thursday/i)).toBeInTheDocument();
   });
 
   it('renders the sponsor name', () => {
     expect(screen.getByText('The Rotary Club of New York')).toBeInTheDocument();
   });
 
-  it('decorative inline SVGs (e.g. icons, arrows) are hidden from assistive tech', () => {
+  it('hides decorative SVGs from assistive tech', () => {
     const footer = screen.getByRole('contentinfo');
-    // The CTA arrow and contact-section icons should have aria-hidden
-    const ariaHiddenSvgs = footer.querySelectorAll('svg[aria-hidden="true"]');
-    // Footer has several decorative SVGs: CTA arrow + contact icons (location, email, clock)
-    expect(ariaHiddenSvgs.length).toBeGreaterThanOrEqual(4);
+    const svgs = Array.from(footer.querySelectorAll('svg'));
+    expect(svgs.length).toBeGreaterThan(0);
+    // Every remaining glyph is decorative — the social links carry their own
+    // aria-label, so no SVG should be announced.
+    expect(svgs.every((svg) => svg.getAttribute('aria-hidden') === 'true')).toBe(true);
   });
 });

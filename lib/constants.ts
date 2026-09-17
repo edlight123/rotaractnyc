@@ -34,6 +34,10 @@ export const SITE = {
   // QR codes on /account/tickets and in event emails.
   url: 'https://www.rotaractnyc.org',
   email: 'info@rotaractnyc.org',
+  // Membership enquiries go to the committee group, not the general inbox.
+  // Kept separate so joining reaches the people who handle joining, and so
+  // neither address has to be hunted down page by page if it changes.
+  membershipEmail: 'membership@rotaractnyc.org',
   address: '216 East 45th Street, New York, NY 10017',
   meetingSchedule: 'Every 2nd & 4th Thursday, 7:00–8:00 PM',
   ageRange: '18–35',

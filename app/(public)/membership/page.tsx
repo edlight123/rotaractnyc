@@ -102,8 +102,8 @@ export default function MembershipPage() {
             </p>
             <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">
               New members: send a short bio (who you are, your background, and why you want to join) to{' '}
-              <a href="mailto:rotaractnewyorkcity@gmail.com" className="text-cranberry font-medium hover:underline">
-                rotaractnewyorkcity@gmail.com
+              <a href={`mailto:${SITE.membershipEmail}`} className="text-cranberry font-medium hover:underline">
+                {SITE.membershipEmail}
               </a>
               {' '}ahead of your induction meeting.
             </p>
@@ -174,8 +174,8 @@ export default function MembershipPage() {
             <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">
               Want the full benefits, perks, and a vote? Become a <strong>full member</strong> anytime by paying
               annual dues. Questions?{' '}
-              <a href="mailto:rotaractnewyorkcity@gmail.com" className="text-cranberry font-medium hover:underline">
-                rotaractnewyorkcity@gmail.com
+              <a href={`mailto:${SITE.membershipEmail}`} className="text-cranberry font-medium hover:underline">
+                {SITE.membershipEmail}
               </a>
             </p>
           </div>

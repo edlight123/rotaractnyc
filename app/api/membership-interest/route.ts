@@ -4,10 +4,14 @@ import { sendEmail } from '@/lib/email/send';
 import { membershipInterestEmail } from '@/lib/email/templates';
 import { isValidEmail } from '@/lib/utils/sanitize';
 import { notifyAdminsMembershipInterest } from '@/lib/notifications';
+import { SITE } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
 
-const TO_EMAIL = process.env.RESEND_TO_EMAIL || 'info@rotaractnyc.org';
+// Membership enquiries belong with the membership committee, not the general
+// inbox. RESEND_TO_EMAIL still overrides, so this can be redirected without a
+// deploy if the group is ever retired.
+const TO_EMAIL = process.env.RESEND_TO_EMAIL || SITE.membershipEmail;
 
 export async function POST(request: Request) {
   // Rate limit: 3 submissions per 60 s per IP
