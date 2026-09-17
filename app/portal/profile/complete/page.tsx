@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage as getStorage } from '@/lib/firebase/client';
 import { useAuth } from '@/lib/firebase/auth';
 import { apiPatch } from '@/hooks/useFirestore';
 import { useToast } from '@/components/ui/Toast';
@@ -26,11 +28,14 @@ import {
  * validation. This shows only what they are missing.
  */
 export default function CompleteProfilePage() {
-  const { member } = useAuth();
+  const { member, user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ bio: '', whyJoin: '', occupation: '' });
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   if (!member) {
     return (
@@ -59,15 +64,32 @@ export default function CompleteProfilePage() {
     bio: value('bio'),
     whyJoin: value('whyJoin'),
     occupation: value('occupation'),
+    photoURL: photoPreview || member.photoURL,
   });
+
+  const pickPhoto = (file: File | undefined) => {
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const uploadPhoto = async (): Promise<string | null> => {
+    if (!photoFile || !user) return member.photoURL || null;
+    const ext = photoFile.name.split('.').pop() || 'jpg';
+    const storageRef = ref(getStorage(), `avatars/${user.uid}.${ext}`);
+    await uploadBytes(storageRef, photoFile);
+    return getDownloadURL(storageRef);
+  };
 
   const handleSave = async () => {
     setSaving(true);
     try {
+      const photoURL = await uploadPhoto();
       await apiPatch('/api/portal/profile', {
         bio: value('bio').trim(),
         whyJoin: value('whyJoin').trim(),
         occupation: value('occupation').trim(),
+        ...(photoURL && { photoURL }),
       });
       toast('Thanks — your profile is complete.');
       // A hard navigation, not router.push. The auth context fetches the
@@ -119,6 +141,39 @@ export default function CompleteProfilePage() {
             placeholder={PROFILE_FIELD_PROMPTS.whyJoin}
             onChange={(e) => setForm({ ...form, whyJoin: e.target.value })}
           />
+        )}
+
+        {missing.includes('photoURL') && (
+          <div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {PROFILE_FIELD_LABELS.photoURL} <span className="text-cranberry">*</span>
+            </p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {PROFILE_FIELD_PROMPTS.photoURL}
+            </p>
+            <div className="mt-3 flex items-center gap-4">
+              {photoPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={photoPreview}
+                  alt="Your new profile photo"
+                  className="h-20 w-20 rounded-full border-4 border-cranberry-100 object-cover dark:border-cranberry-900/30"
+                />
+              ) : (
+                <div className="h-20 w-20 rounded-full bg-gray-100 dark:bg-gray-800" aria-hidden="true" />
+              )}
+              <input
+                ref={fileInput}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => pickPhoto(e.target.files?.[0])}
+              />
+              <Button variant="secondary" onClick={() => fileInput.current?.click()}>
+                {photoPreview ? 'Choose a different photo' : 'Upload a photo'}
+              </Button>
+            </div>
+          </div>
         )}
 
         <Button onClick={handleSave} disabled={!ready || saving}>
