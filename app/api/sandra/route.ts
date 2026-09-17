@@ -4,6 +4,8 @@ import { google } from '@ai-sdk/google';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { buildSystemPrompt, type Viewer } from '@/lib/sandra-knowledge';
+import { upcomingEventsBlock } from '@/lib/sandra-events';
+import { SITE } from '@/lib/constants';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -96,7 +98,7 @@ function corpusBlock(docs: CorpusDoc[]): string {
 export async function POST(request: NextRequest) {
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     return NextResponse.json(
-      { error: 'Sandra isn’t available right now. Please email rotaractnewyorkcity@gmail.com.' },
+      { error: `Sandra isn’t available right now. Please email ${SITE.email}.` },
       { status: 503 },
     );
   }
@@ -126,10 +128,17 @@ export async function POST(request: NextRequest) {
     console.error('[sandra] grounding skipped:', e);
   }
 
+  // The live calendar, always — not only when the question looks event-shaped.
+  // "What's on this weekend", "can I bring a friend", "when do you next meet"
+  // all need it, and keyword-sniffing the question would miss most of them.
+  // It is appended AFTER the documents so that where the two disagree, the
+  // calendar is the last thing the model reads.
+  const calendar = await upcomingEventsBlock(viewer.tier);
+
   try {
     const result = streamText({
       model: google(MODEL),
-      system: buildSystemPrompt(viewer) + grounding,
+      system: buildSystemPrompt(viewer) + grounding + calendar,
       messages,
       temperature: 0.2,
       maxTokens: 800,
