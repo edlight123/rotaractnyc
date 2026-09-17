@@ -169,3 +169,27 @@ describe('the calendar outranks the documents', () => {
     expect(block).toMatch(/never state a venue that is not written here/i);
   });
 });
+
+/**
+ * The WhatsApp community is the one chat a stranger is meant to be able to
+ * walk into. Sandra should offer it — and must never confuse it with the
+ * members-only group, which is not hers to hand out.
+ */
+describe('the open WhatsApp community', () => {
+  const prompts = [
+    ['public', buildSystemPrompt({ tier: 'public' })],
+    ['member', buildSystemPrompt({ tier: 'member' })],
+  ] as const;
+
+  it.each(prompts)('gives a %s viewer the invite link', (_tier, prompt) => {
+    expect(prompt).toContain('https://chat.whatsapp.com/LgXZYScjL0S3LuMLlHbolB');
+  });
+
+  it.each(prompts)('tells a %s viewer it is open to anyone', (_tier, prompt) => {
+    expect(prompt).toMatch(/open to (all|any)|anyone may join/i);
+  });
+
+  it.each(prompts)('warns a %s viewer not to call it a members-only space', (_tier, prompt) => {
+    expect(prompt).toMatch(/not the members-only group/i);
+  });
+});
