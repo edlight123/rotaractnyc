@@ -88,9 +88,19 @@ function corpusBlock(docs: CorpusDoc[]): string {
     if (budget <= 0) break;
   }
   return (
-    '\n\nCLUB DOCUMENTS — authoritative excerpts from the club\'s shared Drive. ' +
-    'Prefer these over general knowledge, and cite the document title when you use one. ' +
-    'If they don\'t cover the question, say so.\n\n' +
+    '\n\nCLUB DOCUMENTS — excerpts from the club\'s shared Drive. They explain ' +
+    'how the club works and what it HAS DONE. Several are explicitly ' +
+    'historical (project logs, partner directories, past venues), so treat ' +
+    'everything here as background, not as a schedule.\n\n' +
+    'THEY ARE NOT A CALENDAR. Never take a date, a time, a venue, or an ' +
+    'answer to "what is coming up" from these documents — a project they ' +
+    'describe may have ended years ago and a venue they name may be one the ' +
+    'club no longer uses. Every one of those facts comes only from the ' +
+    'UPCOMING EVENTS block. Where a document and that block disagree, the ' +
+    'block is right and the document is out of date.\n\n' +
+    'Use them for how things work, who we are, and what we have done before. ' +
+    'Cite the document title when you use one. If they don\'t cover the ' +
+    'question, say so.\n\n' +
     parts.join('\n\n')
   );
 }

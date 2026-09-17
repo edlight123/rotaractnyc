@@ -127,3 +127,45 @@ describe('upcomingEventsBlock', () => {
     await expect(upcomingEventsBlock('public')).resolves.toBe('');
   });
 });
+
+/**
+ * The club documents are a record of what the club has done, not a schedule.
+ * The Neighborhood Supper's former venue lives in one of them; the calendar
+ * has since moved to a different one. Sandra read the document as current
+ * and named the old address, which is how someone ends up at the wrong
+ * building. The prompt now has to say, in terms, which source wins.
+ */
+import { buildSystemPrompt } from '@/lib/sandra-knowledge';
+
+describe('the calendar outranks the documents', () => {
+  const prompts = [
+    ['public', buildSystemPrompt({ tier: 'public' })],
+    ['member', buildSystemPrompt({ tier: 'member' })],
+    ['board', buildSystemPrompt({ tier: 'board' })],
+  ] as const;
+
+  it.each(prompts)('tells a %s viewer that dates and venues come only from the calendar', (_tier, prompt) => {
+    expect(prompt).toMatch(/never state a date, time or venue that does not appear in the UPCOMING EVENTS block/i);
+  });
+
+  it.each(prompts)('stops a %s viewer being told the typical year is a schedule', (_tier, prompt) => {
+    expect(prompt).toMatch(/not a schedule/i);
+  });
+
+  it.each(prompts)('tells a %s viewer to admit an event is not on the calendar', (_tier, prompt) => {
+    expect(prompt).toMatch(/not on the calendar/i);
+  });
+
+  it('no longer asserts a specific recurring date in the static knowledge', () => {
+    // "a food pantry on the 3rd Saturday" was a standing claim that the
+    // calendar, not this file, should be making.
+    expect(buildSystemPrompt({ tier: 'public' })).not.toMatch(/3rd Saturday|third Saturday/i);
+  });
+
+  it('marks the calendar block as beating any document', async () => {
+    snapshot([doc({ title: 'Neighborhood Supper', location: 'Holy Trinity Neighborhood Center' })]);
+    const block = await upcomingEventsBlock('public');
+    expect(block).toMatch(/authoritative|more current than any document/i);
+    expect(block).toMatch(/never state a venue that is not written here/i);
+  });
+});
