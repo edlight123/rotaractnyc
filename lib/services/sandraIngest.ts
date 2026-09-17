@@ -44,9 +44,41 @@ function parseServiceAccount(raw: string): { client_email: string; private_key: 
   return JSON.parse(safe);
 }
 
+/**
+ * Which credential reads the shared Drive.
+ *
+ * The ingest already needs FIREBASE_SERVICE_ACCOUNT to write the corpus to
+ * Firestore, so once that identity is granted Viewer on the source folders
+ * it can do both jobs and production needs no separate Drive key.
+ *
+ * That is a security improvement, not just one fewer secret. The key it
+ * replaces lives in a different GCP project and holds EDIT rights on the
+ * club's shared Drive — a leak of the production environment could have
+ * rewritten those documents. The Firebase identity is a reader there, so the
+ * same leak can only read them.
+ *
+ * GOOGLE_SA_JSON still takes precedence where it is set, so removing it is a
+ * separate, reversible step rather than a flag day.
+ */
+export function resolveDriveCredential(
+  env: { GOOGLE_SA_JSON?: string; FIREBASE_SERVICE_ACCOUNT?: string },
+): { source: 'GOOGLE_SA_JSON' | 'FIREBASE_SERVICE_ACCOUNT'; raw: string } {
+  const dedicated = env.GOOGLE_SA_JSON?.trim();
+  if (dedicated) return { source: 'GOOGLE_SA_JSON', raw: dedicated };
+
+  const firebase = env.FIREBASE_SERVICE_ACCOUNT?.trim();
+  if (firebase) return { source: 'FIREBASE_SERVICE_ACCOUNT', raw: firebase };
+
+  throw new Error(
+    'No Drive credential — set GOOGLE_SA_JSON, or grant FIREBASE_SERVICE_ACCOUNT reader access to the source folders.',
+  );
+}
+
 async function driveToken(): Promise<string> {
-  const raw = process.env.GOOGLE_SA_JSON;
-  if (!raw) throw new Error('GOOGLE_SA_JSON is not set — cannot read the shared Drive.');
+  const { raw } = resolveDriveCredential({
+    GOOGLE_SA_JSON: process.env.GOOGLE_SA_JSON,
+    FIREBASE_SERVICE_ACCOUNT: process.env.FIREBASE_SERVICE_ACCOUNT,
+  });
   const sa = parseServiceAccount(raw);
   const now = Math.floor(Date.now() / 1000);
   const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
