@@ -1,4 +1,4 @@
-import { getTicketScarcity, sellsTickets } from '@/lib/utils/scarcity';
+import { getTicketScarcity, sellsTickets, spotsRemainingLabel } from '@/lib/utils/scarcity';
 
 describe('getTicketScarcity', () => {
   describe('no badge cases', () => {
@@ -133,5 +133,50 @@ describe('sellsTickets — scarcity language only where tickets exist', () => {
     expect(
       sellsTickets({ type: 'paid', pricing: { memberPrice: 0, guestPrice: 0, tiers: [tier({ guestPrice: 5000 })] } }),
     ).toBe(true);
+  });
+});
+
+/**
+ * Free, capacity-limited events.
+ *
+ * Gating scarcity on sellsTickets fixed "🔥 Almost sold out" appearing on a
+ * free volunteering shift, but left those events showing nothing at all — a
+ * Supper capped at 20 looked uncapped. The replacement deliberately states
+ * what is LEFT rather than how full the event is: "10 of 20 filled" reads as
+ * half-empty and discourages people, while "10 spots left" reads as an
+ * invitation. Same number, opposite signal.
+ */
+describe('spotsRemainingLabel', () => {
+  it('says how many places are left', () => {
+    expect(spotsRemainingLabel(20, 10)).toBe('10 spots left');
+  });
+
+  it('uses the singular for the last place', () => {
+    expect(spotsRemainingLabel(20, 19)).toBe('1 spot left');
+  });
+
+  it('says nothing when the event has no capacity', () => {
+    expect(spotsRemainingLabel(null, 4)).toBeNull();
+    expect(spotsRemainingLabel(undefined, 4)).toBeNull();
+    expect(spotsRemainingLabel(0, 0)).toBeNull();
+  });
+
+  it('says nothing when the event is full — that has its own UI', () => {
+    expect(spotsRemainingLabel(20, 20)).toBeNull();
+  });
+
+  it('does not report negative places when an event is over capacity', () => {
+    expect(spotsRemainingLabel(20, 25)).toBeNull();
+  });
+
+  it('treats a missing signup count as nobody signed up yet', () => {
+    expect(spotsRemainingLabel(20, null)).toBe('20 spots left');
+    expect(spotsRemainingLabel(20, undefined)).toBe('20 spots left');
+  });
+
+  it('never describes the event as filling up or selling out', () => {
+    // The whole point: no urgency, no percentage, no "almost gone".
+    const label = spotsRemainingLabel(20, 18) ?? '';
+    expect(label).not.toMatch(/sold|almost|fast|hurry|only|%|filled/i);
   });
 });

@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/firebase/auth';
+import ProfilePrompt from '@/components/portal/ProfilePrompt';
 import { usePosts, usePortalEvents, useServiceHours, useMemberRsvps, apiPost } from '@/hooks/useFirestore';
 import { useDues } from '@/hooks/useDues';
 import { useToast } from '@/components/ui/Toast';
@@ -395,6 +396,9 @@ export default function PortalDashboard() {
       onClose={() => setShowComposer(false)}
       onSubmit={handlePost}
     />
+
+    {/* Backfill prompt — persists until the profile is complete. */}
+    <ProfilePrompt />
 
     {/* Tutorial Launchers — shown once per track */}
     {!tutorialActive && !isMemberComplete && (

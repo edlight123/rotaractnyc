@@ -1,6 +1,6 @@
 'use client';
 
-import { getTicketScarcity, sellsTickets, type ScarcityLevel } from '@/lib/utils/scarcity';
+import { getTicketScarcity, sellsTickets, spotsRemainingLabel, type ScarcityLevel } from '@/lib/utils/scarcity';
 import type { RotaractEvent } from '@/types';
 
 /**
@@ -65,12 +65,17 @@ const TONE: Record<ScarcityLevel, { wrap: string; text: string; sub: string; dot
 
 interface TicketScarcityProps {
   /**
-   * The event itself, purely so this component can refuse to render on one
-   * that sells no tickets. Required rather than optional: a call site that
-   * forgets it is exactly how "Almost sold out" ended up on a free
-   * volunteering shift.
+   * The event itself, purely so this component can tell a ticketed event
+   * from a free one. Required rather than optional: a call site that forgets
+   * it is exactly how "Almost sold out" ended up on a free volunteering
+   * shift.
+   *
+   * `pricing` is widened to allow null because that is what is actually
+   * stored — the portal writes `pricing: pricing || null` — even though
+   * RotaractEvent types it as optional. Matching reality here beats making
+   * every call site cast.
    */
-  event: Pick<RotaractEvent, 'type' | 'pricing'>;
+  event: { type?: RotaractEvent['type']; pricing?: RotaractEvent['pricing'] | null };
   capacity?: number | null;
   /** Tickets already sold/claimed (one per seat). */
   ticketsSold?: number | null;
@@ -99,7 +104,22 @@ export default function TicketScarcity({
   urgentOnly = false,
   className = '',
 }: TicketScarcityProps) {
-  if (!sellsTickets(event)) return null;
+  // A free event still has a capacity worth knowing about — the Supper caps
+  // at 20 — but none of the language below applies to it. It gets a plain
+  // count of what's left and nothing else: no dot, no icon, no urgency.
+  if (!sellsTickets(event)) {
+    const spots = spotsRemainingLabel(capacity, ticketsSold);
+    if (!spots) return null;
+    if (urgentOnly) return null;
+    return (
+      <p
+        role="status"
+        className={`text-sm text-gray-600 dark:text-gray-400 ${variant === 'inline' ? 'text-center' : ''} ${className}`}
+      >
+        {spots}
+      </p>
+    );
+  }
 
   const info = getTicketScarcity(capacity, ticketsSold);
   if (!info) return null;

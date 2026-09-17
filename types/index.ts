@@ -21,6 +21,8 @@ export interface Member {
   lastName?: string;
   photoURL?: string;
   bio?: string;
+  /** Why they wanted to join — asked at onboarding, read at induction. */
+  whyJoin?: string;
   role: MemberRole;
   status: MemberStatus;
   memberType?: 'professional' | 'student';

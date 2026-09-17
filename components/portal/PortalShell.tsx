@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/auth';
+import { needsOnboarding } from '@/lib/utils/profileCompleteness';
 import { useDues } from '@/hooks/useDues';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useUnreadCounts } from '@/hooks/useUnreadCounts';
@@ -320,7 +321,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
     );
   }
 
-  if (member.onboardingComplete === false && pathname !== '/portal/onboarding') {
+  if (needsOnboarding(member) && pathname !== '/portal/onboarding') {
     router.push('/portal/onboarding');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">

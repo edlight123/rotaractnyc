@@ -24,6 +24,7 @@ import { apiPatch } from '@/hooks/useFirestore';
 import { canManageMembership } from '@/lib/permissions';
 import { formatDate } from '@/lib/utils/format';
 import { SectionHeader } from '@/components/portal/PageHeader';
+import IncompleteProfilesPanel from '@/components/portal/IncompleteProfilesPanel';
 
 interface MemberRow {
   id: string;
@@ -306,6 +307,11 @@ export default function MembershipAdminPage() {
           Applications, onboarding progress, and membership health — the Membership Chair&apos;s workspace.
         </p>
       </div>
+
+      <section>
+        <SectionHeader title="Profiles to chase" />
+        <IncompleteProfilesPanel />
+      </section>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
