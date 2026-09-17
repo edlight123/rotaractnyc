@@ -287,7 +287,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
 
             {/* ── Tickets-left urgency nudge (hidden once sold out or ended) ── */}
             {!external && !eventHasEnded(event) && (
-              <TicketScarcity capacity={event.capacity} ticketsSold={ticketsSold} className="mt-10" />
+              <TicketScarcity event={event} capacity={event.capacity} ticketsSold={ticketsSold} className="mt-10" />
             )}
 
             {/* Pricing */}

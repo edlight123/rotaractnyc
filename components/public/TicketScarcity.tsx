@@ -1,6 +1,7 @@
 'use client';
 
-import { getTicketScarcity, type ScarcityLevel } from '@/lib/utils/scarcity';
+import { getTicketScarcity, sellsTickets, type ScarcityLevel } from '@/lib/utils/scarcity';
+import type { RotaractEvent } from '@/types';
 
 /**
  * TicketScarcity — a tasteful "X tickets left" urgency badge that nudges
@@ -63,6 +64,13 @@ const TONE: Record<ScarcityLevel, { wrap: string; text: string; sub: string; dot
 };
 
 interface TicketScarcityProps {
+  /**
+   * The event itself, purely so this component can refuse to render on one
+   * that sells no tickets. Required rather than optional: a call site that
+   * forgets it is exactly how "Almost sold out" ended up on a free
+   * volunteering shift.
+   */
+  event: Pick<RotaractEvent, 'type' | 'pricing'>;
   capacity?: number | null;
   /** Tickets already sold/claimed (one per seat). */
   ticketsSold?: number | null;
@@ -84,12 +92,15 @@ function LiveDot({ color, ping }: { color: string; ping: boolean }) {
 }
 
 export default function TicketScarcity({
+  event,
   capacity,
   ticketsSold,
   variant = 'card',
   urgentOnly = false,
   className = '',
 }: TicketScarcityProps) {
+  if (!sellsTickets(event)) return null;
+
   const info = getTicketScarcity(capacity, ticketsSold);
   if (!info) return null;
   if (urgentOnly && !['critical', 'high', 'selling'].includes(info.level)) return null;

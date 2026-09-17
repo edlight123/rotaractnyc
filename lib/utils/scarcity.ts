@@ -5,7 +5,36 @@
  * misrepresenting availability.
  */
 
+import type { EventPricing, EventType } from '@/types';
+
 export type ScarcityLevel = 'critical' | 'high' | 'selling' | 'momentum' | 'exclusive';
+
+/**
+ * Does this event actually sell tickets?
+ *
+ * Scarcity messaging is written in the language of tickets — "Almost sold
+ * out", "Only 3 tickets left" — and that language only makes sense where
+ * there is something to buy. A free event can still be capacity-limited: the
+ * Neighborhood Supper caps at 20 volunteers. But telling someone that
+ * signing up to serve a meal is "almost sold out" both misdescribes it and
+ * applies purchase pressure to an act of service.
+ *
+ * `type` alone is not enough. A 'hybrid' event may or may not charge, and an
+ * event mislabelled 'paid' with no prices set has nothing to sell, so the
+ * prices are what decide.
+ */
+export function sellsTickets(event: {
+  type?: EventType;
+  pricing?: EventPricing | null;
+}): boolean {
+  if (event.type === 'free' || event.type === 'service') return false;
+  const pricing = event.pricing;
+  if (!pricing) return false;
+  if (pricing.tiers?.length) {
+    return pricing.tiers.some((t) => (t.guestPrice ?? 0) > 0 || (t.memberPrice ?? 0) > 0);
+  }
+  return (pricing.guestPrice ?? 0) > 0 || (pricing.memberPrice ?? 0) > 0;
+}
 
 export interface ScarcityInfo {
   level: ScarcityLevel;

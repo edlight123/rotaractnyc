@@ -1,4 +1,4 @@
-import { getTicketScarcity } from '@/lib/utils/scarcity';
+import { getTicketScarcity, sellsTickets } from '@/lib/utils/scarcity';
 
 describe('getTicketScarcity', () => {
   describe('no badge cases', () => {
@@ -98,5 +98,40 @@ describe('getTicketScarcity', () => {
     const r = getTicketScarcity(80, 75.9 as unknown as number);
     expect(r?.remaining).toBe(5);
     expect(r?.level).toBe('critical');
+  });
+});
+
+describe('sellsTickets — scarcity language only where tickets exist', () => {
+  // The Neighborhood Supper: a capacity-limited volunteering shift that was
+  // showing "🔥 Almost sold out — 10 tickets left" on a free event.
+  it('is false for a service event with a real capacity', () => {
+    expect(sellsTickets({ type: 'service', pricing: null })).toBe(false);
+  });
+
+  it('is false for a free event', () => {
+    expect(sellsTickets({ type: 'free' })).toBe(false);
+  });
+
+  it('is false for a paid event with no prices actually set', () => {
+    // Mislabelled rather than ticketed — there is nothing to sell.
+    expect(sellsTickets({ type: 'paid', pricing: { memberPrice: 0, guestPrice: 0 } })).toBe(false);
+  });
+
+  it('is true for a paid event with a price', () => {
+    expect(sellsTickets({ type: 'paid', pricing: { memberPrice: 7000, guestPrice: 7500 } })).toBe(true);
+  });
+
+  it('is true for a hybrid event that charges guests but not members', () => {
+    expect(sellsTickets({ type: 'hybrid', pricing: { memberPrice: 0, guestPrice: 2500 } })).toBe(true);
+  });
+
+  it('reads tier prices when tiers are present', () => {
+    const tier = (over: Record<string, unknown>) => ({
+      id: 't', label: 'T', memberPrice: 0, guestPrice: 0, sortOrder: 0, ...over,
+    });
+    expect(sellsTickets({ type: 'paid', pricing: { memberPrice: 0, guestPrice: 0, tiers: [tier({})] } })).toBe(false);
+    expect(
+      sellsTickets({ type: 'paid', pricing: { memberPrice: 0, guestPrice: 0, tiers: [tier({ guestPrice: 5000 })] } }),
+    ).toBe(true);
   });
 });
