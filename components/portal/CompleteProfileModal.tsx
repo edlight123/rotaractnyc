@@ -10,7 +10,7 @@ import { apiPatch } from '@/hooks/useFirestore';
 import { useToast } from '@/components/ui/Toast';
 import {
   missingProfileFields,
-  isProfileComplete,
+  rsvpGateSatisfied,
   PROFILE_FIELD_LABELS,
   PROFILE_FIELD_PROMPTS,
 } from '@/lib/utils/profileCompleteness';
@@ -42,11 +42,12 @@ export default function CompleteProfileModal({
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ bio: '', whyJoin: '', occupation: '' });
 
-  const missing = missingProfileFields(member);
+  // Only the writing — a photo upload at the door is a different ask.
+  const missing = missingProfileFields(member).filter((f) => f !== 'photoURL');
   const value = (field: 'bio' | 'whyJoin' | 'occupation') =>
     form[field] || (member?.[field] as string | undefined) || '';
 
-  const ready = isProfileComplete({
+  const ready = rsvpGateSatisfied({
     bio: value('bio'),
     whyJoin: value('whyJoin'),
     occupation: value('occupation'),

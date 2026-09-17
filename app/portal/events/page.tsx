@@ -22,7 +22,7 @@ import FilterBar, { FilterSelect } from '@/components/portal/FilterBar';
 import DataView, { ViewToggle, type ViewMode } from '@/components/portal/DataView';
 import { defaultEvents } from '@/lib/defaults/data';
 import { resolveHost } from '@/lib/utils/eventAudience';
-import { isProfileComplete } from '@/lib/utils/profileCompleteness';
+import { rsvpGateSatisfied } from '@/lib/utils/profileCompleteness';
 import type { RotaractEvent, RSVPStatus, EventType, EventHost, PaymentSettings } from '@/types';
 
 const HOST_FILTERS = [
@@ -154,7 +154,7 @@ export default function PortalEventsPage() {
     // Committing to an event is the moment to ask for the profile the club
     // never managed to collect by email. Only 'going' is gated — blocking
     // someone from marking themselves NOT going would be absurd.
-    if (status === 'going' && !isProfileComplete(member)) {
+    if (status === 'going' && !rsvpGateSatisfied(member)) {
       setPendingRsvp({ eventId, status });
       return;
     }

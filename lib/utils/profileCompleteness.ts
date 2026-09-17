@@ -15,7 +15,7 @@
  */
 
 /** Order matters: it is the order the fields are asked for and listed. */
-export const REQUIRED_PROFILE_FIELDS = ['bio', 'whyJoin', 'occupation'] as const;
+export const REQUIRED_PROFILE_FIELDS = ['bio', 'whyJoin', 'occupation', 'photoURL'] as const;
 
 export type ProfileField = (typeof REQUIRED_PROFILE_FIELDS)[number];
 
@@ -23,6 +23,7 @@ export const PROFILE_FIELD_LABELS: Record<ProfileField, string> = {
   bio: 'About you',
   whyJoin: 'Why you want to join',
   occupation: 'Occupation',
+  photoURL: 'Profile photo',
 };
 
 /** The prompt each field is asked with, so all four surfaces ask alike. */
@@ -30,7 +31,24 @@ export const PROFILE_FIELD_PROMPTS: Record<ProfileField, string> = {
   bio: 'Who you are, your background, and where in the city you live.',
   whyJoin: 'What brought you to Rotaract, and what you hope to get out of it.',
   occupation: 'What you do — your role, or what you are studying.',
+  photoURL: 'A photo, so people can recognise you at your first meeting.',
 };
+
+/**
+ * The subset an RSVP waits on — everything except the photo.
+ *
+ * The RSVP modal collects text inline in about thirty seconds, which is what
+ * justifies it blocking at all. A file upload at that same moment is a
+ * different proposition: it turns a speed bump into a reason not to come,
+ * and the club would rather have the attendance. The photo is still required
+ * of a complete profile, chased by the dashboard prompt and the board's
+ * list — just not at the door.
+ */
+export const RSVP_GATE_FIELDS: readonly ProfileField[] = ['bio', 'whyJoin', 'occupation'];
+
+export function rsvpGateSatisfied(member: ProfileShape): boolean {
+  return RSVP_GATE_FIELDS.every((field) => filledIn(member?.[field]));
+}
 
 // Callers pass whole member records, partial form state, and (during auth
 // loading) nothing at all — so every field is optional and null is allowed.

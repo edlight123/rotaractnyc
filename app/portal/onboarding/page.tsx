@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/firebase/auth';
-import { isProfileComplete, PROFILE_FIELD_PROMPTS } from '@/lib/utils/profileCompleteness';
+import { rsvpGateSatisfied, PROFILE_FIELD_PROMPTS } from '@/lib/utils/profileCompleteness';
 import { apiPatch, apiGet } from '@/hooks/useFirestore';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
@@ -146,11 +146,15 @@ export default function OnboardingPage() {
   // every member clicked straight through "About You" and 35 of 38 finished
   // onboarding without a bio between them. Same source of truth the
   // dashboard prompt, the RSVP modal and the board's list use.
-  const canProceedStep2 = isProfileComplete({
+  const canProceedStep2 = rsvpGateSatisfied({
     bio: form.bio,
     whyJoin: form.whyJoin,
     occupation: form.occupation,
   });
+
+  // A photo is required too — the club wants to recognise people at their
+  // first meeting. Either a newly chosen file or one already on the record.
+  const canProceedStep3 = Boolean(photoPreview || member?.photoURL);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -301,7 +305,7 @@ export default function OnboardingPage() {
         {step === 3 && (
           <div className="space-y-5">
             <h2 className="font-display font-bold text-gray-900 dark:text-white">Profile Photo</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Add a photo so other members can recognize you. You can always update this later.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Add a photo so other members can recognise you at your first meeting. You can change it later.</p>
 
             <div className="flex flex-col items-center gap-4">
               <div className="relative">
@@ -341,7 +345,7 @@ export default function OnboardingPage() {
 
             <div className="flex justify-between">
               <Button variant="ghost" onClick={() => setStep(2)}>Back</Button>
-              <Button onClick={() => setStep(4)}>Continue</Button>
+              <Button onClick={() => setStep(4)} disabled={!canProceedStep3}>Continue</Button>
             </div>
           </div>
         )}
