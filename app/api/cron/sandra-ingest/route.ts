@@ -15,7 +15,7 @@ export const maxDuration = 120;
 
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
-import { runSandraIngest } from '@/lib/services/sandraIngest';
+import { runSandraIngest, resolveDriveCredential } from '@/lib/services/sandraIngest';
 import type { Firestore } from 'firebase-admin/firestore';
 
 function authorize(request: Request): boolean {
@@ -28,9 +28,18 @@ export async function GET(request: Request) {
   if (!authorize(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  if (!process.env.GOOGLE_SA_JSON) {
+  // Either credential will do: the dedicated Drive key, or the Firebase
+  // service account once it has Viewer on the source folders. Guarding on
+  // GOOGLE_SA_JSON alone would keep skipping after that variable is removed,
+  // which is exactly the silent no-op this endpoint spent eight weeks doing.
+  try {
+    resolveDriveCredential({
+      GOOGLE_SA_JSON: process.env.GOOGLE_SA_JSON,
+      FIREBASE_SERVICE_ACCOUNT: process.env.FIREBASE_SERVICE_ACCOUNT,
+    });
+  } catch (e) {
     return NextResponse.json(
-      { ok: false, skipped: 'GOOGLE_SA_JSON not configured — add it to enable corpus refresh.' },
+      { ok: false, skipped: (e as Error).message },
       { status: 200 },
     );
   }
