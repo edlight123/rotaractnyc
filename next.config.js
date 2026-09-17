@@ -39,6 +39,27 @@ const nextConfig = {
     return buildVersion;
   },
   images: {
+    /**
+     * Vercel's image optimizer is switched off deliberately.
+     *
+     * The account's Image Optimization quota is exhausted, so every
+     * /_next/image request returns HTTP 402
+     * (OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED) and EVERY next/image on the
+     * site renders blank — event heroes, the gallery, avatars. That is how
+     * this was found: two events reported as "no image" both had valid
+     * imageURLs that returned 200 straight from storage.
+     *
+     * Unoptimized, next/image emits a plain <img> pointing at the source, so
+     * images come back immediately at no cost. The trade is real: no
+     * resizing and no WebP/AVIF, so phones download the full-size original
+     * (the event covers are 200-400KB). Acceptable for a club site, and far
+     * better than no images at all.
+     *
+     * Remove this line to turn optimization back on once the plan has quota
+     * again. remotePatterns below stays either way — it still governs which
+     * hosts next/image will accept.
+     */
+    unoptimized: true,
     remotePatterns: [
       { protocol: 'https', hostname: 'firebasestorage.googleapis.com' },
       { protocol: 'https', hostname: 'storage.googleapis.com' },
