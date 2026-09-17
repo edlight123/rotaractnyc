@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { buildSystemPrompt, type Viewer } from '@/lib/sandra-knowledge';
 import { upcomingEventsBlock } from '@/lib/sandra-events';
+import { communityLinkOrDefault } from '@/lib/utils/communityLink';
 import { SITE } from '@/lib/constants';
 
 export const runtime = 'nodejs';
@@ -145,10 +146,23 @@ export async function POST(request: NextRequest) {
   // calendar is the last thing the model reads.
   const calendar = await upcomingEventsBlock(viewer.tier);
 
+  // The community invite is admin-editable and meant to be rotated. Reading
+  // it per request means a reset takes effect for Sandra immediately instead
+  // of at the next deploy.
+  let whatsappCommunityUrl: string | undefined;
+  try {
+    const settings = await adminDb.collection('settings').doc('site').get();
+    whatsappCommunityUrl = communityLinkOrDefault(
+      settings.data()?.whatsappCommunityUrl as string | undefined,
+    );
+  } catch (e) {
+    console.error('[sandra] community link lookup failed:', e);
+  }
+
   try {
     const result = streamText({
       model: google(MODEL),
-      system: buildSystemPrompt(viewer) + grounding + calendar,
+      system: buildSystemPrompt(viewer, { whatsappCommunityUrl }) + grounding + calendar,
       messages,
       temperature: 0.2,
       // Gemini 2.5 counts its internal thinking against maxTokens but reports

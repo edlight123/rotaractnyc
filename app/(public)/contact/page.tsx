@@ -2,6 +2,8 @@ import { generateMeta } from '@/lib/seo';
 import HeroSection from '@/components/public/HeroSection';
 import ContactForm from '@/components/public/ContactForm';
 import { SITE } from '@/lib/constants';
+import { adminDb } from '@/lib/firebase/admin';
+import { communityLinkOrDefault } from '@/lib/utils/communityLink';
 
 export const metadata = generateMeta({
   title: 'Contact Us',
@@ -9,7 +11,25 @@ export const metadata = generateMeta({
   path: '/contact',
 });
 
-export default function ContactPage() {
+/**
+ * The community invite is admin-editable, so it is read here rather than
+ * hardcoded. The page stays statically prerendered — the settings PUT calls
+ * revalidatePath('/contact'), so a new link appears on save without a
+ * deploy, which is the point of making it editable at all.
+ */
+async function communityLink(): Promise<string> {
+  try {
+    const doc = await adminDb.collection('settings').doc('site').get();
+    return communityLinkOrDefault(doc.data()?.whatsappCommunityUrl as string | undefined);
+  } catch {
+    // Settings unreachable is not a reason to break the contact page.
+    return SITE.whatsappCommunity;
+  }
+}
+
+export default async function ContactPage() {
+  const whatsappUrl = await communityLink();
+
   return (
     <>
       <HeroSection title="Contact Us" subtitle="We'd love to hear from you. Reach out with questions, ideas, or just to say hello." size="sm" />
@@ -75,7 +95,7 @@ export default function ContactPage() {
                       Our open community chat — anyone is welcome, member or not.
                     </p>
                     <a
-                      href={SITE.whatsappCommunity}
+                      href={whatsappUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mt-1 inline-block text-sm text-cranberry hover:text-cranberry-800 transition-colors"
