@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Plus, CalendarDays } from 'lucide-react';
+import { Plus, CalendarDays, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/lib/firebase/auth';
 import { usePortalEvents, useMemberRsvps, apiGet, apiPost } from '@/hooks/useFirestore';
 import { useToast } from '@/components/ui/Toast';
@@ -41,7 +41,7 @@ const TYPE_FILTERS = [
 export default function PortalEventsPage() {
   const { user, member } = useAuth();
   const { toast } = useToast();
-  const { data: firestoreEvents, loading } = usePortalEvents({ signedIn: !!user, role: member?.role });
+  const { data: firestoreEvents, loading, error: eventsError } = usePortalEvents({ signedIn: !!user, role: member?.role });
   const { data: memberRsvps } = useMemberRsvps(user?.uid ?? null);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('upcoming');
@@ -104,7 +104,14 @@ export default function PortalEventsPage() {
     ) || (r.paidAmount ?? 0) > 0;
   };
 
-  const allEvents = ((firestoreEvents || []).length > 0 ? firestoreEvents : defaultEvents) as RotaractEvent[];
+  // defaultEvents is placeholder copy for a club with nothing scheduled, not a
+  // fallback for a read that failed. Substituting it on error is what hid the
+  // missing (audience, date) composite index for a day: the query died with
+  // FAILED_PRECONDITION, members got "No upcoming events" under Upcoming and
+  // demo events under Past, and nothing anywhere looked like a fault.
+  const allEvents = (
+    eventsError ? [] : (firestoreEvents || []).length > 0 ? firestoreEvents : defaultEvents
+  ) as RotaractEvent[];
   const now = new Date();
   const upcomingCount = allEvents.filter((e) => new Date(e.date) >= now).length;
 
@@ -317,11 +324,19 @@ export default function PortalEventsPage() {
             isEmpty={events.length === 0}
             skeleton={viewMode === 'grid' ? <CardGridSkeleton count={4} /> : <ListSkeleton rows={3} />}
             empty={
-              <EmptyState
-                icon={<CalendarDays className="w-7 h-7" />}
-                title={activeTab === 'upcoming' ? 'No upcoming events' : 'No past events found'}
-                description="Check back soon for new events."
-              />
+              eventsError ? (
+                <EmptyState
+                  icon={<AlertTriangle className="w-7 h-7" />}
+                  title="Events couldn't be loaded"
+                  description="Something went wrong reading the calendar — this is our end, not yours. Please refresh, and tell the board if it keeps happening."
+                />
+              ) : (
+                <EmptyState
+                  icon={<CalendarDays className="w-7 h-7" />}
+                  title={activeTab === 'upcoming' ? 'No upcoming events' : 'No past events found'}
+                  description="Check back soon for new events."
+                />
+              )
             }
             count={events.length}
             itemLabel="event"
