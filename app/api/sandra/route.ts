@@ -141,7 +141,17 @@ export async function POST(request: NextRequest) {
       system: buildSystemPrompt(viewer) + grounding + calendar,
       messages,
       temperature: 0.2,
-      maxTokens: 800,
+      // Gemini 2.5 counts its internal thinking against maxTokens but reports
+      // only the visible tokens back, so a budget of 800 was silently being
+      // spent on reasoning and answers stopped mid-sentence — measured at 91
+      // visible tokens with finishReason 'length'. Sandra looks things up in
+      // a prompt she has already been handed; she does not need to deliberate
+      // to do it, so the thinking budget is zero and the whole allowance goes
+      // to the reply.
+      maxTokens: 1200,
+      providerOptions: {
+        google: { thinkingConfig: { thinkingBudget: 0 } },
+      },
     });
     return result.toDataStreamResponse();
   } catch (err) {
