@@ -29,6 +29,7 @@ WHAT WE DO
 
 HOW TO JOIN
 - Anyone can attend a meeting or event as a guest first — no invitation needed. Interested guests become prospective members, then are welcomed as full members at an induction.
+- There is also an open WhatsApp community anyone may join, member or not — the easiest first step for someone who is curious but not ready to commit. Offer it when someone asks how to get involved, how to meet the club, or how to keep in touch. It is the COMMUNITY chat, open to all; it is not the members-only group, so never describe it as a members' space.
 - To start, email membership@rotaractnyc.org or use the membership page at rotaractnyc.org/membership.
 
 MEMBERSHIP TYPES
@@ -61,6 +62,7 @@ BOARD & ADMIN (for board / president / treasurer / secretary)
 const PUBLIC_LINKS = `
 PUBLIC LINKS (use these exact URLs — never invent or alter a link):
 - Join / become a member: https://rotaractnyc.org/membership
+- WhatsApp community (open to anyone): https://chat.whatsapp.com/LgXZYScjL0S3LuMLlHbolB
 - Upcoming events: https://rotaractnyc.org/events
 - Contact us: https://rotaractnyc.org/contact
 - Donate: https://rotaractnyc.org/donate

@@ -9,7 +9,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useChat } from 'ai/react';
-import { MessageCircle, X, Send, Sparkles } from 'lucide-react';
+import { MessageCircle, X, Send } from 'lucide-react';
 
 type Variant = 'public' | 'portal';
 
@@ -100,11 +100,11 @@ export default function SandraChat({ variant = 'public' }: { variant?: Variant }
         aria-label={open ? 'Close Sandra' : 'Ask Sandra'}
         aria-expanded={open}
         className="fixed z-[60] bottom-[calc(env(safe-area-inset-bottom)+5rem)] right-4 lg:bottom-6 lg:right-6
-                   flex items-center gap-2 rounded-full bg-cranberry text-white pl-4 pr-5 py-3
+                   flex items-center gap-2 rounded-full bg-cranberry text-white px-5 py-3
                    shadow-lg hover:bg-cranberry-800 hover:shadow-xl transition-all
                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cranberry-500 focus-visible:ring-offset-2"
       >
-        {open ? <X className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
+        {open && <X className="w-5 h-5" />}
         <span className="text-sm font-semibold">{open ? 'Close' : 'Ask Sandra'}</span>
       </button>
 
@@ -121,9 +121,6 @@ export default function SandraChat({ variant = 'public' }: { variant?: Variant }
         >
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-br from-cranberry-900 via-cranberry to-cranberry-800 text-white shrink-0">
-            <div className="w-9 h-9 rounded-full bg-white/15 grid place-items-center">
-              <Sparkles className="w-5 h-5" />
-            </div>
             <div className="min-w-0">
               <p className="font-semibold leading-tight">Sandra</p>
               <p className="text-[11px] text-white/75 leading-tight">Rotaract NYC assistant</p>

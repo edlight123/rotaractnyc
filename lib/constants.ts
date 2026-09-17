@@ -49,6 +49,15 @@ export const SITE = {
     professional: 8500, // cents
     student: 6500,
   },
+  /**
+   * Public WhatsApp community — the open, get-to-know-us space, not the
+   * members' group. Published on /contact deliberately: it is the one chat
+   * a stranger is meant to be able to walk into.
+   *
+   * WhatsApp invite links can be reset from inside the community, which
+   * invalidates the old one. Worth doing if it starts attracting spam.
+   */
+  whatsappCommunity: 'https://chat.whatsapp.com/LgXZYScjL0S3LuMLlHbolB',
   social: {
     instagram: 'https://instagram.com/rotaractnyc',
     linkedin: 'https://www.linkedin.com/company/rotaractnyc',
