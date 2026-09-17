@@ -152,19 +152,79 @@ export function useEvents() {
 /**
  * Portal events, narrowed to what this viewer may read.
  *
- * The where('audience','in',…) clause is load-bearing, not cosmetic:
- * firestore.rules reject a query that could return an unreadable document
- * rather than filtering it out, so this must mirror `match /events` exactly.
- * It also means every document needs an explicit `audience` field — see
- * scripts/backfill-event-host-audience.mjs.
+ * One query per rule branch, merged here — NOT a single
+ * where('audience','in',…) clause. That distinction is the whole reason this
+ * function is shaped the way it is, so it is worth being explicit about why.
+ *
+ * Firestore validates a list query STATICALLY. It never looks at the stored
+ * documents: the query's own constraints must PROVE that every document it
+ * could return satisfies the rule. `match /events` reads
+ *
+ *     (isPublic == true && status == 'published' && audience == 'public')
+ *  || (isMember() && audience == 'members')
+ *  || (isBoard()  && audience == 'board')
+ *
+ * and `where('audience','in',['public','members'])` proves none of it — it
+ * says nothing about isPublic or status — so the whole query is rejected
+ * with PERMISSION_DENIED however clean the data is. Verified against the
+ * live project as an active member: the `in` form is denied, and each of the
+ * three single-branch queries below is allowed.
+ *
+ * So each branch is asked for separately, in a shape that proves itself, and
+ * the results are merged. Adding a branch to the rule means adding a query
+ * here; loosening one means loosening both together.
  */
+const PORTAL_EVENTS_LIMIT = 30;
+
 export function usePortalEvents(viewer: Viewer) {
   const audiences = useMemo(() => visibleAudiences(viewer), [viewer.signedIn, viewer.role]);
-  return useCollection('events', [
-    where('audience', 'in', audiences),
+
+  // Branch 1 — public. All three equality filters are required: isPublic and
+  // status because the rule demands them, audience because nothing else
+  // proves the document is not a members-only one.
+  const publicEvents = useCollection<DocumentData>('events', [
+    where('isPublic', '==', true),
+    where('status', '==', 'published'),
+    where('audience', '==', 'public'),
     orderBy('date', 'desc'),
-    limit(30),
+    limit(PORTAL_EVENTS_LIMIT),
   ]);
+
+  // Branch 2 — members-only. Enabled only when the viewer may read them, so
+  // a signed-out visitor never fires a query the rules would reject.
+  const memberEvents = useCollection<DocumentData>(
+    'events',
+    [where('audience', '==', 'members'), orderBy('date', 'desc'), limit(PORTAL_EVENTS_LIMIT)],
+    audiences.includes('members'),
+  );
+
+  // Branch 3 — board-only.
+  const boardEvents = useCollection<DocumentData>(
+    'events',
+    [where('audience', '==', 'board'), orderBy('date', 'desc'), limit(PORTAL_EVENTS_LIMIT)],
+    audiences.includes('board'),
+  );
+
+  const sources = [publicEvents, memberEvents, boardEvents];
+
+  const data = useMemo(
+    () =>
+      [...publicEvents.data, ...memberEvents.data, ...boardEvents.data]
+        .sort((a, b) => String((b as any).date).localeCompare(String((a as any).date)))
+        .slice(0, PORTAL_EVENTS_LIMIT),
+    [publicEvents.data, memberEvents.data, boardEvents.data],
+  );
+
+  // A branch that fails is reported rather than silently narrowing the list:
+  // losing members-only events while the public ones still render would look
+  // like an empty calendar, not like a fault.
+  return {
+    data,
+    loading: sources.some((s) => s.loading),
+    loadingState: sources.find((s) => s.loadingState === 'error')?.loadingState
+      ?? (sources.some((s) => s.loading) ? 'loading' : 'loaded'),
+    error: sources.map((s) => s.error).find(Boolean) ?? null,
+  };
 }
 
 export function useArticles(onlyPublished = true) {
