@@ -114,7 +114,7 @@ Comprehensive indexes for all collections:
   - Copy signing secret to `STRIPE_WEBHOOK_SECRET` env var
 
 ### 3.2 Stripe Price IDs — ✅ VERIFIED (no hardcoded IDs)
-- Dues amounts are configured in `lib/constants.ts` (professional: $85, student: $65)
+- Dues amounts are configured in `lib/constants.ts` (professional: $90, student: $70)
 - All Stripe sessions use `price_data` with dynamic `unit_amount` — **no hardcoded Price IDs**
 - Donation amounts use preset tiers ($25/$50/$100) or custom amount
 

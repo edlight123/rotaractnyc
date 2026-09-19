@@ -117,7 +117,7 @@ Tell us about yourself:
 - **Short bio** — a sentence or two about you
 - **Occupation** & **Employer**
 - **Interests** — select from tags like Community Service, Professional Development, etc.
-- **Member type** — Professional ($85/year dues) or Student ($65/year dues)
+- **Member type** — Professional ($90/year dues) or Student ($70/year dues)
 
 ### Step 3: Photo Upload
 Upload a **profile photo**. This will appear in the member directory and on your profile card. You can skip this and add one later.
@@ -353,8 +353,8 @@ Manage your annual membership dues.
 ### Dues Amounts
 | Member Type | Annual Dues |
 |-------------|-------------|
-| **Professional** | $85/year |
-| **Student** | $65/year |
+| **Professional** | $90/year |
+| **Student** | $70/year |
 
 The Rotary year runs **July 1 – June 30**.
 
