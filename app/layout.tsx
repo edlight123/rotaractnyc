@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, Manrope, Fraunces } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
 import { SITE } from '@/lib/constants';
+import { DEFAULT_OG_IMAGE } from '@/lib/utils/ogImage';
 import { ToastProvider } from '@/components/ui/Toast';
 import PWARegister from '@/components/PWARegister';
 import './globals.css';
@@ -28,6 +29,11 @@ export const metadata: Metadata = {
     siteName: SITE.name,
     title: SITE.shortName,
     description: SITE.description,
+    images: [DEFAULT_OG_IMAGE],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 

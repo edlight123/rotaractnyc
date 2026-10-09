@@ -296,7 +296,8 @@ export default function Navbar() {
           <Link
             href="/portal/login"
             className={cn(
-              'inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-colors',
+              // Phones get this link from the hamburger menu; here it wraps and crowds the logo
+              'hidden sm:inline-flex items-center whitespace-nowrap px-4 py-2 rounded-xl text-sm font-medium transition-colors',
               scrolled
                 ? 'text-gray-700 hover:text-cranberry hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800'
                 : 'text-white/90 hover:text-white hover:bg-white/10'
