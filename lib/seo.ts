@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { SITE } from './constants';
+import { DEFAULT_OG_IMAGE } from './utils/ogImage';
 
 export function generateMeta(options: {
   title?: string;
@@ -7,12 +8,19 @@ export function generateMeta(options: {
   path?: string;
   image?: string;
 }): Metadata {
-  const title = options.title ? `${options.title} | ${SITE.shortName}` : SITE.shortName;
+  // Build the full title here and mark it absolute, otherwise the root
+  // layout's `%s | Rotaract NYC` template appends the suffix a second time.
+  const title = !options.title
+    ? SITE.shortName
+    : options.title.includes(SITE.shortName)
+      ? options.title
+      : `${options.title} | ${SITE.shortName}`;
   const description = options.description || SITE.description;
   const url = options.path ? `${SITE.url}${options.path}` : SITE.url;
+  const images = options.image ? [{ url: options.image }] : [DEFAULT_OG_IMAGE];
 
   return {
-    title,
+    title: { absolute: title },
     description,
     openGraph: {
       title,
@@ -20,12 +28,13 @@ export function generateMeta(options: {
       url,
       siteName: SITE.name,
       type: 'website',
-      ...(options.image && { images: [{ url: options.image }] }),
+      images,
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
+      images,
     },
     alternates: {
       canonical: url,

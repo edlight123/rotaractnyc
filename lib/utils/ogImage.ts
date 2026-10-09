@@ -1,64 +1,36 @@
 /**
- * Build a social-share-friendly Open Graph image URL.
+ * Build the Open Graph image for a page that has its own photo.
  *
- * Why this exists:
- *   We store original (often very large) photos in Firebase Storage. When
- *   those raw URLs are used as `og:image`, social scrapers like LinkedIn,
- *   iMessage, Slack, and Facebook frequently reject them (>5 MB) or time
- *   out, falling back to the site logo. We also can't honestly claim a
- *   1200×630 size for a 4000×3000 photo.
- *
- * What it does:
- *   Routes the image through Next.js's built-in image optimizer
- *   (`/_next/image`) which uses `sharp` to produce a properly sized,
- *   compressed JPEG (~100–300 KB) at request time. Scrapers that send
- *   "Accept: any" will receive a JPEG; modern browsers get webp/avif.
+ * This used to route photos through `/_next/image` to get a resized
+ * 1200×630 JPEG. Image optimization is switched off in next.config.js
+ * (the Vercel quota ran out), and with it off `/_next/image` returns 404,
+ * so every event, article and album preview went out with a dead image.
+ * Scrapers get the source URL instead; no width/height is claimed because
+ * the original's size is unknown here.
  *
  * Usage:
  *   openGraph: {
  *     images: ogImage(event.imageURL, { alt: event.title }),
  *   }
  *
- * Returns an array of one OG image descriptor (or [] if no source).
+ * Falls back to the site-wide share image when there is no source, so link
+ * previews never go blank.
  */
 
 import { SITE } from '@/lib/constants';
 
-interface OgImageOptions {
-  alt?: string;
-  /** Width in CSS pixels. Defaults to 1200 (Facebook/LinkedIn recommended). */
-  width?: number;
-  /** Height in CSS pixels. Defaults to 630 (1.91:1 ratio). */
-  height?: number;
-  /** JPEG quality 1-100. Default 80. */
-  quality?: number;
-}
+/** Site-wide share image (1200×630, public/og-image.jpg). */
+export const DEFAULT_OG_IMAGE = {
+  url: `${SITE.url.replace(/\/$/, '')}/og-image.jpg`,
+  width: 1200,
+  height: 630,
+  alt: SITE.name,
+};
 
 export function ogImage(
   src: string | undefined | null,
-  opts: OgImageOptions = {},
-): Array<{ url: string; width: number; height: number; alt?: string }> {
-  if (!src) return [];
-
-  const width = opts.width ?? 1200;
-  const height = opts.height ?? 630;
-  const quality = opts.quality ?? 80;
-
-  // Strip any trailing slash from the site URL.
-  const base = SITE.url.replace(/\/$/, '');
-
-  // Next's image optimizer chooses the closest configured `deviceSize`
-  // ≥ requested width. 1200 maps to the 1200 entry by default.
-  const url =
-    `${base}/_next/image?url=${encodeURIComponent(src)}` +
-    `&w=${width}&q=${quality}`;
-
-  return [
-    {
-      url,
-      width,
-      height,
-      ...(opts.alt ? { alt: opts.alt } : {}),
-    },
-  ];
+  opts: { alt?: string } = {},
+): Array<{ url: string; width?: number; height?: number; alt?: string }> {
+  if (!src) return [DEFAULT_OG_IMAGE];
+  return [{ url: src, ...(opts.alt ? { alt: opts.alt } : {}) }];
 }
