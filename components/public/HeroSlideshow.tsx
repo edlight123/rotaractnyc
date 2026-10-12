@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 const FALLBACK_IMAGES = [
-  '/hero-1.jpg',
   '/hero-2.jpg',
   '/hero-3.jpg',
   '/hero-4.jpg',
