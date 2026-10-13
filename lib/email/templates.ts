@@ -1767,3 +1767,42 @@ export function galaPhotosEmail(params: {
       `--\n${SITE.name}\n${SITE.address}`,
   };
 }
+
+/**
+ * Sent to a board member's personal email with their Zoom background attached
+ * (scripts/send-zoom-backgrounds.ts). The same image is always available in
+ * the portal under Settings → Zoom Background.
+ */
+export function zoomBackgroundEmail(data: {
+  firstName: string;
+  title: string;
+}): { subject: string; html: string; text: string } {
+  const name = escapeHtml(data.firstName);
+  const title = escapeHtml(data.title);
+  const portalUrl = `${SITE.url}/portal/settings#zoom-background`;
+  return {
+    subject: `Your ${SITE.shortName} Zoom background`,
+    html: wrapTemplate(`
+      ${h1(`Your Zoom background, ${name}`)}
+      ${p(`Attached is your board Zoom background, with your name and title as <strong>${title}</strong>. Please use it on club calls so members and guests know who's who.`)}
+      <p style="color: ${TEXT_MUTED}; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin: 24px 0 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">Set it up in Zoom</p>
+      ${infoCard(`
+        <table role="presentation" cellpadding="0" cellspacing="0">
+          ${listItem('1.', 'Save the attached image', 'to your computer.')}
+          ${listItem('2.', 'In Zoom, open Settings', '→ Backgrounds &amp; Effects.')}
+          ${listItem('3.', 'Click +', 'then Add Image, and choose the file.')}
+        </table>
+      `)}
+      ${p(`You can also download it any time from the member portal. It updates by itself if your title changes.`)}
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 28px 0 0;">
+        <tr>
+          <td style="text-align: center;">
+            ${ctaButton('Open in the Portal', portalUrl)}
+          </td>
+        </tr>
+      </table>
+      ${muted(`If your name or title looks wrong, reply to this email and we'll fix it.`)}
+    `, `Your board Zoom background is attached.`),
+    text: `Your Zoom background, ${data.firstName}\n\nAttached is your board Zoom background, with your name and title as ${data.title}. Please use it on club calls so members and guests know who's who.\n\nSet it up in Zoom:\n1. Save the attached image to your computer.\n2. In Zoom, open Settings → Backgrounds & Effects.\n3. Click +, then Add Image, and choose the file.\n\nYou can also download it any time from the member portal: ${portalUrl}\n\nIf your name or title looks wrong, reply to this email and we'll fix it.\n\n--\n${SITE.name}\n${SITE.address}`,
+  };
+}

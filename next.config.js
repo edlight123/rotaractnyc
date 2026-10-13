@@ -154,6 +154,13 @@ const nextConfig = {
       },
     ];
   },
+  experimental: {
+    // The Zoom background renderer reads its fonts and logo from disk; list
+    // them so file tracing ships them with the function.
+    outputFileTracingIncludes: {
+      '/api/portal/zoom-background': ['./lib/zoomBackground/assets/**'],
+    },
+  },
 };
 
 module.exports = nextConfig;

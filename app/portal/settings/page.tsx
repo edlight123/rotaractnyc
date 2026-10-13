@@ -137,6 +137,34 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* ── Zoom Background (board only) ── */}
+      {(member?.role === 'board' || member?.role === 'president' || member?.role === 'treasurer') && (
+        <section id="zoom-background" className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden scroll-mt-20">
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Zoom Background</h2>
+          </div>
+          <div className="px-6 py-5 space-y-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Your board background, with your name and title. Use it on club calls: in Zoom, go to
+              Settings → Backgrounds &amp; Effects, click <strong>+</strong> and choose this image.
+              It updates by itself if your title changes.
+            </p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/api/portal/zoom-background"
+              alt={`Zoom background for ${member.displayName}`}
+              width={1920}
+              height={1080}
+              loading="lazy"
+              className="w-full h-auto rounded-lg border border-gray-200 dark:border-gray-800 bg-cranberry-900"
+            />
+            <a href="/api/portal/zoom-background?download=1" className="btn-sm btn-primary">
+              Download PNG
+            </a>
+          </div>
+        </section>
+      )}
+
       {/* ── Tutorial ── */}
       <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
