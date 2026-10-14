@@ -435,7 +435,7 @@ export default function AdminGuidePDF() {
           <Text style={s.cardTitle}>Creating a Dues Cycle</Text>
           <Num n={1}>Go to the Manage tab, click &quot;New Cycle&quot;</Num>
           <Num n={2}>Enter cycle name (e.g. &quot;2025–2026&quot;), start/end dates</Num>
-          <Num n={3}>Set Professional ($85.00) and Student ($65.00) amounts</Num>
+          <Num n={3}>Set Professional ($90.00) and Student ($70.00) amounts</Num>
           <Num n={4}>Set grace period (days after start before reminders begin)</Num>
           <Num n={5}>Click Create — dues records generated for all active members</Num>
         </View>

@@ -82,7 +82,7 @@ export default function DuesPage() {
   const [cycles, setCycles] = useState<any[]>([]);
   const [cycleLoading, setCycleLoading] = useState(false);
   const [showCycleModal, setShowCycleModal] = useState(false);
-  const [cycleForm, setCycleForm] = useState({ name: '', startDate: '', endDate: '', amountProfessional: 8500, amountStudent: 6500, gracePeriodDays: 30, isActive: false });
+  const [cycleForm, setCycleForm] = useState({ name: '', startDate: '', endDate: '', amountProfessional: 9000, amountStudent: 7000, gracePeriodDays: 30, isActive: false });
   const [editingCycleId, setEditingCycleId] = useState<string | null>(null);
 
   // Payment settings edit state
@@ -611,7 +611,7 @@ export default function DuesPage() {
                       variant="outline"
                       onClick={() => {
                         setEditingCycleId(null);
-                        setCycleForm({ name: '', startDate: '', endDate: '', amountProfessional: 8500, amountStudent: 6500, gracePeriodDays: 30, isActive: false });
+                        setCycleForm({ name: '', startDate: '', endDate: '', amountProfessional: 9000, amountStudent: 7000, gracePeriodDays: 30, isActive: false });
                         setShowCycleModal(true);
                       }}
                     >

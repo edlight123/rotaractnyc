@@ -149,7 +149,7 @@ const sections: GuideSection[] = [
         <Card title="Creating a Dues Cycle">
           <ol className="list-decimal ml-5 space-y-1">
             <li>Go to the <strong>Manage</strong> tab, click <strong>&ldquo;New Cycle&rdquo;</strong></li>
-            <li>Enter cycle name (e.g., &ldquo;2025–2026&rdquo;), dates, professional ($85) and student ($65) amounts, and grace period</li>
+            <li>Enter cycle name (e.g., &ldquo;2025–2026&rdquo;), dates, professional ($90) and student ($70) amounts, and grace period</li>
             <li>Click <strong>Create</strong> — dues records are auto-generated for all active members</li>
           </ol>
         </Card>
