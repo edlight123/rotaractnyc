@@ -253,6 +253,39 @@ async function handleDuesPayment(session: Stripe.Checkout.Session): Promise<void
   });
 }
 
+/**
+ * Handle a top-up toward dues already partly paid (e.g. the $5 owed by members
+ * who paid $85 before dues went to $90). Adds to the existing record instead of
+ * replacing its amount the way a full dues payment does.
+ */
+async function handleDuesBalancePayment(session: Stripe.Checkout.Session): Promise<void> {
+  const { memberId, duesDocId } = session.metadata ?? {};
+  if (!memberId || !duesDocId) {
+    console.error('[DuesBalanceHandler] Missing memberId or duesDocId for dues balance payment.');
+    return;
+  }
+  const paid = session.amount_total || 0;
+
+  await adminDb.collection('memberDues').doc(duesDocId).update({
+    amount: FieldValue.increment(paid),
+    balanceDue: FieldValue.increment(-paid),
+    balancePaidAt: new Date().toISOString(),
+  });
+
+  await createTransaction({
+    type: 'income',
+    category: 'Dues',
+    amount: paid,
+    description: 'Dues balance payment',
+    date: new Date().toISOString(),
+    createdBy: 'stripe',
+    createdAt: new Date().toISOString(),
+    paymentMethod: 'stripe',
+    relatedMemberId: memberId,
+    stripeSessionId: session.id,
+  });
+}
+
 /** Handle member event ticket checkout completion */
 async function handleMemberEventTicket(session: Stripe.Checkout.Session): Promise<void> {
   const { eventId, memberId, ticketType, tierId } = session.metadata ?? {};
@@ -638,6 +671,9 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session):
   switch (type) {
     case 'dues':
       await handleDuesPayment(session);
+      break;
+    case 'dues_balance':
+      await handleDuesBalancePayment(session);
       break;
     case 'event':
     case 'event_ticket':

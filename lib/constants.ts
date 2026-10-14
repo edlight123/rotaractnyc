@@ -46,8 +46,8 @@ export const SITE = {
   description:
     'Rotaract Club at the United Nations NYC is a community of young professionals and emerging leaders dedicated to service, leadership development, and global fellowship in New York City.',
   dues: {
-    professional: 8500, // cents
-    student: 6500,
+    professional: 9000, // cents
+    student: 7000,
   },
   /**
    * Public WhatsApp community — the open, get-to-know-us space, not the

@@ -357,8 +357,8 @@ export interface DuesCycle {
   name: string; // e.g., "2025-2026"
   startDate: string;
   endDate: string;
-  amountProfessional: number; // in cents, 8500 = $85
-  amountStudent: number; // 6500 = $65
+  amountProfessional: number; // in cents, 9000 = $90
+  amountStudent: number; // 7000 = $70
   gracePeriodDays: number;
   isActive: boolean;
   createdAt: string;
@@ -376,6 +376,9 @@ export interface MemberDues {
   paymentMethod?: PaymentMethod;
   approvedBy?: string;
   approvedAt?: string;
+  /** Cents still owed after a partial payment, e.g. 500 when $85 was paid on $90 dues */
+  balanceDue?: number;
+  balancePaidAt?: string;
   createdAt: string;
 }
 

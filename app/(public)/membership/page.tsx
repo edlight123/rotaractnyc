@@ -139,13 +139,13 @@ export default function MembershipPage() {
           <div className="grid sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
             <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl border-2 border-cranberry p-8">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Professional</p>
-              <p className="text-4xl font-display font-bold text-cranberry">$85</p>
+              <p className="text-4xl font-display font-bold text-cranberry">$90</p>
               <p className="text-sm text-gray-500 mt-1">per Rotary year</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">Dues stay with the club — they fund our service, events &amp; operations</p>
             </div>
             <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Student</p>
-              <p className="text-4xl font-display font-bold text-gray-900 dark:text-white">$65</p>
+              <p className="text-4xl font-display font-bold text-gray-900 dark:text-white">$70</p>
               <p className="text-sm text-gray-500 mt-1">per Rotary year</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">Valid student ID required</p>
             </div>

@@ -209,8 +209,8 @@ A dues cycle represents one billing period (typically the Rotary year: July 1 �
 3. Enter:
    - **Cycle name** (e.g., "2025–2026")
    - **Start & end dates**
-   - **Professional amount** (e.g., $85.00)
-   - **Student amount** (e.g., $65.00)
+   - **Professional amount** (e.g., $90.00)
+   - **Student amount** (e.g., $70.00)
    - **Grace period** (days after start date before reminders begin)
 4. Click **Create**
 
@@ -224,9 +224,9 @@ The Manage tab shows a **table of all members** with their payment status for th
 ┌──────────────────────────────────────────────────────┐
 │  Member          │ Status    │ Amount  │ Paid At     │
 ├──────────────────┼───────────┼─────────┼─────────────┤
-│  John Doe        │ ✅ PAID   │ $85.00  │ Jul 15      │
-│  Jane Smith      │ 🔴 UNPAID │ $85.00  │ —           │
-│  Alex Chen       │ 🟡 OFFLINE│ $65.00  │ Jul 20      │
+│  John Doe        │ ✅ PAID   │ $90.00  │ Jul 15      │
+│  Jane Smith      │ 🔴 UNPAID │ $90.00  │ —           │
+│  Alex Chen       │ 🟡 OFFLINE│ $70.00  │ Jul 20      │
 │  Sam Wilson      │ ⚪ WAIVED │ $0.00   │ —           │
 └──────────────────────────────────────────────────────┘
 ```

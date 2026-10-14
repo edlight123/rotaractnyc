@@ -70,7 +70,7 @@ const portalSections = [
     title: 'Dues & Billing',
     icon: '💳',
     description: 'View your dues status for the current cycle. Pay online via Stripe, or submit proof of an offline payment (Zelle, Venmo, CashApp).',
-    tips: ['Professional: $85/year · Student: $65/year (Rotary year July 1 – June 30).', 'A banner will appear at the top of the portal if dues are unpaid.'],
+    tips: ['Professional: $90/year · Student: $70/year (Rotary year July 1 – June 30).', 'A banner will appear at the top of the portal if dues are unpaid.'],
   },
   {
     title: 'Articles',

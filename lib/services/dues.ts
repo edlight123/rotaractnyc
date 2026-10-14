@@ -68,6 +68,7 @@ export async function recordDuesPayment(data: {
   if (existing) {
     await adminDb.collection(MEMBER_DUES).doc(existing.id).update({
       status: data.status,
+      amount: data.amount,
       paidAt: new Date().toISOString(),
       stripePaymentId: data.stripePaymentId || null,
     });

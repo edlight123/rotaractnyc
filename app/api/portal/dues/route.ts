@@ -175,8 +175,8 @@ export async function POST(request: NextRequest) {
     const cycleData = cycleSnap.docs[0].data();
     const cycle = { id: cycleSnap.docs[0].id, ...cycleData };
     const amount = memberType === 'student'
-      ? (cycleData.amountStudent ?? 6500)
-      : (cycleData.amountProfessional ?? 8500);
+      ? (cycleData.amountStudent ?? 7000)
+      : (cycleData.amountProfessional ?? 9000);
 
     // Check if Stripe is configured
     if (!process.env.STRIPE_SECRET_KEY) {
