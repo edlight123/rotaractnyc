@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 
 const MESSAGES: Record<string, { text: string; tone: 'success' | 'error' }> = {
   '1': { text: "You're subscribed! Thanks for joining our newsletter. 🎉", tone: 'success' },
+  unsubscribed: { text: "You've been unsubscribed. You won't get any more newsletter emails from us.", tone: 'success' },
   invalid: { text: 'That confirmation link is invalid or has already been used.', tone: 'error' },
   error: { text: 'Something went wrong confirming your subscription. Please try again.', tone: 'error' },
 };

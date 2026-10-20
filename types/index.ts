@@ -138,6 +138,8 @@ export interface NewsletterSubscriber {
   confirmed: boolean;          // double opt-in
   createdAt: string;
   unsubscribedAt?: string;
+  /** Personal token for the unsubscribe link in newsletter emails. */
+  unsubscribeToken?: string;
 }
 
 // ----- Event -----

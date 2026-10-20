@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { randomUUID } from 'crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/lib/firebase/admin';
 import { SITE } from '@/lib/constants';
@@ -34,6 +35,9 @@ export async function GET(request: Request) {
       confirmed: true,
       confirmedAt: new Date().toISOString(),
       token: FieldValue.delete(),
+      unsubscribedAt: FieldValue.delete(),
+      // Every newsletter email carries a personal unsubscribe link.
+      unsubscribeToken: snap.docs[0].data().unsubscribeToken || randomUUID(),
     });
 
     return redirect('?subscribed=1');
