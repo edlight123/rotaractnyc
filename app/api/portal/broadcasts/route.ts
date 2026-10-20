@@ -340,14 +340,14 @@ export async function POST(request: NextRequest) {
     const memberCard = event
       ? eventAnnouncementCard(
           { title: event.title, date: event.date, time: event.time, location: event.location },
-          { href: `${SITE.url}/portal/events/${eventId}`, showVenue: true },
+          { href: `${SITE.url}/portal/events/${encodeURIComponent(eventId!)}`, showVenue: true },
         )
       : null;
     const subscriberCard = event
       ? eventAnnouncementCard(
           { title: event.title, date: event.date, time: event.time, location: event.location },
           {
-            href: `${SITE.url}/events/${event.slug}`,
+            href: `${SITE.url}/events/${encodeURIComponent(event.slug)}`,
             showVenue: resolveVenueVisibility({
               type: event.type,
               venueVisibility: event.venueVisibility,

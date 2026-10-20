@@ -205,3 +205,13 @@ describe('POST /api/portal/broadcasts — event announcements', () => {
     expect(record.eventTitle).toBe('End Polio Now Happy Hour');
   });
 });
+
+describe('POST /api/portal/broadcasts — link safety', () => {
+  it('encodes a hostile slug so it cannot break out of the href', async () => {
+    db.events.pub.slug = '"><script>x</script>';
+    await post({ subject: 'Come!', body: 'Join us', segment: 'subscribers', eventId: 'pub' });
+    const html: string = mockSendEmail.mock.calls[0][0].html;
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('/events/%22%3E%3Cscript%3Ex%3C%2Fscript%3E');
+  });
+});

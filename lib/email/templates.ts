@@ -685,7 +685,7 @@ export function eventAnnouncementCard(event: {
       <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 8px 0 0;">
         <tr>
           <td style="text-align: center;">
-            ${ctaButton('View Event & RSVP', opts.href)}
+            ${ctaButton('View Event &amp; RSVP', escapeHtml(opts.href))}
           </td>
         </tr>
       </table>
