@@ -2,7 +2,8 @@
  * Broadcast email API for board members.
  *
  * GET  — List sent broadcasts (most recent first)
- * POST — Send a new broadcast to a filtered segment of members
+ * POST — Send a new broadcast to a segment of members and/or confirmed
+ *        newsletter subscribers, optionally announcing an event.
  */
 export const dynamic = 'force-dynamic';
 
@@ -10,8 +11,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { adminAuth, adminDb, serializeDoc } from '@/lib/firebase/admin';
 import { rateLimit, getRateLimitKey, rateLimitResponse } from '@/lib/rateLimit';
-import { sendBulkEmail } from '@/lib/email/send';
-import { wrapTemplate } from '@/lib/email/templates';
+import { randomUUID } from 'crypto';
+import { sendBulkEmail, sendEmail } from '@/lib/email/send';
+import { wrapTemplate, eventAnnouncementCard } from '@/lib/email/templates';
+import { resolveVenueVisibility } from '@/lib/utils/eventGating';
 import { SITE } from '@/lib/constants';
 import { FieldValue } from 'firebase-admin/firestore';
 import { notifyBroadcast } from '@/lib/notifications';
@@ -19,8 +22,18 @@ import { notifyBroadcast } from '@/lib/notifications';
 // ─── Constants ─────────────────────────────────────────────────────────────
 
 const BOARD_ROLES = ['board', 'president', 'treasurer'];
-const VALID_SEGMENTS = ['all', 'unpaid', 'board', 'committee'] as const;
+const VALID_SEGMENTS = ['all', 'unpaid', 'board', 'committee', 'subscribers', 'everyone'] as const;
 type Segment = (typeof VALID_SEGMENTS)[number];
+
+/** Segments that reach newsletter subscribers, i.e. people outside the club. */
+const SUBSCRIBER_SEGMENTS: Segment[] = ['subscribers', 'everyone'];
+
+const SUBSCRIBER_CHUNK_SIZE = 10;
+const SUBSCRIBER_CHUNK_DELAY_MS = 100;
+
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 
 // ─── Auth helper ───────────────────────────────────────────────────────────
 
@@ -122,14 +135,14 @@ export async function POST(request: NextRequest) {
 
   // ── Parse & validate body ──
 
-  let body: { subject: string; body: string; segment: Segment; committeeId?: string };
+  let body: { subject: string; body: string; segment: Segment; committeeId?: string; eventId?: string };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
   }
 
-  const { subject, body: rawBody, segment, committeeId } = body;
+  const { subject, body: rawBody, segment, committeeId, eventId } = body;
 
   if (!subject || typeof subject !== 'string' || subject.trim().length === 0) {
     return NextResponse.json({ error: 'Subject is required.' }, { status: 400 });
@@ -149,13 +162,45 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     );
   }
+  if (eventId !== undefined && (typeof eventId !== 'string' || eventId.length === 0)) {
+    return NextResponse.json({ error: 'Invalid eventId.' }, { status: 400 });
+  }
+
+  const includesSubscribers = SUBSCRIBER_SEGMENTS.includes(segment);
 
   try {
-    // ── Build recipient list based on segment ──
+    // ── Load the announced event, if any ──
+
+    let event: FirebaseFirestore.DocumentData | null = null;
+    if (eventId) {
+      const eventDoc = await adminDb.collection('events').doc(eventId).get();
+      if (!eventDoc.exists) {
+        return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
+      }
+      event = eventDoc.data()!;
+      if (event.status !== 'published') {
+        return NextResponse.json(
+          { error: 'Only published events can be announced.' },
+          { status: 400 },
+        );
+      }
+      // Subscribers can only open the public event page, so a members-only
+      // event would send them to a page they can't see.
+      if (includesSubscribers && !event.isPublic) {
+        return NextResponse.json(
+          { error: 'This event is members-only, so it can’t be sent to newsletter subscribers.' },
+          { status: 400 },
+        );
+      }
+    }
+
+    // ── Build member recipient list based on segment ──
 
     let memberDocs: FirebaseFirestore.QueryDocumentSnapshot[];
 
-    if (segment === 'all') {
+    if (segment === 'subscribers') {
+      memberDocs = [];
+    } else if (segment === 'all' || segment === 'everyone') {
       const snap = await adminDb
         .collection('members')
         .where('status', '==', 'active')
@@ -230,7 +275,47 @@ export async function POST(request: NextRequest) {
       })
       .filter(Boolean);
 
-    if (recipients.length === 0) {
+    // ── Confirmed newsletter subscribers ──
+    // Anyone who is also a member is skipped: they get the member email (or
+    // opted out of announcements, which must not be undone by the newsletter).
+
+    let subscribers: { ref: FirebaseFirestore.DocumentReference; email: string; unsubscribeToken: string }[] = [];
+    if (includesSubscribers) {
+      const memberEmails = new Set(
+        memberDocs.map((d) => String(d.data().email || '').toLowerCase()).filter(Boolean),
+      );
+      if (segment === 'subscribers') {
+        // Members aren't loaded for this segment, so look them up to dedupe.
+        const allMembers = await adminDb.collection('members').get();
+        allMembers.docs.forEach((d) => {
+          const email = String(d.data().email || '').toLowerCase();
+          if (email) memberEmails.add(email);
+        });
+      }
+
+      const subSnap = await adminDb
+        .collection('newsletter_subscribers')
+        .where('confirmed', '==', true)
+        .get();
+
+      const missingTokens = adminDb.batch();
+      let missingCount = 0;
+      subscribers = subSnap.docs
+        .filter((d) => d.data().email && !memberEmails.has(String(d.data().email).toLowerCase()))
+        .map((d) => {
+          let unsubscribeToken = d.data().unsubscribeToken as string | undefined;
+          if (!unsubscribeToken) {
+            // Subscribers who confirmed before unsubscribe links existed.
+            unsubscribeToken = randomUUID();
+            missingTokens.update(d.ref, { unsubscribeToken });
+            missingCount++;
+          }
+          return { ref: d.ref, email: d.data().email as string, unsubscribeToken };
+        });
+      if (missingCount > 0) await missingTokens.commit();
+    }
+
+    if (recipients.length === 0 && subscribers.length === 0) {
       return NextResponse.json(
         { error: 'No eligible recipients found (all opted out or no matching members).' },
         { status: 400 },
@@ -240,32 +325,108 @@ export async function POST(request: NextRequest) {
     // ── Build email HTML ──
 
     const formattedBody = formatBody(rawBody);
-    const unsubscribeFooter = `
-      <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
-        <p style="color: #9ca3af; font-size: 11px; margin: 0;">
-          You're receiving this because you're a member of ${SITE.shortName}.
-          <a href="${SITE.url}/portal/settings" style="color: #9B1B30; text-decoration: underline;">
-            Manage notification preferences
-          </a>
-        </p>
-      </div>
-    `;
-
-    const emailHtml = wrapTemplate(`
+    const safeSubject = escapeHtml(subject);
+    const heading = `
       <h2 style="color: #111827; font-size: 20px; margin: 0 0 16px; font-weight: 700;">
-        ${subject.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+        ${safeSubject}
       </h2>
       <div style="color: #374151; font-size: 15px; line-height: 1.7;">
         ${formattedBody}
       </div>
-      ${unsubscribeFooter}
-    `);
+    `;
 
-    const plainText = rawBody + `\n\n---\nManage preferences: ${SITE.url}/portal/settings`;
+    // Members see the event in the portal with its venue; subscribers get the
+    // public page and only see the venue if it's public.
+    const memberCard = event
+      ? eventAnnouncementCard(
+          { title: event.title, date: event.date, time: event.time, location: event.location },
+          { href: `${SITE.url}/portal/events/${eventId}`, showVenue: true },
+        )
+      : null;
+    const subscriberCard = event
+      ? eventAnnouncementCard(
+          { title: event.title, date: event.date, time: event.time, location: event.location },
+          {
+            href: `${SITE.url}/events/${event.slug}`,
+            showVenue: resolveVenueVisibility({
+              type: event.type,
+              venueVisibility: event.venueVisibility,
+            }) === 'public',
+          },
+        )
+      : null;
 
-    // ── Send ──
+    let memberResult = { sent: 0, failed: 0, total: 0 };
+    if (recipients.length > 0) {
+      const unsubscribeFooter = `
+        <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+          <p style="color: #9ca3af; font-size: 11px; margin: 0;">
+            You're receiving this because you're a member of ${SITE.shortName}.
+            <a href="${SITE.url}/portal/settings" style="color: #9B1B30; text-decoration: underline;">
+              Manage notification preferences
+            </a>
+          </p>
+        </div>
+      `;
 
-    await sendBulkEmail(recipients, subject.trim(), emailHtml, plainText);
+      const emailHtml = wrapTemplate(`
+        ${heading}
+        ${memberCard?.html || ''}
+        ${unsubscribeFooter}
+      `);
+
+      const plainText = rawBody
+        + (memberCard ? `\n\n${memberCard.text}` : '')
+        + `\n\n---\nManage preferences: ${SITE.url}/portal/settings`;
+
+      memberResult = await sendBulkEmail(recipients, subject.trim(), emailHtml, plainText);
+    }
+
+    // ── Send to subscribers, one at a time so each gets their own unsubscribe link ──
+
+    let subscriberFailed = 0;
+    for (let i = 0; i < subscribers.length; i += SUBSCRIBER_CHUNK_SIZE) {
+      const chunk = subscribers.slice(i, i + SUBSCRIBER_CHUNK_SIZE);
+      const results = await Promise.allSettled(
+        chunk.map((s) => {
+          const unsubscribeUrl = `${SITE.url}/api/newsletter/unsubscribe?token=${encodeURIComponent(s.unsubscribeToken)}`;
+          const html = wrapTemplate(`
+            ${heading}
+            ${subscriberCard?.html || ''}
+            <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #9ca3af; font-size: 11px; margin: 0;">
+                You're receiving this because you subscribed to the ${SITE.shortName} newsletter.
+                <a href="${unsubscribeUrl}" style="color: #9B1B30; text-decoration: underline;">
+                  Unsubscribe
+                </a>
+              </p>
+            </div>
+          `);
+          const text = rawBody
+            + (subscriberCard ? `\n\n${subscriberCard.text}` : '')
+            + `\n\n---\nUnsubscribe: ${unsubscribeUrl}`;
+          return sendEmail({
+            to: s.email,
+            subject: subject.trim(),
+            html,
+            text,
+            headers: {
+              'List-Unsubscribe': `<${unsubscribeUrl}>`,
+              'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+            },
+          });
+        }),
+      );
+      for (const r of results) {
+        if (r.status !== 'fulfilled' || !r.value.success) subscriberFailed++;
+      }
+      if (i + SUBSCRIBER_CHUNK_SIZE < subscribers.length) {
+        await new Promise((resolve) => setTimeout(resolve, SUBSCRIBER_CHUNK_DELAY_MS));
+      }
+    }
+
+    const recipientCount = recipients.length + subscribers.length;
+    const failedCount = memberResult.failed + subscriberFailed;
 
     // ── Save broadcast record ──
 
@@ -274,7 +435,11 @@ export async function POST(request: NextRequest) {
       body: rawBody,
       segment,
       ...(committeeId && { committeeId }),
-      recipientCount: recipients.length,
+      ...(eventId && event && { eventId, eventTitle: event.title }),
+      recipientCount,
+      memberCount: recipients.length,
+      subscriberCount: subscribers.length,
+      failedCount,
       sentBy: sender.uid,
       sentByName: sender.name,
       sentAt: FieldValue.serverTimestamp(),
@@ -283,19 +448,27 @@ export async function POST(request: NextRequest) {
     // ── Companion push notification (best-effort, non-blocking) ──
     // Mirrors the email blast so members who don't check email still see it.
     // Per-member push opt-outs are honoured inside notifyBroadcast.
-    (async () => {
-      try {
-        await notifyBroadcast({
-          subject: subject.trim(),
-          recipientUids: memberUids,
-          broadcastId: broadcastRef.id,
-        });
-      } catch (err) {
-        console.warn('[push] broadcast fan-out failed:', err);
-      }
-    })();
+    if (memberUids.length > 0) {
+      (async () => {
+        try {
+          await notifyBroadcast({
+            subject: subject.trim(),
+            recipientUids: memberUids,
+            broadcastId: broadcastRef.id,
+          });
+        } catch (err) {
+          console.warn('[push] broadcast fan-out failed:', err);
+        }
+      })();
+    }
 
-    return NextResponse.json({ success: true, recipientCount: recipients.length });
+    return NextResponse.json({
+      success: true,
+      recipientCount,
+      memberCount: recipients.length,
+      subscriberCount: subscribers.length,
+      failedCount,
+    });
   } catch (err) {
     console.error('[POST /api/portal/broadcasts]', err);
     return NextResponse.json(

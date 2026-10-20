@@ -658,6 +658,42 @@ export function eventReminderEmail(name: string, event: {
   };
 }
 
+/**
+ * Event card appended to a broadcast that announces an event. The caller
+ * decides the link (portal for members, public page for subscribers) and
+ * whether the venue may be shown — a members-only venue must never reach
+ * newsletter subscribers.
+ */
+export function eventAnnouncementCard(event: {
+  title: string;
+  date: string;
+  time: string;
+  location?: string;
+}, opts: { href: string; showVenue: boolean }): { html: string; text: string } {
+  const when = `${formatEmailDate(event.date)}${event.time ? ` at ${event.time}` : ''}`;
+  const where = opts.showVenue && event.location ? event.location : 'Shared with members — sign in to see it';
+
+  return {
+    html: `
+      ${infoCard(`
+        <p style="color: ${CRIMSON}; font-size: 17px; font-weight: 700; margin: 0 0 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">${escapeHtml(event.title)}</p>
+        <table role="presentation" cellpadding="0" cellspacing="0">
+          ${listItem('calendar', 'When:', escapeHtml(when))}
+          ${listItem('map-pin', 'Where:', escapeHtml(where))}
+        </table>
+      `)}
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 8px 0 0;">
+        <tr>
+          <td style="text-align: center;">
+            ${ctaButton('View Event & RSVP', opts.href)}
+          </td>
+        </tr>
+      </table>
+    `,
+    text: `${event.title}\n${when}\n${where}\nView event & RSVP: ${opts.href}`,
+  };
+}
+
 // ── Onboarding Sequence Templates ──────────────────────────────────────────
 
 export function profileReminderEmail(name: string): { subject: string; html: string; text: string } {

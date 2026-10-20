@@ -41,6 +41,8 @@ interface SendEmailOptions {
   replyTo?: string;
   text?: string;
   attachments?: EmailAttachment[];
+  /** Extra headers, e.g. List-Unsubscribe for newsletter sends. */
+  headers?: Record<string, string>;
   /**
    * Bypass the EMAILS_PAUSED kill switch for a single transactional send.
    * Use ONLY for admin-initiated, one-recipient, credential-style messages
@@ -60,7 +62,7 @@ function emailsPaused(): boolean {
   return process.env.EMAILS_PAUSED === 'true';
 }
 
-export async function sendEmail({ to, subject, html, replyTo, text, attachments, ignorePause }: SendEmailOptions) {
+export async function sendEmail({ to, subject, html, replyTo, text, attachments, headers, ignorePause }: SendEmailOptions) {
   if (emailsPaused() && !ignorePause) {
     console.warn(`✋ EMAILS_PAUSED — skipped send: "${subject}" → ${Array.isArray(to) ? to.join(', ') : to}`);
     return { success: true, id: 'paused-skip' };
@@ -78,6 +80,7 @@ export async function sendEmail({ to, subject, html, replyTo, text, attachments,
       html,
       ...(text && { text }),
       ...(replyTo && { replyTo }),
+      ...(headers && { headers }),
       ...(attachments && attachments.length > 0 && {
         attachments: attachments.map((a) => ({
           filename: a.filename,

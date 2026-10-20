@@ -10,7 +10,7 @@ import { useToast } from '@/components/ui/Toast';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
-type Segment = 'all' | 'unpaid' | 'board' | 'committee';
+type Segment = 'all' | 'unpaid' | 'board' | 'committee' | 'subscribers' | 'everyone';
 
 interface Broadcast {
   id: string;
@@ -18,6 +18,8 @@ interface Broadcast {
   body: string;
   segment: Segment;
   committeeId?: string;
+  eventId?: string;
+  eventTitle?: string;
   recipientCount: number;
   sentBy: string;
   sentByName: string;
@@ -29,6 +31,20 @@ interface Committee {
   name: string;
 }
 
+interface EventOption {
+  id: string;
+  title: string;
+  slug: string;
+  date: string;
+  time: string;
+  location?: string;
+  isPublic: boolean;
+  status: string;
+}
+
+/** Segments that email newsletter subscribers (people outside the club). */
+const SUBSCRIBER_SEGMENTS: Segment[] = ['subscribers', 'everyone'];
+
 const ADMIN_ROLES = ['board', 'president', 'treasurer'];
 
 const SEGMENT_OPTIONS: { value: Segment; label: string; description: string }[] = [
@@ -36,6 +52,8 @@ const SEGMENT_OPTIONS: { value: Segment; label: string; description: string }[] 
   { value: 'unpaid', label: 'Unpaid Members', description: 'Members with unpaid dues' },
   { value: 'board', label: 'Board Only', description: 'Board, president & treasurer' },
   { value: 'committee', label: 'Committee', description: 'Members of a specific committee' },
+  { value: 'subscribers', label: 'Newsletter Subscribers', description: 'Public sign-ups who aren’t members' },
+  { value: 'everyone', label: 'Members + Subscribers', description: 'All active members and newsletter subscribers' },
 ];
 
 const SEGMENT_BADGE_VARIANT: Record<Segment, 'cranberry' | 'gold' | 'azure' | 'green'> = {
@@ -43,6 +61,8 @@ const SEGMENT_BADGE_VARIANT: Record<Segment, 'cranberry' | 'gold' | 'azure' | 'g
   unpaid: 'gold',
   board: 'azure',
   committee: 'green',
+  subscribers: 'azure',
+  everyone: 'cranberry',
 };
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -55,6 +75,13 @@ function formatDate(iso: string) {
     hour: 'numeric',
     minute: '2-digit',
   });
+}
+
+/** Event dates are stored as YYYY-MM-DD; parse as UTC so they don't shift a day. */
+function formatEventDate(value: string) {
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00Z`) : new Date(value);
+  if (isNaN(d.getTime())) return value;
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 
 /** Simple markdown-ish → HTML for preview (matches the server-side formatting) */
@@ -98,6 +125,8 @@ export default function AdminBroadcastsPage() {
   const [committeeId, setCommitteeId] = useState('');
   const [committees, setCommittees] = useState<Committee[]>([]);
   const [committeesLoading, setCommitteesLoading] = useState(false);
+  const [eventId, setEventId] = useState('');
+  const [events, setEvents] = useState<EventOption[]>([]);
 
   // Preview
   const [showPreview, setShowPreview] = useState(false);
@@ -124,6 +153,32 @@ export default function AdminBroadcastsPage() {
       .catch(() => toast('Failed to load committees', 'error'))
       .finally(() => setCommitteesLoading(false));
   }, [segment, committees.length, toast]);
+
+  // ── Fetch upcoming published events for the "announce an event" picker ──
+
+  useEffect(() => {
+    if (!hasAccess) return;
+    const today = new Date().toISOString().slice(0, 10);
+    apiGet<EventOption[]>('/api/portal/events')
+      .then((all) =>
+        setEvents(
+          all
+            .filter((e) => e.status === 'published' && e.date && e.date.slice(0, 10) >= today)
+            .sort((a, b) => a.date.localeCompare(b.date)),
+        ),
+      )
+      .catch(() => toast('Failed to load events', 'error'));
+  }, [hasAccess, toast]);
+
+  const selectedEvent = events.find((e) => e.id === eventId);
+  const includesSubscribers = SUBSCRIBER_SEGMENTS.includes(segment);
+  const eventBlockedForSubscribers = includesSubscribers && !!selectedEvent && !selectedEvent.isPublic;
+
+  const handleEventChange = (id: string) => {
+    setEventId(id);
+    const ev = events.find((e) => e.id === id);
+    if (ev && !subject.trim()) setSubject(ev.title);
+  };
 
   // ── Fetch broadcast history ──
 
@@ -154,19 +209,25 @@ export default function AdminBroadcastsPage() {
     try {
       const payload: Record<string, string> = { subject: subject.trim(), body, segment };
       if (segment === 'committee') payload.committeeId = committeeId;
+      if (eventId) payload.eventId = eventId;
 
-      const result = await apiPost<{ success: boolean; recipientCount: number }>(
+      const result = await apiPost<{ success: boolean; recipientCount: number; failedCount?: number }>(
         '/api/portal/broadcasts',
         payload,
       );
 
-      toast(`Broadcast sent to ${result.recipientCount} recipient${result.recipientCount !== 1 ? 's' : ''}!`, 'success');
+      if (result.failedCount) {
+        toast(`Sent to ${result.recipientCount - result.failedCount} of ${result.recipientCount} recipients — ${result.failedCount} failed.`, 'error');
+      } else {
+        toast(`Broadcast sent to ${result.recipientCount} recipient${result.recipientCount !== 1 ? 's' : ''}!`, 'success');
+      }
 
       // Reset form
       setSubject('');
       setBody('');
       setSegment('all');
       setCommitteeId('');
+      setEventId('');
       setShowPreview(false);
 
       // Refresh history
@@ -181,7 +242,8 @@ export default function AdminBroadcastsPage() {
   const canSend =
     subject.trim().length > 0 &&
     body.trim().length > 0 &&
-    (segment !== 'committee' || committeeId.length > 0);
+    (segment !== 'committee' || committeeId.length > 0) &&
+    !eventBlockedForSubscribers;
 
   // ── Auth loading ──
 
@@ -224,7 +286,7 @@ export default function AdminBroadcastsPage() {
       <div>
         <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Email Broadcasts</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Send email announcements to members. Recipients who have opted out of announcements will be excluded.
+          Send email announcements to members and newsletter subscribers. Members who have opted out of announcements are excluded, and every subscriber email carries an unsubscribe link.
         </p>
       </div>
 
@@ -247,6 +309,30 @@ export default function AdminBroadcastsPage() {
           />
         </div>
 
+        {/* Event to announce */}
+        <div>
+          <label htmlFor="broadcast-event" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Announce an event <span className="font-normal text-gray-400">(optional)</span>
+          </label>
+          <select
+            id="broadcast-event"
+            value={eventId}
+            onChange={(e) => handleEventChange(e.target.value)}
+            className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-cranberry-500 focus:border-transparent transition"
+          >
+            <option value="">No event — just a message</option>
+            {events.map((ev) => (
+              <option key={ev.id} value={ev.id}>
+                {formatEventDate(ev.date)} — {ev.title}{ev.isPublic ? '' : ' (members only)'}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-400 mt-1">
+            Adds an event card with the date, venue and an RSVP button below your message.
+            Subscribers get the public event page and only see the venue if it’s public.
+          </p>
+        </div>
+
         {/* Body */}
         <div>
           <label htmlFor="broadcast-body" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -266,7 +352,7 @@ export default function AdminBroadcastsPage() {
         {/* Segment selector */}
         <div>
           <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Audience</span>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {SEGMENT_OPTIONS.map((opt) => (
               <label
                 key={opt.value}
@@ -315,6 +401,18 @@ export default function AdminBroadcastsPage() {
               </select>
             )}
           </div>
+        )}
+
+        {includesSubscribers && (
+          <p className={`text-xs rounded-xl px-4 py-3 ${
+            eventBlockedForSubscribers
+              ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300'
+              : 'bg-amber-50 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300'
+          }`}>
+            {eventBlockedForSubscribers
+              ? 'This event is members-only, so it can’t go to newsletter subscribers. Pick a member audience or a public event.'
+              : 'This goes to people outside the club. Don’t put a members-only address or member pricing in the message.'}
+          </p>
         )}
 
         {/* Actions */}
@@ -379,10 +477,24 @@ export default function AdminBroadcastsPage() {
                     __html: `<h2 style="font-size:20px;font-weight:700;color:#111827;margin:0 0 16px">${subject.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</h2><div>${formatBodyHtml(body)}</div>`,
                   }}
                 />
+                {selectedEvent && (
+                  <div className="bg-white px-6 pb-6">
+                    <div className="rounded-lg border border-gray-200 p-4">
+                      <p className="font-bold text-[#9B1B30]">{selectedEvent.title}</p>
+                      <p className="text-sm text-gray-700 mt-2">📅 {formatEventDate(selectedEvent.date)}{selectedEvent.time ? ` at ${selectedEvent.time}` : ''}</p>
+                      <p className="text-sm text-gray-700">📍 {selectedEvent.location || '—'}</p>
+                    </div>
+                    <div className="text-center mt-3">
+                      <span className="inline-block rounded-lg bg-[#9B1B30] px-5 py-2 text-sm font-semibold text-white">View Event &amp; RSVP</span>
+                    </div>
+                  </div>
+                )}
                 {/* Footer */}
                 <div className="border-t border-gray-200 bg-gray-50 px-6 py-4 text-center text-xs text-gray-400">
                   Rotaract Club of New York at the United Nations ·{' '}
-                  <span className="text-cranberry underline">Manage notification preferences</span>
+                  <span className="text-cranberry underline">
+                    {segment === 'subscribers' ? 'Unsubscribe' : 'Manage notification preferences'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -448,6 +560,9 @@ export default function AdminBroadcastsPage() {
                   <tr key={b.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
                     <td className="py-3 pr-4 font-medium text-gray-900 dark:text-white max-w-xs truncate">
                       {b.subject}
+                      {b.eventTitle && (
+                        <span className="block text-xs font-normal text-gray-400 truncate">📅 {b.eventTitle}</span>
+                      )}
                     </td>
                     <td className="py-3 pr-4">
                       <Badge variant={SEGMENT_BADGE_VARIANT[b.segment] || 'gray'}>
