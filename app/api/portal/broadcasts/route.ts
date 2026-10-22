@@ -28,8 +28,10 @@ type Segment = (typeof VALID_SEGMENTS)[number];
 /** Segments that reach newsletter subscribers, i.e. people outside the club. */
 const SUBSCRIBER_SEGMENTS: Segment[] = ['subscribers', 'everyone'];
 
-const SUBSCRIBER_CHUNK_SIZE = 10;
-const SUBSCRIBER_CHUNK_DELAY_MS = 100;
+// Subscribers each need their own unsubscribe link, so they can't share a
+// batch request. Keep the request rate under Resend's per-second limit.
+const SUBSCRIBER_CHUNK_SIZE = 2;
+const SUBSCRIBER_CHUNK_DELAY_MS = 1000;
 
 function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -356,7 +358,8 @@ export async function POST(request: NextRequest) {
         )
       : null;
 
-    let memberResult = { sent: 0, failed: 0, total: 0 };
+    let memberResult: { sent: number; failed: number; total: number; failedRecipients: string[] } =
+      { sent: 0, failed: 0, total: 0, failedRecipients: [] };
     if (recipients.length > 0) {
       const unsubscribeFooter = `
         <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
@@ -384,7 +387,7 @@ export async function POST(request: NextRequest) {
 
     // ── Send to subscribers, one at a time so each gets their own unsubscribe link ──
 
-    let subscriberFailed = 0;
+    const failedSubscribers: string[] = [];
     for (let i = 0; i < subscribers.length; i += SUBSCRIBER_CHUNK_SIZE) {
       const chunk = subscribers.slice(i, i + SUBSCRIBER_CHUNK_SIZE);
       const results = await Promise.allSettled(
@@ -417,16 +420,16 @@ export async function POST(request: NextRequest) {
           });
         }),
       );
-      for (const r of results) {
-        if (r.status !== 'fulfilled' || !r.value.success) subscriberFailed++;
-      }
+      results.forEach((r, j) => {
+        if (r.status !== 'fulfilled' || !r.value.success) failedSubscribers.push(chunk[j].email);
+      });
       if (i + SUBSCRIBER_CHUNK_SIZE < subscribers.length) {
         await new Promise((resolve) => setTimeout(resolve, SUBSCRIBER_CHUNK_DELAY_MS));
       }
     }
 
     const recipientCount = recipients.length + subscribers.length;
-    const failedCount = memberResult.failed + subscriberFailed;
+    const failedCount = memberResult.failed + failedSubscribers.length;
 
     // ── Save broadcast record ──
 
@@ -440,6 +443,8 @@ export async function POST(request: NextRequest) {
       memberCount: recipients.length,
       subscriberCount: subscribers.length,
       failedCount,
+      // Who didn't get it, so the board can follow up without re-sending to everyone.
+      ...(failedCount > 0 && { failedRecipients: [...memberResult.failedRecipients, ...failedSubscribers] }),
       sentBy: sender.uid,
       sentByName: sender.name,
       sentAt: FieldValue.serverTimestamp(),
