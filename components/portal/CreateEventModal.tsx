@@ -486,6 +486,11 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    // Enter in a field on an earlier step submits the form; advance instead of saving.
+    if (activeStep < STEPS.length - 1) {
+      setActiveStep((s) => s + 1);
+      return;
+    }
     setError('');
 
     // Validation
@@ -1476,14 +1481,16 @@ export default function CreateEventModal({ open, onClose, onSaved, event }: Crea
                 {showPricing ? 'Stripe checkout for paid tickets' : 'Free — direct RSVP'}
               </p>
               {activeStep < STEPS.length - 1 ? (
-                <Button type="button" onClick={() => setActiveStep((s) => s + 1)}>
+                // Distinct keys stop React reusing this DOM node as the submit button,
+                // which made the browser submit the form on the click that reached the last step.
+                <Button key="next" type="button" onClick={() => setActiveStep((s) => s + 1)}>
                   Next
                   <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                   </svg>
                 </Button>
               ) : (
-                <Button type="submit" loading={loading}>
+                <Button key="submit" type="submit" loading={loading}>
                   {isEdit ? 'Update Event' : 'Create Event'}
                 </Button>
               )}
