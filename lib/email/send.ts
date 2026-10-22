@@ -62,6 +62,23 @@ function emailsPaused(): boolean {
   return process.env.EMAILS_PAUSED === 'true';
 }
 
+// Resend allows only a few requests per second per account. A rejected
+// request is safe to repeat, so wait and retry instead of dropping the email.
+const RATE_LIMIT_RETRIES = 4;
+const RATE_LIMIT_BACKOFF_MS = 1000;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function withRateLimitRetry<T extends { error: { name?: string } | null }>(
+  request: () => Promise<T>,
+): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    const result = await request();
+    if (result.error?.name !== 'rate_limit_exceeded' || attempt >= RATE_LIMIT_RETRIES) return result;
+    await sleep(RATE_LIMIT_BACKOFF_MS * (attempt + 1));
+  }
+}
+
 export async function sendEmail({ to, subject, html, replyTo, text, attachments, headers, ignorePause }: SendEmailOptions) {
   if (emailsPaused() && !ignorePause) {
     console.warn(`✋ EMAILS_PAUSED — skipped send: "${subject}" → ${Array.isArray(to) ? to.join(', ') : to}`);
@@ -73,7 +90,7 @@ export async function sendEmail({ to, subject, html, replyTo, text, attachments,
   }
 
   try {
-    const { data, error } = await getResend().emails.send({
+    const { data, error } = await withRateLimitRetry(() => getResend().emails.send({
       from: FROM_EMAIL,
       to: Array.isArray(to) ? to : [to],
       subject,
@@ -88,7 +105,7 @@ export async function sendEmail({ to, subject, html, replyTo, text, attachments,
           ...(a.contentType && { contentType: a.contentType }),
         })),
       }),
-    });
+    }));
 
     if (error) {
       console.error('Resend error:', error);
@@ -102,8 +119,20 @@ export async function sendEmail({ to, subject, html, replyTo, text, attachments,
   }
 }
 
-const BULK_CHUNK_SIZE = 10;
-const BULK_CHUNK_DELAY_MS = 100;
+// Resend's batch endpoint takes up to 100 emails in one request, so a whole
+// member list costs one request instead of one per recipient. Firing those
+// individually, ten at a time, tripped the rate limit and dropped most of a
+// 39-recipient broadcast.
+const BATCH_SIZE = 100;
+const BATCH_DELAY_MS = 600;
+
+export interface BulkEmailResult {
+  sent: number;
+  failed: number;
+  total: number;
+  /** Addresses that did not go out, so a retry can target only them. */
+  failedRecipients: string[];
+}
 
 export async function sendBulkEmail(
   recipients: string[],
@@ -111,40 +140,47 @@ export async function sendBulkEmail(
   html: string,
   text?: string,
   attachments?: EmailAttachment[],
-) {
+): Promise<BulkEmailResult> {
   if (emailsPaused()) {
     console.warn(`✋ EMAILS_PAUSED — skipped bulk send: "${subject}" → ${recipients.length} recipients`);
-    return { sent: 0, failed: 0, total: recipients.length };
+    return { sent: 0, failed: 0, total: recipients.length, failedRecipients: [] };
   }
   if (!process.env.RESEND_API_KEY) {
     console.warn('RESEND_API_KEY not set — bulk email not sent:', subject);
-    return { sent: 0, failed: recipients.length, total: recipients.length };
+    return { sent: 0, failed: recipients.length, total: recipients.length, failedRecipients: [...recipients] };
   }
 
-  let sent = 0;
-  let failed = 0;
+  const failedRecipients: string[] = [];
 
-  // Process recipients in chunks to avoid Resend rate limits
-  for (let i = 0; i < recipients.length; i += BULK_CHUNK_SIZE) {
-    const chunk = recipients.slice(i, i + BULK_CHUNK_SIZE);
-
-    const results = await Promise.allSettled(
-      chunk.map((to) => sendEmail({ to, subject, html, text, attachments })),
-    );
-
-    for (const result of results) {
-      if (result.status === 'fulfilled' && result.value.success) {
-        sent++;
-      } else {
-        failed++;
+  if (attachments && attachments.length > 0) {
+    // The batch endpoint doesn't accept attachments; send one at a time.
+    for (const to of recipients) {
+      const result = await sendEmail({ to, subject, html, text, attachments });
+      if (!result.success) failedRecipients.push(to);
+    }
+  } else {
+    for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+      const chunk = recipients.slice(i, i + BATCH_SIZE);
+      try {
+        const { error } = await withRateLimitRetry(() => getResend().batch.send(
+          chunk.map((to) => ({ from: FROM_EMAIL, to: [to], subject, html, ...(text && { text }) })),
+        ));
+        if (error) {
+          console.error('Resend batch error:', error);
+          failedRecipients.push(...chunk);
+        }
+      } catch (err) {
+        console.error('Resend batch send failed:', err);
+        failedRecipients.push(...chunk);
       }
-    }
-
-    // Small delay between chunks to stay within rate limits
-    if (i + BULK_CHUNK_SIZE < recipients.length) {
-      await new Promise((resolve) => setTimeout(resolve, BULK_CHUNK_DELAY_MS));
+      if (i + BATCH_SIZE < recipients.length) await sleep(BATCH_DELAY_MS);
     }
   }
 
-  return { sent, failed, total: recipients.length };
+  return {
+    sent: recipients.length - failedRecipients.length,
+    failed: failedRecipients.length,
+    total: recipients.length,
+    failedRecipients,
+  };
 }
