@@ -9,14 +9,18 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const doc = await adminDb.collection('settings').doc('payment').get();
-    if (!doc.exists) {
-      return NextResponse.json({
-        zellePhone: '',
-        venmoHandle: '',
-        instructions: '',
-      });
-    }
-    return NextResponse.json(doc.data());
+    const data = doc.exists ? doc.data()! : {};
+    // Older saves used zellePhone/venmoHandle and had no enabled flags; clients
+    // read the new names, so fall back to the legacy ones and default to enabled.
+    return NextResponse.json({
+      zelleIdentifier: data.zelleIdentifier || data.zellePhone || '',
+      zelleEnabled: data.zelleEnabled ?? true,
+      venmoUsername: data.venmoUsername || data.venmoHandle || '',
+      venmoEnabled: data.venmoEnabled ?? true,
+      cashappUsername: data.cashappUsername || '',
+      cashappEnabled: data.cashappEnabled ?? true,
+      instructions: data.instructions || '',
+    });
   } catch (error) {
     console.error('Error fetching payment settings:', error);
     return NextResponse.json({ error: 'Failed to fetch payment settings' }, { status: 500 });
